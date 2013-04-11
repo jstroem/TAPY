@@ -9,5 +9,14 @@ src_managed/
 project/boot/
 project/plugins/project/
 
+
+# eclipse specific
+bin/
+.settings/
+.classpath
+.cache
+.project
+TAPY/
+
 # Scala-IDE specific
 .scala_dependencies

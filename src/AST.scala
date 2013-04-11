@@ -2,57 +2,90 @@ package TAPY
 
 object AST {
   // NAME
-  case class Name(name:String)
-
+  case class Name(name: String)
+  
   // dotted_name: identifier ('.' identifier)*
-  case class DottedName(names:List[Name])
-  // '.' | '...'
-  case class Dot()
-
+  case class DottedName(names: List[Name])
+  
+  // '.'
+  case class Dot() extends DotOrTripleDot
+  
+  // '...'
+  case class TripleDot() extends DotOrTripleDot
+  
   // ('.' | '...')+
-  case class Dots(dots:List[Dot]) extends DottedNameOrDots
+  case class Dots(dots: List[DotOrTripleDot]) extends DottedNameOrDots
 
+  sealed trait DotOrTripleDot
+  
   // *
   case class Star() extends ImportAsNamesOrStar
-
+  
+  
+  /**
+    * Statements
+    */
+  
   // stmt: simple_stmt | compound_stmt
-	sealed trait Statement
-
-  //simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-  case class SimpleStatement(smallStmts: List[SmallStatement]) extends Statement
-
-  //small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
+  sealed trait Statement
+  sealed trait SimpleStmOrStms
+  
+  case class StatementList(stms: List[Statement]) extends SimpleStmOrStms
+  
+  
+  /**
+    * Simple statement
+    */
+  
+  // simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+  case class SimpleStatement(smallStmts: List[SmallStatement]) extends Statement with SimpleStmOrStms
+  
+  
+  /**
+    * Small statement
+    */
+  
+  // small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
   sealed trait SmallStatement
+  
+  
+  /**
+    * Small statement: Expression statement
+    */
+  
+  // expr_stmt: testlist_star_expr augassign_or_assign
+  case class ExpressionStatement(testOrStarExpList: List[TestOrStarExpression], augAssignOrAssign: AugAssignOrAssign) extends SmallStatement
+  
+  // test_or_star_expression: test | star_expr
+  sealed trait TestOrStarExpression
 
-  //expr_stmt: testlist_star_expr augassign_yield_expr_testlist_or_assign_yield_expr_testlist_star_expr_list
-  case class ExpressionStatement(testlist_star_expr:TestlistStarExpression,augassign_yield:AugYieldtestlistOrAssignYieldTestlistStarList) extends SmallStatement
-
-  // test_star_expression: test | star_expr
-  sealed trait TestStarExpression
-
-  // testlist_star_expr: test_star_expression (',' test_star_expression)* [',']
-  case class TestlistStarExpression(test_star_expr:List[TestStarExpression])
-
-  // yield_expr_testlist: yield_expr | testlist
-  sealed trait YieldTestlist
-
-  // augassign_yield_expr_testlist_or_assign_yield_expr_testlist_star_expr_list: augassign_yield_expr_testlist | assign_yield_expr_testlist_star_expr_list
-  sealed trait AugYieldtestlistOrAssignYieldTestlistStarList
+  // augassign_or_assign: augassign_yield_expr_testlist | assign_yield_expr_testlist_star_expr_list
+  sealed trait AugAssignOrAssign
 
   // augassign_yield_expr_testlist: augassign yield_expr_testlist
-  case class AugYieldtestlist(augassign:AugAssign,yieldtestlist:YieldTestlist) extends AugYieldtestlistOrAssignYieldTestlistStarList
-
-  // yield_expr_testlist_star_expr: yield_expr | testlist_star_expr
-  sealed trait YieldTestlistStar
-
-  // assign_yield_expr_testlist_star_expr: '=' yield_expr_testlist_star_expr
-  case class AssignYieldTestlistStar(yieldtestlist:YieldTestlistStar)
+  case class AugAssign(augAssignOp: AugAssignOp, yieldExpOrTestList: YieldExpressionOrTestList) extends AugAssignOrAssign
+  
+  // augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
+  case class AugAssignOp(op: String)
+  
+  // yield_expr_testlist: yield_expr | testlist
+  sealed trait YieldExpressionOrTestList
 
   // assign_yield_expr_testlist_star_expr_list: assign_yield_expr_testlist_star_expr*
-  case class AssignYieldTestlistStarList(yieldtestlists:List[YieldTestlistStar]) extends AugYieldtestlistOrAssignYieldTestlistStarList
+  case class Assign(yieldExpOrTestOrStarExpListList: List[YieldExpressionOrTestOrStarExpressionList]) extends AugAssignOrAssign
 
+  // yield_expr_testlist_star_expr: yield_expr | testlist_star_expr
+  sealed trait YieldExpressionOrTestOrStarExpressionList
+  
+  case class TestOrStarExpressionList(testOrStarExps: List[TestOrStarExpression]) extends YieldExpressionOrTestOrStarExpressionList with ForComprehensionOrTestOrStarExpressionList
+  
+  
+  /**
+    * More small statements
+    */
+  
   // del_stmt: 'del' exprlist
-	case class DelStatement(exprs:List[Expression]) extends SmallStatement
+	case class DeleteStatement(exps: List[Expression]) extends SmallStatement
 
   // pass_stmt: 'pass'
 	case class PassStatement() extends SmallStatement
@@ -67,28 +100,35 @@ object AST {
 	case class ContinueStatement() extends FlowStatement
 
   // return_stmt: 'return' [testlist]
-	case class ReturnStatement(otests:Option[List[Test]]) extends FlowStatement
+	case class ReturnStatement(tests: Option[List[Test]]) extends FlowStatement
 
   // raise_stmt: 'raise' [test ['from' test]]
-	case class RaiseStatement(otests:Option[Pair[Test,Option[Test]]]) extends FlowStatement
+	case class RaiseStatement(tests: Option[Pair[Test, Option[Test]]]) extends FlowStatement
 
   // yield_stmt: yield_expr
-	case class YieldStatement(yield_expr:YieldExpression) extends FlowStatement
+	case class YieldStatement(yieldExp: YieldExpression) extends FlowStatement
 
+	
+	/**
+	  * Small statement: Import statement
+	  */
+	
+	// TODO: Check this section
+	
   // import_stmt: import_name | import_from
   sealed trait ImportStatement extends SmallStatement
 
   // import_name: 'import' dotted_as_names
-  case class ImportName(dotted_as_names:DottedAsNames) extends ImportStatement
+  case class ImportName(dottedAsNames: DottedAsNames) extends ImportStatement
+  
+  case class ImportFrom(dottedName: DottedNameOrDots, importAsNames: ImportAsNamesOrStar) extends ImportStatement
 
   // ('*' | import_as_names
   sealed trait ImportAsNamesOrStar
 
   sealed trait DottedNameOrDots
 
-  case class DotDottedName(dots:List[Dot],dotted_name:DottedName) extends DottedNameOrDots
-
-  case class ImportFrom(dotted_name:DottedNameOrDots, import_as_names:ImportAsNamesOrStar) 
+  case class DotDottedName(dots: List[DotOrTripleDot], dottedName: DottedName) extends DottedNameOrDots
 
   // import_as_name: NAME ['as' NAME]
   case class ImportAsName(name:Name,oname:Option[Name])
@@ -102,110 +142,267 @@ object AST {
   // dotted_as_names: dotted_as_name (',' dotted_as_name)*
   case class DottedAsNames(dotted_as_names:List[DottedAsName]) extends ImportStatement
 
+  
+  /**
+    * More small statements
+    */
+  
   //global_stmt: 'global' NAME (',' NAME)*
-  case class GlobalStatement(names:List[Name]) extends SmallStatement
+  case class GlobalStatement(names: List[Name]) extends SmallStatement
 
   //nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
-  case class NonLocalStatement(names:List[Name]) extends SmallStatement
+  case class NonLocalStatement(names: List[Name]) extends SmallStatement
 
   //assert_stmt: 'assert' test [',' test]
-  case class AssertStatement(tests:List[Test]) extends SmallStatement
+  case class AssertStatement(tests: List[Test]) extends SmallStatement
 
-  // augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
-	case class AugAssign(aug:String)
+  
+  /**
+    * Compound statement
+    */
+  
+  // compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
+	sealed trait CompoundStatement extends Statement
+	
+	// if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+  case class IfStatement(test: Test, suite: Suite, elif: List[Pair[Test, Suite]], el: Option[Suite]) extends CompoundStatement 
+  
+  // suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
+  case class Suite(simpleStmOrStms: SimpleStmOrStms)
+  
+  // while_stmt: 'while' test ':' suite ['else' ':' suite]
+  case class WhileStatement(test: Test, suite: Suite, el: Option[Suite]) extends CompoundStatement
+  
+	// for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
+  case class ForStatement(expList: ExpressionList, in: List[Test], suite: Suite, el: Option[Suite]) extends CompoundStatement
+  
+  // try_stmt: ('try' ':' suite final_or_except_final)
+  case class TryStatement(suite: Suite, finalOrExceptFinal: FinalOrExceptFinal) extends CompoundStatement
+	
+  // final_or_except_final: final | except_final
+  sealed trait FinalOrExceptFinal
+  
+  // final: 'finally' ':' suite)
+  case class Final(suite: Suite) extends FinalOrExceptFinal
+  
+  // except_final: (except_clause ':' suite)+ ['else' ':' suite] ['finally' ':' suite]
+  case class ExceptFinal(excepts: List[Pair[ExceptClause, Suite]], elSuite: Suite, finallySuite: Suite) extends FinalOrExceptFinal
+  
+  // except_clause: 'except' [test ['as' NAME]]
+  case class ExceptClause(exceptTest: Option[Pair[Test, Option[Name]]])
+  
+  // with_stmt: 'with' with_item (',' with_item)*  ':' suite
+  case class WithStatement(withItems: List[WithItem], suite: Suite) extends CompoundStatement
+  
+  // with_item: test ['as' expr]
+  case class WithItem(test: Test, as: Expression)
+  
+  // class_or_func_def: classdef | funcdef
+  sealed trait ClassOrFunctionDef
+  
+  // classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
+  case class ClassDef(name: Name, arguments: Option[ArgumentList], suite: Suite) extends CompoundStatement with ClassOrFunctionDef
+  
+  // funcdef: 'def' NAME parameters ['->' test] ':' suite
+  case class FunctionDef(name: Name, parameters: TypedArgumentList, test: Option[Test], suite: Suite) extends CompoundStatement with ClassOrFunctionDef
+  
+  // decorated: decorators (classdef | funcdef)
+  case class Decorated(decorators: List[Decorator], classOrFuncDef: ClassOrFunctionDef) extends CompoundStatement
+  
+  // decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+  case class Decorator(dottedName: DottedName, arguments: Option[ArgumentList])
+  
+  
+  /**
+    * Tests and comparisons (?)
+    */
+  
+  //test: or_else_or_lambda
+  case class Test(e: OrElseTestOrLambdaDef) extends TestOrStarExpression
+  
+  // or_else_or_lambda: or_else | lambdef
+  sealed trait OrElseTestOrLambdaDef
+  
+  // or_else: or_test ['if' or_test 'else' test]
+  case class OrElseTest(or: OrTest, elseTest: Option[Pair[OrTest, Test]]) extends OrElseTestOrLambdaDef
+  
+  // or_test: and_test ('or' and_test)*
+  case class OrTest(test: List[AndTest]) extends OrTestOrLambdaDefNoCond
+  
+  // and_test: not_test ('and' not_test)*
+  case class AndTest(notTests: List[NotTest])
+  
+  // not_test: not_test_or_comparison
+  case class NotTest(notTestOrComparison: NotTestOrComparison) extends NotTestOrComparison
 
-
-  //TODO
-  sealed trait Expression
-  case class Test()
-  case class YieldExpression() extends Expression with YieldTestlist with YieldTestlistStar
+  // not_test_or_comparison: 'not' not_test | comparison
+  sealed trait NotTestOrComparison
+  
+  // comparison: expr (comp_op expr)*
+  case class Comparison(exp: Expression, compOpExps: List[Pair[CompOp, Expression]]) extends NotTestOrComparison
+  
+  // comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+  case class CompOp(op: String)
+  
+  //test_nocond: or_test | lambdef_nocond
+  case class TestNoCond(orTestOrLambdaDefNoCond: OrTestOrLambdaDefNoCond)
+  
+  sealed trait OrTestOrLambdaDefNoCond
+  
+  
+  /**
+    * Expression
+    */
+  
+  sealed trait ExpressionOrStarExpression
+  
+  // expr: xor_expr ('|' xor_expr)*
+  case class Expression(xorExps: List[XOrExpression]) extends ExpressionOrStarExpression
+  
+  // xor_expr: and_expr ('^' and_expr)*
+  case class XOrExpression(andExps: List[AndExpression])
+  
+  // and_expr: shift_expr ('&' shift_expr)*
+  case class AndExpression(shiftExps: List[ShiftExpression])
+  
+  // shift_expr: arith_expr (arith_op arith_expr)*
+  case class ShiftExpression(arithExp: ArithExpression, arithExps: List[Pair[ShiftOp, ArithExpression]])
+  
+  // shift_op: '<<' | '>>'
+  case class ShiftOp(op: String)
+  
+  // arith_expr: term (arith_op term)*
+  case class ArithExpression(term: Term, terms: List[Pair[ArithOp, Term]])
+  
+  // arith_op: '+' | '-'
+  case class ArithOp(op: String)
+  
+  // term: factor_or_power (term_op factor_or_power)*
+  case class Term(factor: Factor, factors: List[Pair[TermOp, Factor]])
+  
+  // term_op: '*' | '/' | '%' | '//'
+  case class TermOp(op: String)
+  
+  // factor_or_power: factor | power
+  sealed trait FactorOrPower
+  
+  // factor: factor_op factor_or_power
+  case class Factor(factorOp: FactorOp, factor: FactorOrPower) extends FactorOrPower
+  
+  // factor_op: '+' | '-' | '~'
+  case class FactorOp(op: String)
+  
+  // power: atom trailer* ['**' factor]
+  case class Power(atom: Atom, trailers: List[Trailer], factor: Option[Factor]) extends FactorOrPower
+  
+  /* atom:
+   *   ( '(' [yield_expr|testlist_comp] ')'
+   *     | '[' [testlist_comp] ']'
+   *     | '{' [dictorsetmaker] '}'
+   *     | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False') */
+  case class Atom() // TODO
+  
+  sealed trait YieldExpressionOrTestListComp
+  
+  // testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+  case class TestListComp(testOrStarExp: TestOrStarExpression, compForOrTestStarExpList: ForComprehensionOrTestOrStarExpressionList) extends YieldExpressionOrTestListComp
+  
+  sealed trait ForComprehensionOrTestOrStarExpressionList
+  
+  // star_expr: '*' expr
+  case class StarExpression(exp: Expression) extends ExpressionOrStarExpression with TestOrStarExpression
+  
+  
+  // trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+  case class Trailer()
+  
+  // subscriptlist: subscript (',' subscript)* [',']
+  case class SubscriptList(subscripts: List[Subscript])
+  
+  // subscript: test | [test] ':' [test] [sliceop]
+  case class Subscript()
+  
+  // sliceop: ':' [test]
+  case class SliceOp(test: Option[Test])
+  
+  // exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
+  case class ExpressionList(exps: List[ExpressionOrStarExpression])
+  
+  // testlist: test (',' test)* [',']
+  case class TestList(tests: List[Test]) extends YieldExpressionOrTestList
+  
+  // dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) | (test (comp_for | (',' test)* [','])) )
+  case class DictionaryOrSetMaker() // TODO
+  
+  /**
+    * Lambda definitions:
+    */
+  
+  // lambdef: 'lambda' [varargslist] ':' test
+  case class LambdaDef(varArgs: Option[VarArgumentList], test: Test) extends OrElseTestOrLambdaDef
+  
+  // lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
+  case class LambdaDefNoCond(varArgs: Option[VarArgumentList], testNoCond: TestNoCond) extends OrTestOrLambdaDefNoCond
+  
+  
+  /**
+    * Yield expressions:
+    */
+  // yield_expr: 'yield' [yield_arg]
+  case class YieldExpression() extends YieldExpressionOrTestList with YieldExpressionOrTestOrStarExpressionList with YieldExpressionOrTestListComp
+  
+  // yield_arg: 'from' test | testlist*/
+  case class YieldArg()
+  
+  // parameters: '(' [typedargslist] ')'
+  
+  /* typedargslist:
+   *   (tfpdef ['=' test] (',' tfpdef ['=' test])*
+   *   [ ',' ['*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef]]
+   *   | '*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef) */
+  case class TypedArgument() // TODO
+  case class TypedArgumentList() // TODO
+  
+  // tfpdef: NAME [':' test]
+  case class TFPDef(name: Name, test: Option[Test])
+  
+  
+  /**
+    * Varargslist, vfpdef
+    */
+  
+  /* varargslist:
+   *   (vfpdef ['=' test] (',' vfpdef ['=' test])* [','
+   *   [ '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef]]
+   *   | '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef) */
+  case class VarArgument() // TODO
+  case class VarArgumentList() // TODO
+  
+  // vfpdef: NAME
+  case class VFPDef(name: Name)
+  
+  // argument: test [comp_for] | test '=' test  # Really [keyword '='] test
+  case class Argument()
+  
+  /* arglist:
+   *   (argument ',')* (
+   *     argument [',']
+   *     | '*' test (',' argument)* [',' '**' test] 
+   *     | '**' test
+   *   ) */
+  case class ArgumentList()
+  
+  
+  /**
+    * Comprehensions
+    */
+  
+  // comp_iter: comp_for | comp_if
+  sealed trait ComprehensionIterator
+  
+  // comp_for: 'for' exprlist 'in' or_test [comp_iter]
+  case class ForComprehension(exps: ExpressionList, orTest: OrTest, compIter: Option[ComprehensionIterator]) extends ComprehensionIterator with ForComprehensionOrTestOrStarExpressionList
+  
+  // comp_if: 'if' test_nocond [comp_iter]
+  case class IfComprehension(testNoCond: TestNoCond, compIter: Option[ComprehensionIterator]) extends ComprehensionIterator
 }
-
-
-/*
-single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
-file_input: (NEWLINE | stmt)* ENDMARKER
-eval_input: testlist NEWLINE* ENDMARKER
-
-decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
-decorators: decorator+
-decorated: decorators (classdef | funcdef)
-funcdef: 'def' NAME parameters ['->' test] ':' suite
-parameters: '(' [typedargslist] ')'
-typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [','
-       ['*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef]]
-     |  '*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef)
-tfpdef: NAME [':' test]
-varargslist: (vfpdef ['=' test] (',' vfpdef ['=' test])* [','
-       ['*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef]]
-     |  '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef)
-vfpdef: NAME
-
-# For normal assignments, additional restrictions enforced by the interpreter
-
-compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
-if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-while_stmt: 'while' test ':' suite ['else' ':' suite]
-for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-try_stmt: ('try' ':' suite
-           ((except_clause ':' suite)+
-            ['else' ':' suite]
-            ['finally' ':' suite] |
-           'finally' ':' suite))
-with_stmt: 'with' with_item (',' with_item)*  ':' suite
-with_item: test ['as' expr]
-# NB compile.c makes sure that the default except clause is last
-except_clause: 'except' [test ['as' NAME]]
-suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
-
-test: or_test ['if' or_test 'else' test] | lambdef
-test_nocond: or_test | lambdef_nocond
-lambdef: 'lambda' [varargslist] ':' test
-lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
-or_test: and_test ('or' and_test)*
-and_test: not_test ('and' not_test)*
-not_test: 'not' not_test | comparison
-comparison: expr (comp_op expr)*
-# <> isn't actually a valid comparison operator in Python. It's here for the
-# sake of a __future__ import described in PEP 401
-comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
-star_expr: '*' expr
-expr: xor_expr ('|' xor_expr)*
-xor_expr: and_expr ('^' and_expr)*
-and_expr: shift_expr ('&' shift_expr)*
-shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'/'|'%'|'//') factor)*
-factor: ('+'|'-'|'~') factor | power
-power: atom trailer* ['**' factor]
-atom: ('(' [yield_expr|testlist_comp] ')' |
-       '[' [testlist_comp] ']' |
-       '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-subscriptlist: subscript (',' subscript)* [',']
-subscript: test | [test] ':' [test] [sliceop]
-sliceop: ':' [test]
-exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-testlist: test (',' test)* [',']
-dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
-                  (test (comp_for | (',' test)* [','])) )
-
-classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
-
-arglist: (argument ',')* (argument [',']
-                         |'*' test (',' argument)* [',' '**' test] 
-                         |'**' test)
-# The reason that keywords are test nodes instead of NAME is that using NAME
-# results in an ambiguity. ast.c makes sure it's a NAME.
-argument: test [comp_for] | test '=' test  # Really [keyword '='] test
-comp_iter: comp_for | comp_if
-comp_for: 'for' exprlist 'in' or_test [comp_iter]
-comp_if: 'if' test_nocond [comp_iter]
-
-# not used in grammar, but may appear in "node" passed from Parser to Compiler
-encoding_decl: NAME
-
-yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist*/
