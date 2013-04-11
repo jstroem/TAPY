@@ -2,7 +2,7 @@ package TAPY
 
 object AST {
   // NAME
-  case class Name(name: String)
+  case class Name(name: String) extends Atom
   
   // dotted_name: identifier ('.' identifier)*
   case class DottedName(names: List[Name])
@@ -11,7 +11,7 @@ object AST {
   case class Dot() extends DotOrTripleDot
   
   // '...'
-  case class TripleDot() extends DotOrTripleDot
+  case class TripleDot() extends DotOrTripleDot with Atom
   
   // ('.' | '...')+
   case class Dots(dots: List[DotOrTripleDot]) extends DottedNameOrDots
@@ -204,7 +204,7 @@ object AST {
   case class ClassDef(name: Name, arguments: Option[ArgumentList], suite: Suite) extends CompoundStatement with ClassOrFunctionDef
   
   // funcdef: 'def' NAME parameters ['->' test] ':' suite
-  case class FunctionDef(name: Name, parameters: TypedArgumentList, test: Option[Test], suite: Suite) extends CompoundStatement with ClassOrFunctionDef
+  case class FunctionDef(name: Name, parameters: List[TypedArgument], test: Option[Test], suite: Suite) extends CompoundStatement with ClassOrFunctionDef
   
   // decorated: decorators (classdef | funcdef)
   case class Decorated(decorators: List[Decorator], classOrFuncDef: ClassOrFunctionDef) extends CompoundStatement
@@ -300,18 +300,24 @@ object AST {
    *     | '[' [testlist_comp] ']'
    *     | '{' [dictorsetmaker] '}'
    *     | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False') */
-  case class Atom() // TODO
+  sealed trait Atom
+  
+  case class Number(n: String)
+  case class Strings(ss: List[String])
+  case class None() extends Atom
+  case class Bool(b: Boolean) extends Atom
   
   sealed trait YieldExpressionOrTestListComp
+  case class OptionYieldExpressionOrTestListComp(option: Option[YieldExpressionOrTestListComp]) extends Atom
   
   // testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
   case class TestListComp(testOrStarExp: TestOrStarExpression, compForOrTestStarExpList: ForComprehensionOrTestOrStarExpressionList) extends YieldExpressionOrTestListComp
+  case class OptionTestListComp(option: Option[TestListComp]) extends Atom
   
   sealed trait ForComprehensionOrTestOrStarExpressionList
   
   // star_expr: '*' expr
   case class StarExpression(exp: Expression) extends ExpressionOrStarExpression with TestOrStarExpression
-  
   
   // trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
   case class Trailer()
@@ -332,17 +338,19 @@ object AST {
   case class TestList(tests: List[Test]) extends YieldExpressionOrTestList
   
   // dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) | (test (comp_for | (',' test)* [','])) )
-  case class DictionaryOrSetMaker() // TODO
+  case class DictionaryOrSetMaker()
+  case class OptionDictionaryOrSetMaker(option: DictionaryOrSetMaker) extends Atom
+  
   
   /**
     * Lambda definitions:
     */
   
   // lambdef: 'lambda' [varargslist] ':' test
-  case class LambdaDef(varArgs: Option[VarArgumentList], test: Test) extends OrElseTestOrLambdaDef
+  case class LambdaDef(varArgs: List[VarArgument], test: Test) extends OrElseTestOrLambdaDef
   
   // lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
-  case class LambdaDefNoCond(varArgs: Option[VarArgumentList], testNoCond: TestNoCond) extends OrTestOrLambdaDefNoCond
+  case class LambdaDefNoCond(varArgs: List[VarArgument], testNoCond: TestNoCond) extends OrTestOrLambdaDefNoCond
   
   
   /**
@@ -360,8 +368,7 @@ object AST {
    *   (tfpdef ['=' test] (',' tfpdef ['=' test])*
    *   [ ',' ['*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef]]
    *   | '*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef) */
-  case class TypedArgument() // TODO
-  case class TypedArgumentList() // TODO
+  case class TypedArgument(stars: String, tfpDef: Option[TFPDef], default: Option[Test])
   
   // tfpdef: NAME [':' test]
   case class TFPDef(name: Name, test: Option[Test])
@@ -375,8 +382,7 @@ object AST {
    *   (vfpdef ['=' test] (',' vfpdef ['=' test])* [','
    *   [ '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef]]
    *   | '*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef) */
-  case class VarArgument() // TODO
-  case class VarArgumentList() // TODO
+  case class VarArgument(stars: String, vfpDef: Option[VFPDef], default: Option[Test])
   
   // vfpdef: NAME
   case class VFPDef(name: Name)
