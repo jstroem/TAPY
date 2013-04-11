@@ -85,36 +85,36 @@ object AST {
     */
   
   // del_stmt: 'del' exprlist
-	case class DeleteStatement(exps: List[Expression]) extends SmallStatement
+  case class DeleteStatement(exps: List[Expression]) extends SmallStatement
 
   // pass_stmt: 'pass'
-	case class PassStatement() extends SmallStatement
+  case class PassStatement() extends SmallStatement
 
   // flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
-	sealed trait FlowStatement extends SmallStatement
+  sealed trait FlowStatement extends SmallStatement
 
   // break_stmt: 'break'
-	case class BreakStatement() extends FlowStatement
+  case class BreakStatement() extends FlowStatement
 
   // continue_stmt: 'continue'
-	case class ContinueStatement() extends FlowStatement
+  case class ContinueStatement() extends FlowStatement
 
   // return_stmt: 'return' [testlist]
-	case class ReturnStatement(tests: Option[List[Test]]) extends FlowStatement
+  case class ReturnStatement(tests: Option[List[Test]]) extends FlowStatement
 
   // raise_stmt: 'raise' [test ['from' test]]
-	case class RaiseStatement(tests: Option[Pair[Test, Option[Test]]]) extends FlowStatement
+  case class RaiseStatement(tests: Option[Pair[Test, Option[Test]]]) extends FlowStatement
 
   // yield_stmt: yield_expr
-	case class YieldStatement(yieldExp: YieldExpression) extends FlowStatement
+  case class YieldStatement(yieldExp: YieldExpression) extends FlowStatement
 
-	
-	/**
-	  * Small statement: Import statement
-	  */
-	
-	// TODO: Check this section
-	
+  
+  /**
+    * Small statement: Import statement
+    */
+  
+  // TODO: Check this section
+  
   // import_stmt: import_name | import_from
   sealed trait ImportStatement extends SmallStatement
 
@@ -162,9 +162,9 @@ object AST {
     */
   
   // compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
-	sealed trait CompoundStatement extends Statement
-	
-	// if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+  sealed trait CompoundStatement extends Statement
+  
+  // if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
   case class IfStatement(test: Test, suite: Suite, elif: List[Pair[Test, Suite]], el: Option[Suite]) extends CompoundStatement 
   
   // suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
@@ -173,12 +173,12 @@ object AST {
   // while_stmt: 'while' test ':' suite ['else' ':' suite]
   case class WhileStatement(test: Test, suite: Suite, el: Option[Suite]) extends CompoundStatement
   
-	// for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
+  // for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
   case class ForStatement(expList: ExpressionList, in: List[Test], suite: Suite, el: Option[Suite]) extends CompoundStatement
   
   // try_stmt: ('try' ':' suite final_or_except_final)
   case class TryStatement(suite: Suite, finalOrExceptFinal: FinalOrExceptFinal) extends CompoundStatement
-	
+  
   // final_or_except_final: final | except_final
   sealed trait FinalOrExceptFinal
   
