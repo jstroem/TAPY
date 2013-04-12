@@ -1,9 +1,16 @@
+OSNAME := ${shell uname}
+
+all: clean compile run
+
 clean:
-	rm -r bin
+	rm -rf bin
 
 compile:
-	mkdir bin
+	mkdir -p bin
 	scalac -classpath lib/*.jar -d bin src/*.scala
 
 run:
-	scala -cp "bin:./lib/jython-2.7-b1.jar" Main
+	@if (test "${OSNAME}" = "CYGWIN_NT-6.2-WOW64"); \
+		then scala -cp "bin;./lib/jython-2.7-b1.jar" Main; fi
+	@if (test "${OSNAME}" = "Darwin"); \
+		then scala -cp "bin:./lib/jython-2.7-b1.jar" Main; fi
