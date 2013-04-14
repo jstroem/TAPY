@@ -46,10 +46,10 @@ object CFG {
 	case class ExceptNode(types:List[String],result_reg:Option[Int]) extends Node
 
 	// Binary operation; result = arg1 op arg2
-	case class BinOpNode(op:BinOp,arg1_reg:Int,arg2_reg:Int,result_reg:Int) extends Node
+	case class BinOpNode(op:Operator.BinOp,arg1_reg:Int,arg2_reg:Int,result_reg:Int) extends Node
 
 	// Unary operation: result = op arg1
-	case class UnaryOpNode(op:UnOp,arg1_reg:Int,result_reg:Int) extends Node
+	case class UnaryOpNode(op:Operator.UnOp,arg1_reg:Int,result_reg:Int) extends Node
 
 	// TODO
 	case class ForInNode() extends Node

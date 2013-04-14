@@ -11,6 +11,6 @@ compile:
 
 run:
 	@if (test "${OSNAME}" = "CYGWIN_NT-6.2-WOW64"); \
-		then scala -cp "bin;./lib/jython-2.7-b1.jar" Main; fi
+		then scala -cp "bin;./lib/jython-2.7-b1.jar" TAPY.Main; fi
 	@if (test "${OSNAME}" = "Darwin"); \
-		then scala -cp "bin:./lib/jython-2.7-b1.jar" Main; fi
+		then scala -cp "bin:./lib/jython-2.7-b1.jar" TAPY.Main; fi
