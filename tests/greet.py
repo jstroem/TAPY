@@ -1,5 +1,8 @@
 def greet(name):
     print 'Hello', name
 greet('Jack')
-greet('Jill')
-greet('Bob')
+greet(name='Jack')
+x = ['Jack']
+greet(*x)
+y = {'name': 'Jack'}
+greet(**y)

@@ -1,116 +1,286 @@
 package tapy.cfg
 
+import org.python.antlr._;
 import org.python.antlr.ast._;
 
-object CFGGeneratorVisitor extends VisitorIF[ControlFlowGraph] {
-  def visitModule(node: Module): ControlFlowGraph = {
-    println("Visit module");
+object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
+  override def traverse(node: PythonTree): Unit = {
+      node.traverse(this);
+  }
+  
+  override def unhandled_node(node: PythonTree): ControlFlowGraph = {
+      return null;
+  }
+
+  /* Implementation of visitor methods: */
+  
+  override def visitModule(node: Module): ControlFlowGraph = {
+    println("visitModule");
     return null;
   }
   
-  def visitInteractive(node: Interactive): ControlFlowGraph = { return null; }
+  override def visitInteractive(node: Interactive): ControlFlowGraph = {
+    println("visitInteractive");
+    return null;
+  }
   
-  def visitExpression(node: Expression): ControlFlowGraph = { return null; }
+  override def visitExpression(node: Expression): ControlFlowGraph = {
+    println("visitExpression");
+    return null;
+  }
   
-  def visitSuite(node: Suite): ControlFlowGraph = { return null; }
+  override def visitSuite(node: Suite): ControlFlowGraph = {
+    println("visitSuite");
+    return null;
+  }
   
-  def visitFunctionDef(node: FunctionDef): ControlFlowGraph = { return null; }
+  override def visitFunctionDef(node: FunctionDef): ControlFlowGraph = {
+    println("visitFunctionDef");
+    return null;
+  }
   
-  def visitClassDef(node: ClassDef): ControlFlowGraph = { return null; }
+  override def visitClassDef(node: ClassDef): ControlFlowGraph = {
+    println("visitClassDef");
+    return null;
+  }
   
-  def visitReturn(node: Return): ControlFlowGraph = { return null; }
+  override def visitReturn(node: Return): ControlFlowGraph = {
+    println("visitReturn");
+    return null;
+  }
   
-  def visitDelete(node: Delete): ControlFlowGraph = { return null; }
+  override def visitDelete(node: Delete): ControlFlowGraph = {
+    println("visitDelete");
+    return null;
+  }
   
-  def visitAssign(node: Assign): ControlFlowGraph = { return null; }
+  override def visitAssign(node: Assign): ControlFlowGraph = {
+    println("visitInteractive");
+    return null;
+  }
   
-  def visitAugAssign(node: AugAssign): ControlFlowGraph = { return null; }
+  override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
+    println("visitAugAssign");
+    return null;
+  }
   
-  def visitPrint(node: Print): ControlFlowGraph = { return null; }
+  override def visitPrint(node: Print): ControlFlowGraph = {
+    println("visitPrint");
+    return null;
+  }
   
-  def visitFor(node: For): ControlFlowGraph = { return null; }
+  override def visitFor(node: For): ControlFlowGraph = {
+    println("visitFor");
+    return null;
+  }
   
-  def visitWhile(node: While): ControlFlowGraph = { return null; }
+  override def visitWhile(node: While): ControlFlowGraph = {
+    println("visitWhile");
+    return null;
+  }
   
-  def visitIf(node: If): ControlFlowGraph = { return null; }
+  override def visitIf(node: If): ControlFlowGraph = {
+    println("visitIf");
+    return null;
+  }
   
-  def visitWith(node: With): ControlFlowGraph = { return null; }
+  override def visitWith(node: With): ControlFlowGraph = {
+    println("visitWith");
+    return null;
+  }
   
-  def visitRaise(node: Raise): ControlFlowGraph = { return null; }
+  override def visitRaise(node: Raise): ControlFlowGraph = {
+    println("visitRaise");
+    return null;
+  }
   
-  def visitTryExcept(node: TryExcept): ControlFlowGraph = { return null; }
+  override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
+    println("visitTryExcept");
+    return null;
+  }
   
-  def visitTryFinally(node: TryFinally): ControlFlowGraph = { return null; }
+  override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
+    println("visitTryFinally");
+    return null;
+  }
   
-  def visitAssert(node: Assert): ControlFlowGraph = { return null; }
+  override def visitAssert(node: Assert): ControlFlowGraph = {
+    println("visitAssert");
+    return null;
+  }
   
-  def visitImport(node: Import): ControlFlowGraph = { return null; }
+  override def visitImport(node: Import): ControlFlowGraph = {
+    println("visitImport");
+    return null;
+  }
   
-  def visitImportFrom(node: ImportFrom): ControlFlowGraph = { return null; }
+  override def visitImportFrom(node: ImportFrom): ControlFlowGraph = {
+    println("visitImportFrom");
+    return null;
+  }
   
-  def visitExec(node: Exec): ControlFlowGraph = { return null; }
+  override def visitExec(node: Exec): ControlFlowGraph = {
+    println("visitExec");
+    return null;
+  }
   
-  def visitGlobal(node: Global): ControlFlowGraph = { return null; }
+  override def visitGlobal(node: Global): ControlFlowGraph = {
+    println("visitGlobal");
+    return null;
+  }
   
-  def visitExpr(node: Expr): ControlFlowGraph = { return null; }
+  override def visitExpr(node: Expr): ControlFlowGraph = {
+    println("visitExpr");
+    return null;
+  }
   
-  def visitPass(node: Pass): ControlFlowGraph = { return null; }
+  override def visitPass(node: Pass): ControlFlowGraph = {
+    println("visitPass");
+    return null;
+  }
   
-  def visitBreak(node: Break): ControlFlowGraph = { return null; }
+  override def visitBreak(node: Break): ControlFlowGraph = {
+    println("visitBreak");
+    return null;
+  }
   
-  def visitContinue(node: Continue): ControlFlowGraph = { return null; }
+  override def visitContinue(node: Continue): ControlFlowGraph = {
+    println("visitContinue");
+    return null;
+  }
   
-  def visitBoolOp(node: BoolOp): ControlFlowGraph = { return null; }
+  override def visitBoolOp(node: BoolOp): ControlFlowGraph = {
+    println("visitBoolOp");
+    return null;
+  }
   
-  def visitBinOp(node: BinOp): ControlFlowGraph = { return null; }
+  override def visitBinOp(node: BinOp): ControlFlowGraph = {
+    println("visitBinOp");
+    return null;
+  }
   
-  def visitUnaryOp(node: UnaryOp): ControlFlowGraph = { return null; }
+  override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
+    println("visitUnaryOp");
+    return null;
+  }
   
-  def visitLambda(node: Lambda): ControlFlowGraph = { return null; }
+  override def visitLambda(node: Lambda): ControlFlowGraph = {
+    println("visitLambda");
+    return null;
+  }
   
-  def visitIfExp(node: IfExp): ControlFlowGraph = { return null; }
+  override def visitIfExp(node: IfExp): ControlFlowGraph = {
+    println("visitIfExp");
+    return null;
+  }
   
-  def visitDict(node: Dict): ControlFlowGraph = { return null; }
+  override def visitDict(node: Dict): ControlFlowGraph = {
+    println("visitDict");
+    return null;
+  }
   
-  def visitSet(node: Set): ControlFlowGraph = { return null; }
+  override def visitSet(node: Set): ControlFlowGraph = {
+    println("visitSet");
+    return null;
+  }
   
-  def visitListComp(node: ListComp): ControlFlowGraph = { return null; }
+  override def visitListComp(node: ListComp): ControlFlowGraph = {
+    println("visitListComp");
+    return null;
+  }
   
-  def visitSetComp(node: SetComp): ControlFlowGraph = { return null; }
+  override def visitSetComp(node: SetComp): ControlFlowGraph = {
+    println("visitSetComp");
+    return null;
+  }
   
-  def visitDictComp(node: DictComp): ControlFlowGraph = { return null; }
+  override def visitDictComp(node: DictComp): ControlFlowGraph = {
+    println("visitDictComp");
+    return null;
+  }
   
-  def visitGeneratorExp(node: GeneratorExp): ControlFlowGraph = { return null; }
+  override def visitGeneratorExp(node: GeneratorExp): ControlFlowGraph = {
+    println("visitGeneratorExp");
+    return null;
+  }
   
-  def visitYield(node: Yield): ControlFlowGraph = { return null; }
+  override def visitYield(node: Yield): ControlFlowGraph = {
+    println("visitYield");
+    return null;
+  }
   
-  def visitCompare(node: Compare): ControlFlowGraph = { return null; }
+  override def visitCompare(node: Compare): ControlFlowGraph = {
+    println("visitCompare");
+    return null;
+  }
   
-  def visitCall(node: Call): ControlFlowGraph = { return null; }
+  override def visitCall(node: Call): ControlFlowGraph = {
+    println("visitCall");
+    return null;
+  }
   
-  def visitRepr(node: Repr): ControlFlowGraph = { return null; }
+  override def visitRepr(node: Repr): ControlFlowGraph = {
+    println("visitRepr");
+    return null;
+  }
   
-  def visitNum(node: Num): ControlFlowGraph = { return null; }
+  override def visitNum(node: Num): ControlFlowGraph = {
+    println("visitNum");
+    return null;
+  }
   
-  def visitStr(node: Str): ControlFlowGraph = { return null; }
+  override def visitStr(node: Str): ControlFlowGraph = {
+    println("visitStr");
+    return null;
+  }
   
-  def visitAttribute(node: Attribute): ControlFlowGraph = { return null; }
+  override def visitAttribute(node: Attribute): ControlFlowGraph = {
+    println("visitAttribute");
+    return null;
+  }
   
-  def visitSubscript(node: Subscript): ControlFlowGraph = { return null; }
+  override def visitSubscript(node: Subscript): ControlFlowGraph = {
+    println("visitSubscript");
+    return null;
+  }
   
-  def visitName(node: Name): ControlFlowGraph = { return null; }
+  override def visitName(node: Name): ControlFlowGraph = {
+    println("visitName");
+    return null;
+  }
   
-  def visitList(node: List): ControlFlowGraph = { return null; }
+  override def visitList(node: List): ControlFlowGraph = {
+    println("visitList");
+    return null;
+  }
   
-  def visitTuple(node: Tuple): ControlFlowGraph = { return null; }
+  override def visitTuple(node: Tuple): ControlFlowGraph = {
+    println("visitTuple");
+    return null;
+  }
   
-  def visitEllipsis(node: Ellipsis): ControlFlowGraph = { return null; }
+  override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
+    println("visitEllipsis");
+    return null;
+  }
   
-  def visitSlice(node: Slice): ControlFlowGraph = { return null; }
+  override def visitSlice(node: Slice): ControlFlowGraph = {
+    println("visitSlice");
+    return null;
+  }
   
-  def visitExtSlice(node: ExtSlice): ControlFlowGraph = { return null; }
+  override def visitExtSlice(node: ExtSlice): ControlFlowGraph = {
+    println("visitExtSlice");
+    return null;
+  }
   
-  def visitIndex(node: Index): ControlFlowGraph = { return null; }
+  override def visitIndex(node: Index): ControlFlowGraph = {
+    println("visitIndex");
+    return null;
+  }
   
-  def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = { return null; }
+  override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
+    println("visitExceptHandler");
+    return null;
+  }
 }
