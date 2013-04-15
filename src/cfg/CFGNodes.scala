@@ -7,7 +7,7 @@ sealed trait Node{
 }
 
 // Write variable; variable = value
-case class WriteVariableNode(variable:String,value_reg:Int, label0: String) extends Node { label = label0 } { label = label0 }
+case class WriteVariableNode(variable:String,value_reg:Int, label0: String) extends Node{ label = label0 }
 
 // Read variable; result = variable
 case class ReadVariableNode(variable:String,result_reg:Int, label0: String) extends Node { label = label0 }
