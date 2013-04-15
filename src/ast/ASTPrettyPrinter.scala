@@ -14,7 +14,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     }
   }
 
-  def CmpopTypeToString(cmpOp: cmpopType) : String = cmpOp match {
+  def cmpopTypeToString(cmpOp: cmpopType) : String = cmpOp match {
     case cmpopType.UNDEFINED => "undefined"
     case cmpopType.Eq => "=="
     case cmpopType.NotEq => "!="
@@ -257,8 +257,10 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   override def visitCompare(node: Compare): String = {
     println("visitCompare");
     println("getInternalComparators: " + implodeList(node.getInternalComparators(), ", "))
-    println("getInternalOps: " + node.getInternalOps().toList.map(CmpopTypeToString))
 
+    val pairList = node.getInternalComparators().toList zip node.getInternalOps().toList
+
+    return pairList.map({ case (com,op) => cmpopTypeToString(op) + " " + com.accept(this)}).foldLeft(node.getInternalLeft().accept(this))((str,add) => str + " " + add)
     return "<not implemented>";
   }
   
