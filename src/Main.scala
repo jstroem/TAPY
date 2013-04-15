@@ -35,12 +35,11 @@ object Main {
 		println(ast.accept(ASTPrettyPrinter))
 		cfg = ast.accept(CFGGeneratorVisitor);
 
+		/*
 		val graphvizGraph = cfg.generateGraphvizGraph()
 
 		GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
-		Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
-
-		println(node.toStringTree());
+		Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")*/
 	}
 
 	def analyzeDirectory(dir : File) : Unit = {

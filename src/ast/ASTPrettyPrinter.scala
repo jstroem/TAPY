@@ -3,8 +3,33 @@ package tapy.cfg
 import org.python.antlr._
 import org.python.antlr.ast._;
 import sun.security.util.Length
+import scala.collection.JavaConversions._
 
 object ASTPrettyPrinter extends VisitorBase[String] {
+  def implodeList(lst: java.util.List[_ <: PythonTree], sep:String =  "") : String = {
+    val list = lst.toList
+    return list.headOption match {
+      case Some(e) => list.tail.foldLeft(e.accept(this))((list,el) => list + sep + el.accept(this))
+      case None => ""
+    }
+  }
+
+  def CmpopTypeToString(cmpOp: cmpopType) : String = cmpOp match {
+    case cmpopType.UNDEFINED => "undefined"
+    case cmpopType.Eq => "=="
+    case cmpopType.NotEq => "!="
+    case cmpopType.Lt => "<"
+    case cmpopType.LtE => "<="
+    case cmpopType.Gt => ">"
+    case cmpopType.GtE => ">="
+    case cmpopType.Is => "is"
+    case cmpopType.IsNot => "is not"
+    case cmpopType.In => "in"
+    case cmpopType.NotIn => "not in"
+  }
+
+  var indent : String = ""
+
   override def traverse(node: PythonTree): Unit = {
       node.traverse(this);
   }
@@ -17,11 +42,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitModule(node: Module): String = {
     var result: String = "";
-    var i = 0;
-    for (i <- 0 to node.getInternalBody().size()-1) {
-      result += node.getInternalBody().get(i).accept(this) + "\n";
-    }
-    return result;
+    return implodeList(node.getInternalBody(), "\n")
   }
   
   override def visitInteractive(node: Interactive): String = {
@@ -46,12 +67,20 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitClassDef(node: ClassDef): String = {
     println("visitClassDef");
-    return "<not implemented>";
+    val prevIndent = indent
+    indent += "  "
+
+    val res = "class " + node.getInternalName() + "(" + implodeList(node.getInternalBases(),", ") + "):\n" + 
+        implodeList(node.getInternalBody(), "\n")
+
+    indent = prevIndent
+
+    return res
   }
   
   override def visitReturn(node: Return): String = {
     println("visitReturn");
-    return "<not implemented>";
+    return indent + "return" + node.getInternalValue().accept(this);
   }
   
   override def visitDelete(node: Delete): String = {
@@ -60,8 +89,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitAssign(node: Assign): String = {
-    println("visitInteractive");
-    return "<not implemented>";
+    println("visitAssign")
+    return indent + implodeList(node.getInternalTargets(), ", ") + " = " + node.getInternalValue().accept(this)
   }
   
   override def visitAugAssign(node: AugAssign): String = {
@@ -85,8 +114,19 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitIf(node: If): String = {
-    println("visitIf");
-    return "<not implemented>";
+    var res = indent + "if " + node.getInternalTest().accept(this) + ":\n"
+
+    val prevIndent = indent
+    indent += "  "
+
+    res += implodeList(node.getInternalBody(), "\n")
+
+    if (node.getInternalOrelse() != null) {
+      res += "\n" + prevIndent + "else:\n" + implodeList(node.getInternalOrelse(), "\n")
+    }
+
+    indent = prevIndent
+    return res;
   }
   
   override def visitWith(node: With): String = {
@@ -175,8 +215,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitIfExp(node: IfExp): String = {
-    println("visitIfExp");
-    return "<not implemented>";
+    println("visitIfExp")
+    return "<not implemented>"
   }
   
   override def visitDict(node: Dict): String = {
@@ -216,6 +256,9 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitCompare(node: Compare): String = {
     println("visitCompare");
+    println("getInternalComparators: " + implodeList(node.getInternalComparators(), ", "))
+    println("getInternalOps: " + node.getInternalOps().toList.map(CmpopTypeToString))
+
     return "<not implemented>";
   }
   
@@ -227,18 +270,11 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     println("- " + func);
     
     // args
-    val argsIterator = node.getInternalArgs().iterator();
-    var args: String = if (argsIterator.hasNext()) argsIterator.next().accept(this); else "";
-    while (argsIterator.hasNext())
-      args += ", " + argsIterator.next().accept(this);
+    var args: String = implodeList(node.getInternalArgs(), ",")
     println("- args: " + args);
     
     // keywords
-    val keywordsIterator = node.getInternalKeywords().iterator();
-    println(node.getInternalKeywords())
-    var keywords: String = if (keywordsIterator.hasNext()) keywordsIterator.next().accept(this); else "";
-    while (keywordsIterator.hasNext())
-      keywords += ", " + keywordsIterator.next().accept(this);
+    var keywords: String = implodeList(node.getInternalKeywords(), ",")
     println("- keywords: " + keywords);
     
     // kwargs
@@ -265,7 +301,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitNum(node: Num): String = {
     println("visitNum");
-    return "<not implemented>";
+    return node.getInternalN().toString();
   }
   
   override def visitStr(node: Str): String = {
@@ -275,7 +311,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitAttribute(node: Attribute): String = {
     println("visitAttribute");
-    return "<not implemented>";
+    return node.getInternalValue().accept(this) + "." + node.getInternalAttrName().accept(this);
   }
   
   override def visitSubscript(node: Subscript): String = {
