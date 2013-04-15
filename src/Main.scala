@@ -16,7 +16,6 @@ object Main {
     node = parser.parseModule()
     
     cfg = node.accept(CFGGeneratorVisitor);
-    
-    println(node.toStringTree());
+    println(cfg.prettyPrint());
   }
 }

@@ -18,7 +18,7 @@ case class ControlFlowGraph(
     // TODO
   }
   
-  def pretty_print() = {
+  def prettyPrint() = {
     
   }
 }
