@@ -1,8 +1,8 @@
-def greet(name):
-    print 'Hello', name
-greet('Jack')
-greet(name='Jack')
-x = ['Jack']
+def greet(firstname = '<no firstname>', lastname = '<no lastname>'):
+    print 'Hello', firstname, lastname
+greet('John', 'Doe')
+greet('John', lastname='Jack')
+x = ['John', 'Doe']
 greet(*x)
-y = {'name': 'Jack'}
-greet(**y)
+y = {'lastname': 'Doe'}
+greet('John', **y)

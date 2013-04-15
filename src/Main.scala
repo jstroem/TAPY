@@ -14,7 +14,6 @@ object Main {
 	var cfg: ControlFlowGraph = null
 
 	def main(args: Array[String]): Unit = {
-
 		args.foreach((f) => {
 			var file = new File(f)
 			if (file.isFile()){
@@ -28,12 +27,17 @@ object Main {
 	}
 
 	def analyzeFile(file: File) : Unit = {
-		val parser: BaseParser = new BaseParser(new ANTLRFileStream(file.getPath()), file.getPath(), "ascii");
+		val parser: BaseParser = new BaseParser(new ANTLRFileStream(file.getPath()), file.getPath(), "ascii")
 		var (dir,fname,fext) = splitFilename(file)
 
 		val ast = parser.parseModule()
-		println(ast.accept(ASTPrettyPrinter))
-		cfg = ast.accept(CFGGeneratorVisitor);
+		println("\n----------\n")
+		println("Pretty printing AST of \"" + file + "\"\n")
+		println("\n" + ast.accept(ASTPrettyPrinter))
+		
+    println("\n----------\n")
+    println("Generating CFG of \"" + file + "\"\n")
+		cfg = ast.accept(CFGGeneratorVisitor)
 
 		/*
 		val graphvizGraph = cfg.generateGraphvizGraph()
