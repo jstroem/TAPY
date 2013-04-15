@@ -4,6 +4,8 @@ all: clean compile run
 
 clean:
 	rm -rf bin
+	rm -f tests/*.gif
+	rm -f tests/*.dot
 
 compile:
 	mkdir -p bin
