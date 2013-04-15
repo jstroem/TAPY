@@ -3,7 +3,10 @@ package tapy.cfg
 import org.python.antlr.ast._;
 
 object CFGGeneratorVisitor extends VisitorIF[ControlFlowGraph] {
-  def visitModule(node: Module): ControlFlowGraph = { return null; }
+  def visitModule(node: Module): ControlFlowGraph = {
+    println("Visit module");
+    return null;
+  }
   
   def visitInteractive(node: Interactive): ControlFlowGraph = { return null; }
   
