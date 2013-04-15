@@ -25,7 +25,9 @@ case class ControlFlowGraph(
   }
 }
 
-sealed trait Node
+sealed trait Node{
+  var label: String
+}
 
 // Write variable; variable = value
 case class WriteVariableNode(variable:String,value_reg:Int) extends Node
