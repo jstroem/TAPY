@@ -16,7 +16,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   def implodeStringList(lst: java.util.List[String], sep: String = "", ignoreEmpty: Boolean = false) : String = {
     val list = lst.toList
     return list.headOption match {
-      case Some(s) => list.tail.foldLeft(s)((acc,s) => if (ignoreEmpty && s == "") acc + sep else acc + sep + s)
+      case Some(s) => list.tail.foldLeft(s) {(acc,s) => if (ignoreEmpty && s == "") acc else acc + sep + s }
       case None => ""
     }
   }
