@@ -8,16 +8,47 @@ case class ControlFlowGraph(
     nodes: List[Node],
     edges: Map[Node, List[Node]]) {
   
-  def predecessors(node: Node) = {
-    // TODO
+  def getNodePredecessors(node: Node): List[Node] = {
+    return edges.foldLeft(List[Node]()) {(acc, entry) => if (entry._2.contains(node)) entry._1 :: acc else acc}
+  }
+
+  def getNodeSuccessors(node: Node): List[Node] = {
+    return edges.get(node) match {
+      case Some(successors) => successors
+      case None => List[Node]()
+    }
   }
   
-  def successors(node: Node) = {
-    // TODO
+  def combineGraphs(o: ControlFlowGraph): ControlFlowGraph = {
+    return new ControlFlowGraph(startNodes ++ o.startNodes, exitNodes ++ o.exitNodes, nodes ++ o.nodes, edges ++ o.edges)
   }
-  
-  def combine(o: ControlFlowGraph) = {
-    // TODO
+
+  def connectNodes(pred: Node, succ: Node): ControlFlowGraph = {
+    val newPredSuccessors = edges.get(pred) match {
+      case Some(succs) => succ :: succs
+      case None => succ :: List[Node]()
+    }
+    return new ControlFlowGraph(startNodes, exitNodes, nodes, edges + (pred -> newPredSuccessors))
+  }
+
+  def connectManyNodes(predecessors: List[Node], successors: List[Node]): ControlFlowGraph = {
+    val newEdges = predecessors.foldLeft(edges) {(acc, pred) =>
+      acc.get(pred) match {
+        case Some(currentPredSuccessors) =>
+          val newPredSuccessors = currentPredSuccessors ++ successors
+          acc + (pred -> newPredSuccessors)
+        case None => acc + (pred -> successors)
+      }
+    }
+    return new ControlFlowGraph(startNodes, exitNodes, nodes, newEdges)
+  }
+
+  def removeNode(node: Node): ControlFlowGraph = {
+    val filteredStartNodes = startNodes.filter({(startNode) => startNode != node})
+    val filteredExitNodes = exitNodes.filter({(exitNode) => exitNode != node})
+    val filteredNodes = nodes.filter({(otherNode) => otherNode != node})
+    val filteredEdges = edges.foldLeft(Map[Node, List[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
+    return new ControlFlowGraph(filteredStartNodes, filteredExitNodes, filteredNodes, filteredEdges).connectManyNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
   
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
@@ -41,11 +72,8 @@ case class ControlFlowGraph(
 
     new GraphvizExporter.Graph {
       def nodes = graphNodes
-
       def edges() = graphEdges
-
       def subgraphs() = List()
-      
       def name() = "ControlFlowGraph"
     }
   }
