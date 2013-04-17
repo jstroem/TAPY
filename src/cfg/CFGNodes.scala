@@ -4,6 +4,10 @@ import tapy.constants
 
 abstract class Node(label: String)
 
+// Class and function declaration (exit and entry)
+case class EntryNode(label: String) extends Node(label)
+case class ExitNode(label: String) extends Node(label)
+
 // Write variable; variable = value
 case class WriteVariableNode(variable:String,value_reg:Int, label: String) extends Node(label)
 

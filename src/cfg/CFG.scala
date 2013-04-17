@@ -75,18 +75,22 @@ case class ControlFlowGraph(
     return connectNodes(preds, succ :: List())
   }
 
+  /**
+    * Notice that this method does not add a new entry node, if the last entry node is removed.
+    * The same holds for the exit node.
+    */
   def removeNode(node: Node): ControlFlowGraph = {
-    val filteredStartNodes = entryNodes.filter({(startNode) => startNode != node})
+    val filteredEntryNodes = entryNodes.filter({(startNode) => startNode != node})
     val filteredExitNodes = exitNodes.filter({(exitNode) => exitNode != node})
     val filteredNodes = nodes.filter({(otherNode) => otherNode != node})
     val filteredEdges = edges.foldLeft(Map[Node, List[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
-    return new ControlFlowGraph(filteredStartNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
+    return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
   
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
     def nodeToString(node: Node) : String = node.toString()
 
-    var nodeMap : Map[Node,GraphvizExporter.Node] = this.nodes.foldLeft(Map() : Map[Node, GraphvizExporter.Node])(
+    var nodeMap = this.nodes.foldLeft(Map() : Map[Node, GraphvizExporter.Node])(
         (map,node) => map + ((node, GraphvizExporter.Node(nodeToString(node)))))
 
     def getNodeId(node: Node, nodeMap: Map[Node,GraphvizExporter.Node]) : String = nodeMap.get(node) match {
@@ -94,15 +98,13 @@ case class ControlFlowGraph(
       case None => ""
     }
 
-    var graphNodes : List[GraphvizExporter.Node] = nodeMap.values.toList
+    var graphNodes = nodeMap.values.toList
 
-    var graphEdges : List[GraphvizExporter.Edge] = this.edges.foldLeft(List() : List[GraphvizExporter.Edge])(
-      (list,pair) => {
-        var (from,toList) = pair
-          toList.foldLeft(list)((list,to) => GraphvizExporter.Edge(getNodeId(from,nodeMap),getNodeId(to,nodeMap)) :: list)
-      }) 
+    var graphEdges = this.edges.foldLeft(List() : List[GraphvizExporter.Edge]) {(list, pair) =>
+        var (from, toList) = pair
+        toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from, nodeMap), getNodeId(to, nodeMap)) :: list)}
 
-    new GraphvizExporter.Graph {
+    return new GraphvizExporter.Graph {
       def nodes = graphNodes
       def edges() = graphEdges
       def subgraphs() = List()
@@ -113,4 +115,9 @@ case class ControlFlowGraph(
 
 object ControlFlowGraph {
   final val EMPTY = new ControlFlowGraph(List(), List(), List(), Map())
+  
+  final def makeSingleton(node: Node): ControlFlowGraph = {
+    val nodes = node :: List()
+    return new ControlFlowGraph(nodes, nodes, nodes, Map())
+  }
 }

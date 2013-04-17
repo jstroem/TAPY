@@ -2,6 +2,10 @@
 *.log
 .DS_Store
 
+# graphviz specific
+tests/*.gif
+tests/*.dot
+
 # sbt specific
 dist/*
 target/

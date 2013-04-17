@@ -1,27 +1,35 @@
 package tapy.cfg
 
 import scala.collection.immutable.List
+import tapy.export._
 import org.python.antlr.PythonTree
 import org.python.antlr.ast._
 import org.python.antlr.base._
 import scala.collection.JavaConversions._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import java.io._
 
 object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   
   /* Helper methods */
   
-  def generateCFGOfStatementList(statements: java.util.List[stmt]): ControlFlowGraph = {
+  def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph = {
+    var stmsCfg = ControlFlowGraph.makeSingleton(entryNode)
     
     val iterator = statements.iterator()
-    var stmsCfg = iterator.next().accept(this)
     while (iterator.hasNext()) {
-      val stm = iterator.next()
-      val stmCfg = stm.accept(this);
-      stmsCfg = stmsCfg.combineGraphs(stmCfg)
-                       .setEntryNodes(stmsCfg.entryNodes)
-                       .setExitNodes(stmCfg.exitNodes)
-                       .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
+      val stmCfg = iterator.next().accept(this);
+      stmCfg.entryNodes.get(0) match {
+        case node: EntryNode =>
+          stmsCfg = stmsCfg.combineGraphs(stmCfg)
+                           .setEntryNodes(stmsCfg.entryNodes)
+                           .setExitNodes(stmsCfg.exitNodes)
+        case node =>
+          stmsCfg = stmsCfg.combineGraphs(stmCfg)
+                           .setEntryNodes(stmsCfg.entryNodes)
+                           .setExitNodes(stmCfg.exitNodes)
+                           .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
+      }
     }
     return stmsCfg;
   }
@@ -39,7 +47,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   /* Implementation of visitor methods: */
   
   override def visitModule(node: Module): ControlFlowGraph = {
-    return generateCFGOfStatementList(node.getInternalBody())
+    println("visitModule")
+    return generateCFGOfStatementList(new NoOpNode("Program entry"), node.getInternalBody())
   }
   
   override def visitInteractive(node: Interactive): ControlFlowGraph = {
@@ -58,13 +67,30 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
   
   override def visitFunctionDef(node: FunctionDef): ControlFlowGraph = {
-    println("visitFunctionDef");
-    return null;
+    println("visitFunctionDef")
+    
+    val entryCfgNode = new EntryNode(node.getInternalName())
+    val exitCfgNode = new ExitNode(node.getInternalName())
+    
+    val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
+    
+    // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
+    return bodyCfg.addNodes(exitCfgNode :: List())
+                  .setExitNode(exitCfgNode)
+                  .connectNodes(bodyCfg.exitNodes, exitCfgNode)
   }
   
   override def visitClassDef(node: ClassDef): ControlFlowGraph = {
-    println("visitClassDef");
-    return null;
+    println("visitClassDef")
+    val entryCfgNode = new EntryNode(node.getInternalName())
+    val exitCfgNode = new ExitNode(node.getInternalName())
+    
+    val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
+    
+    // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
+    return bodyCfg.addNodes(exitCfgNode :: List())
+                  .setExitNode(exitCfgNode)
+                  .connectNodes(bodyCfg.exitNodes, exitCfgNode)
   }
   
   override def visitReturn(node: Return): ControlFlowGraph = {
@@ -87,20 +113,22 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     if (targets.size() == 1) {
       // Single assignment
       val target = targets.get(0)
-      target match {
-        case t: Name =>
-          val cfgNode = new WriteVariableNode(t.getInternalId(), 0, node.accept(ASTPrettyPrinter))
-          val cfgNodes = cfgNode :: List()
-          return new ControlFlowGraph(cfgNodes, cfgNodes, cfgNodes, Map())
-          
+      
+      // Generate the CFG node of the assignment
+      val cfgNode: Node = targets.get(0) match {
+        case t: Name => new WriteVariableNode(t.getInternalId(), 0, node.accept(ASTPrettyPrinter))
+        case t: Subscript => new WriteDictionaryNode(0, 0, 0, node.accept(ASTPrettyPrinter))
+        case t: Attribute => new WritePropertyNode(0, t.getInternalAttr(), 0, node.accept(ASTPrettyPrinter))
         case _ =>
           try {
-            target.accept(this)
+            println(node.accept(ASTPrettyPrinter))
           } catch {
             case e: Exception =>
           }
           throw new NotImplementedException()
       }
+      
+      return ControlFlowGraph.makeSingleton(cfgNode)
     } else {
       // Multiple assignment
       throw new NotImplementedException()
@@ -110,44 +138,48 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   
   override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
     println("visitAugAssign");
+    // TODO
     return null;
   }
   
   override def visitPrint(node: Print): ControlFlowGraph = {
-    val printCfgNode = new PrintNode(0, node.accept(ASTPrettyPrinter))
-    val cfgNodes = printCfgNode :: List()
-    return new ControlFlowGraph(cfgNodes, cfgNodes, cfgNodes, Map())
+    return ControlFlowGraph.makeSingleton(new PrintNode(0, node.accept(ASTPrettyPrinter)))
   }
   
   override def visitFor(node: For): ControlFlowGraph = {
     println("visitFor");
+    // TODO
     return null;
   }
   
   override def visitWhile(node: While): ControlFlowGraph = {
     println("visitWhile");
+    // TODO
     return null;
   }
   
   override def visitIf(node: If): ControlFlowGraph = {
     println("visitIf")
     
-    val thenCfg = generateCFGOfStatementList(node.getInternalBody())
-    val elseCfg = generateCFGOfStatementList(node.getInternalOrelse())
+    val noOpNode = new NoOpNode("")
     
-    // TODO:
-    // Are we always sure that there is only 1 entryNode of the two branches?
-    // What if the first statement is a function declaration?
-    val ifCfgNode = new IfNode(0, thenCfg.entryNodes.get(0), elseCfg.entryNodes.get(0), node.accept(ASTPrettyPrinter))
-    val noOpCfgNode = new NoOpNode("")
+    // Construct the CFG's for the two branches
+    var thenCfg = generateCFGOfStatementList(noOpNode, node.getInternalBody())
+    var elseCfg = generateCFGOfStatementList(noOpNode, node.getInternalOrelse())
+    
+    // Remove the no operation node from both CFG's
+    thenCfg = thenCfg.removeNode(noOpNode).setEntryNodes(thenCfg.getNodeSuccessors(noOpNode))
+    elseCfg = elseCfg.removeNode(noOpNode).setEntryNodes(elseCfg.getNodeSuccessors(noOpNode))
+    
+    val ifEntryCfgNode: IfNode = new IfNode(0, thenCfg.entryNodes.get(0), elseCfg.entryNodes.get(0), node.accept(ASTPrettyPrinter))
+    val ifExitCfgNode = new NoOpNode("")
     
     return thenCfg.combineGraphs(elseCfg)
-                  .addNodes(ifCfgNode :: noOpCfgNode :: List())
-                  .setEntryNode(ifCfgNode)
-                  .setExitNode(noOpCfgNode)
-                  .connectNodes(ifCfgNode, thenCfg.entryNodes ++ elseCfg.entryNodes)
-                  .connectNodes(thenCfg.exitNodes ++ elseCfg.exitNodes, noOpCfgNode)
-    return null
+                  .addNodes(ifEntryCfgNode :: ifExitCfgNode :: List())
+                  .setEntryNode(ifEntryCfgNode)
+                  .setExitNode(ifExitCfgNode)
+                  .connectNodes(ifEntryCfgNode, thenCfg.entryNodes ++ elseCfg.entryNodes)
+                  .connectNodes(thenCfg.exitNodes ++ elseCfg.exitNodes, ifExitCfgNode)
   }
   
   override def visitWith(node: With): ControlFlowGraph = {
@@ -197,7 +229,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   
   override def visitExpr(node: Expr): ControlFlowGraph = {
     println("visitExpr");
-    return null;
+    return node.getInternalValue().accept(this)
   }
   
   override def visitPass(node: Pass): ControlFlowGraph = {
@@ -282,7 +314,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   
   override def visitCall(node: Call): ControlFlowGraph = {
     println("visitCall");
-    return null;
+    return ControlFlowGraph.makeSingleton(new CallNode(0, None, 0, List(), node.accept(ASTPrettyPrinter)))
   }
   
   override def visitRepr(node: Repr): ControlFlowGraph = {

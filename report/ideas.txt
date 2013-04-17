@@ -1,0 +1,8 @@
+Comparison to JavaScript:
+
+- obj["prop"] (Python: only dictionaries or runtime-error)
+- obj.prop (Python: only class object or runtime-error)
+
+- Prototyping vs Python-classes
+
+- (Common runtime errors)
