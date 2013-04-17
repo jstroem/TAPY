@@ -1,27 +1,50 @@
 package tapy.cfg
 
-import org.python.antlr._;
-import org.python.antlr.ast._;
+import scala.collection.immutable.List
+import org.python.antlr.PythonTree
+import org.python.antlr.ast._
+import org.python.antlr.base._
+import scala.collection.JavaConversions._
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
+  
+  /* Helper methods */
+  
+  def generateCFGOfStatementList(statements: java.util.List[stmt]): ControlFlowGraph = {
+    
+    val iterator = statements.iterator()
+    var stmsCfg = iterator.next().accept(this)
+    while (iterator.hasNext()) {
+      val stm = iterator.next()
+      val stmCfg = stm.accept(this);
+      stmsCfg = stmsCfg.combineGraphs(stmCfg)
+                       .setEntryNodes(stmsCfg.entryNodes)
+                       .setExitNodes(stmCfg.exitNodes)
+                       .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
+    }
+    return stmsCfg;
+  }
+  
+  /* Abstract methods from VisitorBase */
+  
   override def traverse(node: PythonTree): Unit = {
-      node.traverse(this);
+      node.traverse(this)
   }
   
   override def unhandled_node(node: PythonTree): ControlFlowGraph = {
-      return null;
+      return null
   }
 
   /* Implementation of visitor methods: */
   
   override def visitModule(node: Module): ControlFlowGraph = {
-    println("visitModule");
-    return null;
+    return generateCFGOfStatementList(node.getInternalBody())
   }
   
   override def visitInteractive(node: Interactive): ControlFlowGraph = {
-    println("visitInteractive");
-    return null;
+    println("visitInteractive")
+    return null
   }
   
   override def visitExpression(node: Expression): ControlFlowGraph = {
@@ -55,7 +78,33 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
   
   override def visitAssign(node: Assign): ControlFlowGraph = {
-    println("visitInteractive");
+    println("visitAssign");
+    
+    var variableNode: Boolean = false
+    
+    // Find out whether this is a variable or property assignment
+    val targets = node.getInternalTargets()
+    if (targets.size() == 1) {
+      // Single assignment
+      val target = targets.get(0)
+      target match {
+        case t: Name =>
+          val cfgNode = new WriteVariableNode(t.getInternalId(), 0, node.accept(ASTPrettyPrinter))
+          val cfgNodes = cfgNode :: List()
+          return new ControlFlowGraph(cfgNodes, cfgNodes, cfgNodes, Map())
+          
+        case _ =>
+          try {
+            target.accept(this)
+          } catch {
+            case e: Exception =>
+          }
+          throw new NotImplementedException()
+      }
+    } else {
+      // Multiple assignment
+      throw new NotImplementedException()
+    }
     return null;
   }
   
@@ -65,8 +114,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
   
   override def visitPrint(node: Print): ControlFlowGraph = {
-    println("visitPrint");
-    return null;
+    val printCfgNode = new PrintNode(0, node.accept(ASTPrettyPrinter))
+    val cfgNodes = printCfgNode :: List()
+    return new ControlFlowGraph(cfgNodes, cfgNodes, cfgNodes, Map())
   }
   
   override def visitFor(node: For): ControlFlowGraph = {
@@ -80,8 +130,24 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
   
   override def visitIf(node: If): ControlFlowGraph = {
-    println("visitIf");
-    return null;
+    println("visitIf")
+    
+    val thenCfg = generateCFGOfStatementList(node.getInternalBody())
+    val elseCfg = generateCFGOfStatementList(node.getInternalOrelse())
+    
+    // TODO:
+    // Are we always sure that there is only 1 entryNode of the two branches?
+    // What if the first statement is a function declaration?
+    val ifCfgNode = new IfNode(0, thenCfg.entryNodes.get(0), elseCfg.entryNodes.get(0), node.accept(ASTPrettyPrinter))
+    val noOpCfgNode = new NoOpNode("")
+    
+    return thenCfg.combineGraphs(elseCfg)
+                  .addNodes(ifCfgNode :: noOpCfgNode :: List())
+                  .setEntryNode(ifCfgNode)
+                  .setExitNode(noOpCfgNode)
+                  .connectNodes(ifCfgNode, thenCfg.entryNodes ++ elseCfg.entryNodes)
+                  .connectNodes(thenCfg.exitNodes ++ elseCfg.exitNodes, noOpCfgNode)
+    return null
   }
   
   override def visitWith(node: With): ControlFlowGraph = {
@@ -249,7 +315,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null;
   }
   
-  override def visitList(node: List): ControlFlowGraph = {
+  override def visitList(node: org.python.antlr.ast.List): ControlFlowGraph = {
     println("visitList");
     return null;
   }

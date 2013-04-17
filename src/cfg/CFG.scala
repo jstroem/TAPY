@@ -3,7 +3,7 @@ package tapy.cfg
 import tapy.export._
 
 case class ControlFlowGraph(
-    startNodes: List[Node],
+    entryNodes: List[Node],
     exitNodes: List[Node],
     nodes: List[Node],
     edges: Map[Node, List[Node]]) {
@@ -19,8 +19,32 @@ case class ControlFlowGraph(
     }
   }
   
+  def addNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, node :: nodes, edges)
+  }
+  
+  def addNodes(newNodes: List[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes ++ newNodes, edges)
+  }
+  
+  def setEntryNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(node :: List(), exitNodes, nodes, edges)
+  }
+  
+  def setEntryNodes(newEntryNodes: List[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(newEntryNodes, exitNodes, nodes, edges)
+  }
+  
+  def setExitNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, node :: List(), nodes, edges)
+  }
+  
+  def setExitNodes(newExitNodes: List[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, newExitNodes, nodes, edges)
+  }
+                  
   def combineGraphs(o: ControlFlowGraph): ControlFlowGraph = {
-    return new ControlFlowGraph(startNodes ++ o.startNodes, exitNodes ++ o.exitNodes, nodes ++ o.nodes, edges ++ o.edges)
+    return new ControlFlowGraph(entryNodes ++ o.entryNodes, exitNodes ++ o.exitNodes, nodes ++ o.nodes, edges ++ o.edges)
   }
 
   def connectNodes(pred: Node, succ: Node): ControlFlowGraph = {
@@ -28,10 +52,10 @@ case class ControlFlowGraph(
       case Some(succs) => succ :: succs
       case None => succ :: List[Node]()
     }
-    return new ControlFlowGraph(startNodes, exitNodes, nodes, edges + (pred -> newPredSuccessors))
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes, edges + (pred -> newPredSuccessors))
   }
 
-  def connectManyNodes(predecessors: List[Node], successors: List[Node]): ControlFlowGraph = {
+  def connectNodes(predecessors: List[Node], successors: List[Node]): ControlFlowGraph = {
     val newEdges = predecessors.foldLeft(edges) {(acc, pred) =>
       acc.get(pred) match {
         case Some(currentPredSuccessors) =>
@@ -40,15 +64,23 @@ case class ControlFlowGraph(
         case None => acc + (pred -> successors)
       }
     }
-    return new ControlFlowGraph(startNodes, exitNodes, nodes, newEdges)
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes, newEdges)
+  }
+
+  def connectNodes(pred: Node, succs: List[Node]): ControlFlowGraph = {
+    return connectNodes(pred :: List(), succs)
+  }
+
+  def connectNodes(preds: List[Node], succ: Node): ControlFlowGraph = {
+    return connectNodes(preds, succ :: List())
   }
 
   def removeNode(node: Node): ControlFlowGraph = {
-    val filteredStartNodes = startNodes.filter({(startNode) => startNode != node})
+    val filteredStartNodes = entryNodes.filter({(startNode) => startNode != node})
     val filteredExitNodes = exitNodes.filter({(exitNode) => exitNode != node})
     val filteredNodes = nodes.filter({(otherNode) => otherNode != node})
     val filteredEdges = edges.foldLeft(Map[Node, List[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
-    return new ControlFlowGraph(filteredStartNodes, filteredExitNodes, filteredNodes, filteredEdges).connectManyNodes(getNodePredecessors(node), getNodeSuccessors(node))
+    return new ControlFlowGraph(filteredStartNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
   
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
@@ -77,4 +109,8 @@ case class ControlFlowGraph(
       def name() = "ControlFlowGraph"
     }
   }
+}
+
+object ControlFlowGraph {
+  final val EMPTY = new ControlFlowGraph(List(), List(), List(), Map())
 }

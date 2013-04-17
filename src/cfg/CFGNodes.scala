@@ -26,10 +26,10 @@ case class ReadDictionaryNode(base_reg:Int,property_reg:Int,result_reg:Int, labe
 case class NoOpNode(label: String) extends Node(label)
 
 // If statement: if (condition): then_block else: else_block
-case class IfNode(condition_reg:Int,then_block:BasicBlockNode,else_block:BasicBlockNode, label: String) extends Node(label)
+case class IfNode(condition_reg:Int,then_block:Node,else_block:Node, label: String) extends Node(label)
 
 // Sequence of statements
-case class BasicBlockNode(nodes:List[Node], label: String) extends Node(label)
+// case class BasicBlockNode(nodes:List[Node], label: String) extends Node(label)
 
 // Return statement: return result
 case class ReturnNode(result_reg:Int, label: String) extends Node(label)
@@ -51,6 +51,9 @@ case class BinOpNode(op: constants.BinOp,arg1_reg:Int,arg2_reg:Int,result_reg:In
 
 // Unary operation: result = op arg1
 case class UnaryOpNode(op: constants.UnOp,arg1_reg:Int,result_reg:Int, label: String) extends Node(label)
+
+// Print node; print value
+case class PrintNode(value_reg: Int, label: String) extends Node(label)
 
 // TODO
 case class ForInNode(label: String) extends Node(label)

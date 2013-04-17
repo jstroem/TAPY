@@ -1,0 +1,14 @@
+digraph ControlFlowGraph {
+	"05fe6549-6b67-463c-bc69-afda6df0ac62" [shape=record label="NoOpNode()"];
+	"2a608d24-e0b2-4567-9b72-bb403a4ee8cc" [shape=record label="PrintNode(0,print b)"];
+	"5c8543e8-72c6-419b-813a-ba303a3dd8a7" [shape=record label="WriteVariableNode(b,0,b = 3)"];
+	"6dc916e3-551a-4e93-bef5-86a0fc06e923" [shape=record label="PrintNode(0,print a)"];
+	"097eab79-0ede-41fd-af12-c5201850eafe" [shape=record label="WriteVariableNode(a,0,a = 2)"];
+	"08b03418-e8d9-40c2-8492-d33ca6130204" [shape=record label="IfNode(0,PrintNode(0,print a),PrintNode(0,print b),if a &lt; b:\n  print a\nelse:\n  print b)"];
+	"08b03418-e8d9-40c2-8492-d33ca6130204" -> "2a608d24-e0b2-4567-9b72-bb403a4ee8cc"
+	"08b03418-e8d9-40c2-8492-d33ca6130204" -> "6dc916e3-551a-4e93-bef5-86a0fc06e923"
+	"097eab79-0ede-41fd-af12-c5201850eafe" -> "5c8543e8-72c6-419b-813a-ba303a3dd8a7"
+	"6dc916e3-551a-4e93-bef5-86a0fc06e923" -> "05fe6549-6b67-463c-bc69-afda6df0ac62"
+	"5c8543e8-72c6-419b-813a-ba303a3dd8a7" -> "08b03418-e8d9-40c2-8492-d33ca6130204"
+	"2a608d24-e0b2-4567-9b72-bb403a4ee8cc" -> "05fe6549-6b67-463c-bc69-afda6df0ac62"
+}
