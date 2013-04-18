@@ -3,8 +3,8 @@
 .DS_Store
 
 # graphviz specific
-tests/*.gif
-tests/*.dot
+*.gif
+*.dot
 
 # sbt specific
 dist/*
