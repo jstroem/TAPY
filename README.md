@@ -1,5 +1,5 @@
 TAPY
-====
+=====
 
 Type analysis for python
 
@@ -11,7 +11,14 @@ Antlr 3.0 javadoc: [www.antlr3.org/api/Java/index.html](http://www.antlr3.org/ap
 
 
 RUN
-====
+=====
 
 Use `Make FILES=tests/*.scala`
 To run the analysis on the hole test suite
+
+
+LINKS
+=====
+
+Good source on what happens with type declarations.
+http://stackoverflow.com/questions/100003/what-is-a-metaclass-in-python
