@@ -13,12 +13,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
       case None => ""
     }
   }
-  def implodeStringList(lst: java.util.List[String], sep: String = "", ignoreEmpty: Boolean = false) : String = {
-    val list = lst.toList
-    return list.headOption match {
-      case Some(s) => list.tail.foldLeft(s) {(acc,s) => if (ignoreEmpty && s == "") acc else acc + sep + s }
-      case None => ""
-    }
+  def implodeStringList(list: java.util.List[String], sep: String = "", ignoreEmpty: Boolean = false) : String = {
+    return list.toList.foldLeft("")((acc,s) => if (ignoreEmpty && s == "") acc else if (acc == "") s else acc + sep + s)
   }
 
   def cmpopTypeToString(cmpOp: cmpopType) : String = cmpOp match {
@@ -288,9 +284,13 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitCall(node: Call): String = {
     val func = node.getInternalFunc().accept(this);
-    
+
+    if (node.getInternalKeywords().length > 0)
+      println("kword: " + node.getInternalKeywords().get(0).getInternalArg())
+
+
     val args = implodeList(node.getInternalArgs(), ", ")
-    val keywords = implodeList(node.getInternalKeywords(), ",")
+    val keywords = implodeStringList(node.getInternalKeywords().toList.map((node) => node.getInternalArg() + "=" + node.getInternalValue().accept(this)), ", ", true)
     val kwargs =
       if (node.getInternalKwargs() != null)
         "**" + node.getInternalKwargs().accept(this)
@@ -299,8 +299,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
       if (node.getInternalStarargs() != null)
         "*" + node.getInternalStarargs().accept(this)
       else ""
-    
-    val mixed_args = implodeStringList(java.util.Arrays.asList(args, kwargs, starargs), ", ", true)
+      
+    val mixed_args = implodeStringList(scala.List(args, kwargs, starargs, keywords), ", ", true)
     
     return s"$func($mixed_args)" // TODO
   }
