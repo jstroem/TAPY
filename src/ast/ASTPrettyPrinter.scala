@@ -325,11 +325,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitSubscript(node: Subscript): String = {
     println("visitSubscript");
-    
-    // node.getInternalCtx().
     val slice = node.getInternalSlice().accept(this)
     val value = node.getInternalValue().accept(this)
-    
     return s"$value[$slice]";
   }
   
@@ -350,7 +347,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitTuple(node: Tuple): String = {
     println("visitTuple");
-    return "<not implemented>";
+    val elts = implodeList(node.getInternalElts(), ", ")
+    return s"($elts)";
   }
   
   override def visitEllipsis(node: Ellipsis): String = {
