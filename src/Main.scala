@@ -43,7 +43,6 @@ object Main {
     println("Pretty printing CFG of \"" + file + "\"\n")
     val graphvizGraph = cfg.generateGraphvizGraph()
 
-    // TODO: The CFG pretty printer does not work with nodes that have the same labels
     GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
   }
