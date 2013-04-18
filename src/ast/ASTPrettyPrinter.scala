@@ -288,9 +288,13 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitCall(node: Call): String = {
     val func = node.getInternalFunc().accept(this);
-    
+
+    if (node.getInternalKeywords().length > 0)
+      println("kword: " + node.getInternalKeywords().get(0).getInternalArg())
+
+
     val args = implodeList(node.getInternalArgs(), ", ")
-    val keywords = implodeList(node.getInternalKeywords(), ",")
+    val keywords = implodeStringList(node.getInternalKeywords().toList.map((node) => node.getInternalArg() + "=" + node.getInternalValue().accept(this)), ", ", true)
     val kwargs =
       if (node.getInternalKwargs() != null)
         "**" + node.getInternalKwargs().accept(this)
@@ -300,7 +304,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
         "*" + node.getInternalStarargs().accept(this)
       else ""
     
-    val mixed_args = implodeStringList(java.util.Arrays.asList(args, kwargs, starargs), ", ", true)
+    val mixed_args = implodeStringList(java.util.Arrays.asList(args, kwargs, starargs, keywords), ", ", true)
     
     return s"$func($mixed_args)" // TODO
   }
