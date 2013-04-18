@@ -1,6 +1,8 @@
 package tapy.cfg
 
 import tapy.export._
+import scala.collection.JavaConversions._
+import java.util.IdentityHashMap
 
 case class ControlFlowGraph(
     entryNodes: List[Node],
@@ -90,19 +92,20 @@ case class ControlFlowGraph(
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
     def nodeToString(node: Node) : String = node.toString()
 
-    var nodeMap = this.nodes.foldLeft(Map() : Map[Node, GraphvizExporter.Node])(
-        (map,node) => map + ((node, GraphvizExporter.Node(nodeToString(node)))))
+    var nodeMap = new IdentityHashMap[Node, GraphvizExporter.Node]()
 
-    def getNodeId(node: Node, nodeMap: Map[Node,GraphvizExporter.Node]) : String = nodeMap.get(node) match {
-      case Some(n) => n.id 
-      case None => ""
+    this.nodes.foreach((node) => nodeMap.put(node, GraphvizExporter.Node(nodeToString(node))))
+
+    def getNodeId(node: Node) : String = nodeMap.get(node) match {
+      case null => "" 
+      case n => n.id
     }
 
     var graphNodes = nodeMap.values.toList
 
     var graphEdges = this.edges.foldLeft(List() : List[GraphvizExporter.Edge]) {(list, pair) =>
         var (from, toList) = pair
-        toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from, nodeMap), getNodeId(to, nodeMap)) :: list)}
+        toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from), getNodeId(to)) :: list)}
 
     return new GraphvizExporter.Graph {
       def nodes = graphNodes

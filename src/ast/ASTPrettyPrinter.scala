@@ -34,6 +34,13 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     case cmpopType.In => "in"
     case cmpopType.NotIn => "not in"
   }
+
+  def visitArguments(node: arguments) : String = {
+    val defs = node.getInternalDefaults()
+    val args = node.getInternalArgs()
+    val argsDefaults = args.toList.zipWithIndex.map({ case (arg,idx) => if (idx < args.length - defs.length) arg.accept(this); else arg.accept(this) + "=" + defs.get(idx-(args.length - defs.length)).accept(this);})
+    return implodeStringList(argsDefaults, ", ")
+  }
   
   var indent : String = ""
     
@@ -70,13 +77,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitFunctionDef(node: FunctionDef): String = {
-    val args_with_defaults =
-      node.getInternalArgs().getInternalArgs().toList
-      .zip(node.getInternalArgs().getInternalDefaults().toList)
-      .map({ case (key, value) => key.accept(this) + " = " + value.accept(this)})
-    
     val name = node.getInternalName()
-    val args = implodeStringList(args_with_defaults, ", ")
+    val args = visitArguments(node.getInternalArgs())
     
     incIndent()
     val body = implodeList(node.getInternalBody(), "\n")
