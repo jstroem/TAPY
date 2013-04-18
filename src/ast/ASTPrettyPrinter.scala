@@ -13,12 +13,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
       case None => ""
     }
   }
-  def implodeStringList(lst: java.util.List[String], sep: String = "", ignoreEmpty: Boolean = false) : String = {
-    val list = lst.toList
-    return list.headOption match {
-      case Some(s) => list.tail.foldLeft(s) {(acc,s) => if (ignoreEmpty && s == "") acc else acc + sep + s }
-      case None => ""
-    }
+  def implodeStringList(list: java.util.List[String], sep: String = "", ignoreEmpty: Boolean = false) : String = {
+    return list.toList.foldLeft("")((acc,s) => if (ignoreEmpty && s == "") acc else if (acc == "") s else acc + sep + s)
   }
 
   def cmpopTypeToString(cmpOp: cmpopType) : String = cmpOp match {
@@ -303,8 +299,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
       if (node.getInternalStarargs() != null)
         "*" + node.getInternalStarargs().accept(this)
       else ""
-    
-    val mixed_args = implodeStringList(java.util.Arrays.asList(args, kwargs, starargs, keywords), ", ", true)
+      
+    val mixed_args = implodeStringList(scala.List(args, kwargs, starargs, keywords), ", ", true)
     
     return s"$func($mixed_args)" // TODO
   }

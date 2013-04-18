@@ -5,7 +5,14 @@ all: clean compile run
 clean:
 	rm -rf bin
 	rm -f test/*.gif
+	rm -f test/*.ast
 	rm -f test/*.dot
+	rm -f test/*/*.dot
+	rm -f test/*/*.ast
+	rm -f test/*/*.gif	
+	rm -f test/*/*/*.dot
+	rm -f test/*/*/*.ast
+	rm -f test/*/*/*.gif
 
 compile:
 	mkdir -p bin

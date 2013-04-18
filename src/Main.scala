@@ -33,7 +33,8 @@ object Main {
     val ast = parser.parseModule()
     println("\n----------\n")
     println("Pretty printing AST of \"" + file + "\"\n")
-    println("\n" + ast.accept(ASTPrettyPrinter))
+    val aspp = ast.accept(ASTPrettyPrinter)
+    (new PrintStream(dir+fname+".ast")).print(aspp)
 
     println("\n----------\n")
     println("Generating CFG of \"" + file + "\"\n")
