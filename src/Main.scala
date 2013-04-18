@@ -42,7 +42,7 @@ object Main {
     println("\n----------\n")
     println("Pretty printing CFG of \"" + file + "\"\n")
     val graphvizGraph = cfg.generateGraphvizGraph()
-
+    
     GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
   }

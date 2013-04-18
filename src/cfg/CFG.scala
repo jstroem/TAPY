@@ -1,5 +1,6 @@
 package tapy.cfg
 
+import java.io._
 import tapy.export._
 import scala.collection.JavaConversions._
 import java.util.IdentityHashMap
@@ -88,9 +89,18 @@ case class ControlFlowGraph(
     val filteredEdges = edges.foldLeft(Map[Node, List[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
     return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
+
+  def exportToFile(fileName: String): Unit = {
+    GraphvizExporter.export(generateGraphvizGraph(), new PrintStream(fileName + ".cfg.dot"))
+    Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
+  }
   
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
-    def nodeToString(node: Node) : String = node.toString()
+    def nodeToString(node: Node): String = {
+      val entryNodeStr = if (entryNodes.contains(node)) "\nEntry node" else ""
+      val exitNodeStr = if (exitNodes.contains(node)) "\nExit node" else ""
+      return node.toString() + entryNodeStr + exitNodeStr
+    }
 
     var nodeMap = new IdentityHashMap[Node, GraphvizExporter.Node]()
 

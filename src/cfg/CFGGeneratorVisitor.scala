@@ -23,18 +23,17 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   /* Helper methods */
-
-  def printToTest(cfg: ControlFlowGraph): Unit = {
-    GraphvizExporter.export(cfg.generateGraphvizGraph(), new PrintStream("test.cfg.dot"))
-    Runtime.getRuntime().exec("dot -Tgif -o test.cfg.gif test.cfg.dot")
-  }
-  
+  var round = 0
   def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph = {
     var stmsCfg = ControlFlowGraph.makeSingleton(entryNode)
-
+    stmsCfg.exportToFile("iteration-" + round + "-0")
+    
     val iterator = statements.iterator()
+    var i = 0
     while (iterator.hasNext()) {
+      i = i + 1
       val stmCfg = iterator.next().accept(this);
+      stmCfg.exportToFile("iteration-" + round + "-" + i + "a")
       stmCfg.entryNodes.get(0) match {
         case node: EntryNode =>
           stmsCfg = stmsCfg.combineGraphs(stmCfg)
@@ -46,6 +45,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
             .setExitNodes(stmCfg.exitNodes)
             .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
       }
+      stmsCfg.exportToFile("iteration-" + round + "-" + i + "b")
     }
     return stmsCfg;
   }
@@ -64,7 +64,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitModule(node: Module): ControlFlowGraph = {
     println("visitModule")
-    return generateCFGOfStatementList(new NoOpNode("Program entry"), node.getInternalBody())
+    round = round + 1
+    val value = generateCFGOfStatementList(new NoOpNode("Program entry"), node.getInternalBody())
+    round = round - 1
+    return value
   }
 
   override def visitInteractive(node: Interactive): ControlFlowGraph = {
@@ -260,9 +263,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val ifExitCfgNode = new NoOpNode("If exit")
 
     // Construct the CFG's for the two branches
+    round = round + 1
     var thenCfg = generateCFGOfStatementList(ifEntryCfgNode, node.getInternalBody())
+    round = round + 1
     var elseCfg = generateCFGOfStatementList(ifEntryCfgNode, node.getInternalOrelse())
-
+    round = round - 2
+    
     if (elseCfg.getNodeSuccessors(ifEntryCfgNode).size() == 0) {
       // There is no or-else branch
       return thenCfg.addNode(ifExitCfgNode)
