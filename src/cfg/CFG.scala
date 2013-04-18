@@ -47,7 +47,8 @@ case class ControlFlowGraph(
   }
                   
   def combineGraphs(o: ControlFlowGraph): ControlFlowGraph = {
-    return new ControlFlowGraph(entryNodes ++ o.entryNodes, exitNodes ++ o.exitNodes, nodes ++ o.nodes, edges ++ o.edges)
+    val newEdges = edges ++ o.edges.map {case (k, v) => k -> (v ++ edges.getOrElse(k, List()))}
+    return new ControlFlowGraph(entryNodes ++ o.entryNodes, exitNodes ++ o.exitNodes, nodes ++ o.nodes, newEdges)
   }
 
   def connectNodes(pred: Node, succ: Node): ControlFlowGraph = {
