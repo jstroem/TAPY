@@ -22,3 +22,6 @@ LINKS
 
 Good source on what happens with type declarations.
 http://stackoverflow.com/questions/100003/what-is-a-metaclass-in-python
+
+Classic vs New class style method/property resolving
+http://stackoverflow.com/questions/1848474/method-resolution-order-mro-in-new-style-python-classes
