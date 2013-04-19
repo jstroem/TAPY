@@ -143,7 +143,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       acc}
   }
   
-  var assignTmpIndices = List()
+  var j = 0
   def visitMultipleAssign(node: Assign, oldTarget: expr, elts: java.util.List[expr], acc: ControlFlowGraph): ControlFlowGraph = {
     // Multiple assignment
     // Normalize
@@ -176,7 +176,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
           ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]"))
           
         case t: Tuple =>
-          throw new NotImplementedException()
+          // TODO: oldTarget should be changed: if oldTarget was null, a temporary variable was already created
+          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
         
         case t =>
           throw new NotImplementedException()
@@ -185,10 +186,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       i = i + 1
       
       // B) Add it to the multiple assignment CFG
+      j = j + 1
       acc.combineGraphs(ithAssignmentCfg)
          .connectNodes(acc.exitNodes, ithAssignmentCfg.entryNodes)
          .setEntryNodes(acc.entryNodes)
-         .setExitNodes(ithAssignmentCfg.exitNodes)
+         .setExitNodes(ithAssignmentCfg.exitNodes).exportToFile("test/language-features/iteration" + j)
     }
   }
   
