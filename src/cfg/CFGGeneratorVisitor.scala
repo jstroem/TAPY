@@ -414,8 +414,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitPass(node: Pass): ControlFlowGraph = {
-    println("visitPass");
-    return null;
+    println("visitPass")
+    return ControlFlowGraph.makeSingleton(new NoOpNode("pass"))
   }
 
   override def visitBreak(node: Break): ControlFlowGraph = {
