@@ -157,7 +157,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     // Import to use foldRight, such that x_k is taken first:
     return node.getInternalTargets().toList.foldRight(ControlFlowGraph.makeSingleton(new NoOpNode("Assignment entry"))) {(target, acc) =>
       // 1) Generate the CFG of a single assignment (which may be a tuple)
-      val label = if (oldTarget == null) node.accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
+      val label = if (oldTarget == null) node.getInternalValue().accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
       val targetCfg = target match {
         case t: Name => ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
         case t: Subscript =>ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
@@ -180,14 +180,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
               // This is x_i for some i < k, so don't create a temporary variable
               (oldTarget.accept(ASTPrettyPrinter), acc)
   
-          var assignmentCfg = tmpAssignmentCfg
-  
-          val iterator = t.getInternalElts().iterator()
           var i = 0
           var ithMinusOneAssignmentCfg = tmpAssignmentCfg
-          while (iterator.hasNext()) {
+          
+          t.getInternalElts().toList.foldRight(tmpAssignmentCfg) {(el, acc) =>
             // A) Make the node for this particular assignment
-            val ithAssignmentCfgNode: Node = iterator.next() match {
+            val ithAssignmentCfgNode: Node = el match {
               case t: Name => new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName[$i]")
               case t: Subscript => new WriteDictionaryNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]")
               case t: Attribute => new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]")
@@ -197,17 +195,17 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
               case t => throw new NotImplementedException()
             }
             val ithAssignmentCfg = ControlFlowGraph.makeSingleton(ithAssignmentCfgNode)
-  
-            // B) Add it to the multiple assignment CFG
-            assignmentCfg = assignmentCfg.combineGraphs(ithAssignmentCfg)
-                                         .connectNodes(ithMinusOneAssignmentCfg.exitNodes, ithAssignmentCfg.entryNodes)
-                                         .setEntryNodes(assignmentCfg.entryNodes)
-                                         .setExitNodes(ithAssignmentCfg.exitNodes)
             
-            i = i + 1
+            val ithMinusOneAssignmentCfgCopy = ithMinusOneAssignmentCfg
             ithMinusOneAssignmentCfg = ithAssignmentCfg
+            i = i + 1
+            
+            // B) Add it to the multiple assignment CFG
+            acc.combineGraphs(ithAssignmentCfg)
+               .connectNodes(ithMinusOneAssignmentCfgCopy.exitNodes, ithAssignmentCfg.entryNodes)
+               .setEntryNodes(acc.entryNodes)
+               .setExitNodes(ithAssignmentCfg.exitNodes)
           }
-          assignmentCfg
         }
   
         case t => throw new NotImplementedException()
