@@ -30,22 +30,26 @@ object Main {
     val parser: BaseParser = new BaseParser(new ANTLRFileStream(file.getPath()), file.getPath(), "ascii")
     var (dir,fname,fext) = splitFilename(file)
 
-    val ast = parser.parseModule()
-    println("\n----------\n")
-    println("Pretty printing AST of \"" + file + "\"\n")
-    val aspp = ast.accept(ASTPrettyPrinter)
-    (new PrintStream(dir+fname+".ast")).print(aspp)
-
-    println("\n----------\n")
-    println("Generating CFG of \"" + file + "\"\n")
-    cfg = ast.accept(CFGGeneratorVisitor)
-    
-    println("\n----------\n")
-    println("Pretty printing CFG of \"" + file + "\"\n")
-    val graphvizGraph = cfg.generateGraphvizGraph()
-    
-    GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
-    Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
+    try {
+      val ast = parser.parseModule()
+      println("\n----------\n")
+      println("Pretty printing AST of \"" + file + "\"\n")
+      val aspp = ast.accept(ASTPrettyPrinter)
+      (new PrintStream(dir+fname+".ast")).print(aspp)
+  
+      println("\n----------\n")
+      println("Generating CFG of \"" + file + "\"\n")
+      cfg = ast.accept(CFGGeneratorVisitor)
+      
+      println("\n----------\n")
+      println("Pretty printing CFG of \"" + file + "\"\n")
+      val graphvizGraph = cfg.generateGraphvizGraph()
+      
+      GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
+      Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
+    } catch {
+      case e: Exception => println("(error)")
+    }
   }
 
   def analyzeDirectory(dir : File) : Unit = {

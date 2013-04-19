@@ -163,7 +163,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         (oldTarget.accept(ASTPrettyPrinter), acc)
 
     var i = 0
-    elts.toList.foldLeft(tmpAssignmentCfg) {(acc, el) =>
+    return elts.toList.foldLeft(tmpAssignmentCfg) {(acc, el) =>
       // A) Make the node for this particular assignment
       val ithAssignmentCfg = el match {
         case t: Name =>
@@ -184,13 +184,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       
       i = i + 1
       
-      println("Number of exit nodes: " + acc.exitNodes.size())
-      
       // B) Add it to the multiple assignment CFG
       acc.combineGraphs(ithAssignmentCfg)
          .connectNodes(acc.exitNodes, ithAssignmentCfg.entryNodes)
          .setEntryNodes(acc.entryNodes)
-         .setExitNodes(ithAssignmentCfg.exitNodes).exportToFile("inner-iteration-" + i)
+         .setExitNodes(ithAssignmentCfg.exitNodes)
     }
   }
   
@@ -209,8 +207,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val label = if (oldTarget == null) node.getInternalValue().accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
       val targetCfg = target match {
         case t: Name =>
-          visitMultipleAssign(node, target, List(t), ControlFlowGraph.makeSingleton(new NoOpNode("")))
-          // ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
         
         case t: Subscript =>
           ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
@@ -219,8 +216,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
           ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
         
         case t: Tuple =>
-          visitMultipleAssign(node, oldTarget, t.getInternalElts(), acc)
+          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
   
+        case t: org.python.antlr.ast.List =>
+          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
+          
         case t =>
           throw new NotImplementedException()
       }
