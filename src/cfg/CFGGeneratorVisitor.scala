@@ -30,29 +30,25 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   /* Helper methods */
 
   def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph = {
-    var stmsCfg = ControlFlowGraph.makeSingleton(entryNode)
-
-    val iterator = statements.iterator()
-    while (iterator.hasNext()) {
-      val stmCfg = iterator.next().accept(this);
+    return statements.toList.foldRight(ControlFlowGraph.makeSingleton(entryNode)) {(stm, acc) =>
+      val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
         case node: EntryNode =>
-          stmsCfg = stmsCfg.combineGraphs(stmCfg)
-            .setEntryNodes(stmsCfg.entryNodes)
-            .setExitNodes(stmsCfg.exitNodes)
+          acc.combineGraphs(stmCfg)
+             .setEntryNodes(acc.entryNodes)
+             .setExitNodes(acc.exitNodes)
         case node: BreakNode =>
-          return stmsCfg.combineGraphs(stmCfg)
-            .setEntryNodes(stmsCfg.entryNodes)
-            .setExitNodes(Set()) // !
-            .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
+          acc.combineGraphs(stmCfg)
+             .setEntryNodes(acc.entryNodes)
+             .setExitNodes(Set()) // !
+             .connectNodes(acc.exitNodes, stmCfg.entryNodes)
         case node =>
-          stmsCfg = stmsCfg.combineGraphs(stmCfg)
-            .setEntryNodes(stmsCfg.entryNodes)
-            .setExitNodes(stmCfg.exitNodes)
-            .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
+          acc.combineGraphs(stmCfg)
+             .setEntryNodes(acc.entryNodes)
+             .setExitNodes(stmCfg.exitNodes)
+             .connectNodes(acc.exitNodes, stmCfg.entryNodes)
       }
     }
-    return stmsCfg;
   }
 
   def operatorTypeToBinop(operator: operatorType): constants.BinOp.Value = operator match {
@@ -95,12 +91,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitExpression(node: Expression): ControlFlowGraph = {
     println("visitExpression");
-    return null;
+    return null
   }
 
   override def visitSuite(node: Suite): ControlFlowGraph = {
     println("visitSuite");
-    return null;
+    return null
   }
 
   override def visitFunctionDef(node: FunctionDef): ControlFlowGraph = {
@@ -131,18 +127,18 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitReturn(node: Return): ControlFlowGraph = {
-    println("visitReturn")
     return ControlFlowGraph.makeSingleton(new ReturnNode(0, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {
-    println("visitDelete")
     return node.getInternalTargets().toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Del entry"))) {(acc, target) =>
       val targetCfg = target match {
         case t: Name => ControlFlowGraph.makeSingleton(new DelVariableNode(t.getInternalId(), t.accept(ASTPrettyPrinter)))
         case t: Subscript => ControlFlowGraph.makeSingleton(new DelDictionaryNode(0, 0, t.accept(ASTPrettyPrinter)))
         case t: Attribute => ControlFlowGraph.makeSingleton(new DelPropertyNode(0, t.getInternalAttr(), t.accept(ASTPrettyPrinter)))
-        case t: Tuple => acc // tuple
+        case t: org.python.antlr.ast.List => throw new NotImplementedException()
+        case t: Tuple => throw new NotImplementedException()
+        case t => throw new NotImplementedException()
       }
       acc}
   }
@@ -161,28 +157,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     // Import to use foldRight, such that x_k is taken first:
     return node.getInternalTargets().toList.foldRight(ControlFlowGraph.makeSingleton(new NoOpNode("Assignment entry"))) {(target, acc) =>
       // 1) Generate the CFG of a single assignment (which may be a tuple)
+      val label = if (oldTarget == null) node.accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
       val targetCfg = target match {
-        case t: Name =>
-          // Single assignment
-          if (oldTarget == null)
-            ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, node.getInternalValue().accept(ASTPrettyPrinter)))
-          else
-            ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, oldTarget.accept(ASTPrettyPrinter)))
-
-        case t: Subscript =>
-          // Single assignment
-          if (oldTarget == null)
-            ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, node.accept(ASTPrettyPrinter)))
-          else
-            ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, oldTarget.accept(ASTPrettyPrinter)))
-
-        case t: Attribute =>
-          // Single assignment
-          if (oldTarget == null)
-            ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, node.accept(ASTPrettyPrinter)))
-          else
-            ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, oldTarget.accept(ASTPrettyPrinter)))
-
+        case t: Name => ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
+        case t: Subscript =>ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
+        case t: Attribute => ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
         case t: Tuple => {
           // Multiple assignment
           // Normalize
@@ -215,14 +194,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
               case t: Tuple => {
                 null
               }
-              case t =>
-                try {
-                  println("Error")
-                  println(t.accept(ASTPrettyPrinter))
-                } catch {
-                  case e: Exception =>
-                }
-                throw new NotImplementedException()
+              case t => throw new NotImplementedException()
             }
             val ithAssignmentCfg = ControlFlowGraph.makeSingleton(ithAssignmentCfgNode)
   
@@ -235,16 +207,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
             i = i + 1
             ithMinusOneAssignmentCfg = ithAssignmentCfg
           }
-
           assignmentCfg
         }
   
-        case t =>
-          try {
-          } catch {
-            case e: Exception =>
-          }
-          throw new NotImplementedException()
+        case t => throw new NotImplementedException()
       }
       
       // 2) Update oldTarget and combine the accumulator with the generated CFG of the single assignment
@@ -253,7 +219,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       target match {
         case t: Tuple =>
           // Accumulator has already been connected to targetCfg (!)
-          println("RETURN TUPLE")
           acc.combineGraphs(targetCfg)
              .setEntryNodes(acc.entryNodes)
              .setExitNodes(targetCfg.exitNodes)
@@ -268,8 +233,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
     println("visitAugAssign");
-    val op = operatorTypeToBinop(node.getInternalOp())
-    return ControlFlowGraph.makeSingleton(new BinOpNode(op, 0, 0, 0, node.accept(ASTPrettyPrinter)))
+    return null
   }
 
   override def visitPrint(node: Print): ControlFlowGraph = {
@@ -320,20 +284,24 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitWhile");
 
     val whileEntryCfgNode = new WhileNode(0, s"while ${node.getInternalTest().accept(ASTPrettyPrinter)}: ...")
+    val whileExitCfgNode = new NoOpNode("While exit")
     val whileOrElseEntryCfgNode = new NoOpNode("While else")
 
-    val oldForExitCfgNode = this.forExitCfgNode // In case of nested loops
-    val oldWhileExitCfgNode = this.whileExitCfgNode // In case of nested loops
+    val oldForEntryCfgNode = this.forEntryCfgNode // In case of nested loops
+    val oldForExitCfgNode = this.forExitCfgNode
+    val oldWhileEntryCfgNode = this.whileEntryCfgNode
+    val oldWhileExitCfgNode = this.whileExitCfgNode
 
     this.forExitCfgNode = null
-    this.whileExitCfgNode = new NoOpNode("While exit")
+    this.whileExitCfgNode = whileExitCfgNode
 
     val whileBodyCfg = generateCFGOfStatementList(whileEntryCfgNode, node.getInternalBody())
     val whileOrElseCfg = generateCFGOfStatementList(whileOrElseEntryCfgNode, node.getInternalOrelse())
-
-    val whileExitCfgNode = this.whileExitCfgNode
-    this.forExitCfgNode = oldForExitCfgNode // Recover in case of nested loops
-    this.whileExitCfgNode = oldWhileExitCfgNode // Recover in case of nested loops
+    
+    this.forEntryCfgNode = oldForEntryCfgNode // Recover in case of nested loops
+    this.forExitCfgNode = oldForExitCfgNode
+    this.whileEntryCfgNode = oldWhileEntryCfgNode
+    this.whileExitCfgNode = oldWhileExitCfgNode
 
     val whileCfg = whileBodyCfg.combineGraphs(whileOrElseCfg)
       .addNode(whileExitCfgNode)
@@ -378,47 +346,47 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitWith(node: With): ControlFlowGraph = {
     println("visitWith");
-    return null;
+    return null
   }
 
   override def visitRaise(node: Raise): ControlFlowGraph = {
     println("visitRaise");
-    return null;
+    return null
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
     println("visitTryExcept");
-    return null;
+    return null
   }
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
     println("visitTryFinally");
-    return null;
+    return null
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
     println("visitAssert");
-    return null;
+    return null
   }
 
   override def visitImport(node: Import): ControlFlowGraph = {
     println("visitImport");
-    return null;
+    return null
   }
 
   override def visitImportFrom(node: ImportFrom): ControlFlowGraph = {
     println("visitImportFrom");
-    return null;
+    return null
   }
 
   override def visitExec(node: Exec): ControlFlowGraph = {
     println("visitExec");
-    return null;
+    return null
   }
 
   override def visitGlobal(node: Global): ControlFlowGraph = {
     println("visitGlobal");
-    return null;
+    return null
   }
 
   override def visitExpr(node: Expr): ControlFlowGraph = {
@@ -462,67 +430,67 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitBoolOp(node: BoolOp): ControlFlowGraph = {
     println("visitBoolOp");
-    return null;
+    return null
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
     println("visitBinOp");
-    return null;
+    return null
   }
 
   override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
     println("visitUnaryOp");
-    return null;
+    return null
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
     println("visitLambda");
-    return null;
+    return null
   }
 
   override def visitIfExp(node: IfExp): ControlFlowGraph = {
     println("visitIfExp");
-    return null;
+    return null
   }
 
   override def visitDict(node: Dict): ControlFlowGraph = {
     println("visitDict");
-    return null;
+    return null
   }
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
     println("visitSet");
-    return null;
+    return null
   }
 
   override def visitListComp(node: ListComp): ControlFlowGraph = {
     println("visitListComp");
-    return null;
+    return null
   }
 
   override def visitSetComp(node: SetComp): ControlFlowGraph = {
     println("visitSetComp");
-    return null;
+    return null
   }
 
   override def visitDictComp(node: DictComp): ControlFlowGraph = {
     println("visitDictComp");
-    return null;
+    return null
   }
 
   override def visitGeneratorExp(node: GeneratorExp): ControlFlowGraph = {
     println("visitGeneratorExp");
-    return null;
+    return null
   }
 
   override def visitYield(node: Yield): ControlFlowGraph = {
     println("visitYield");
-    return null;
+    return null
   }
 
   override def visitCompare(node: Compare): ControlFlowGraph = {
     println("visitCompare");
-    return null;
+    return null
   }
 
   override def visitCall(node: Call): ControlFlowGraph = {
@@ -532,66 +500,66 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
     println("visitRepr");
-    return null;
+    return null
   }
 
   override def visitNum(node: Num): ControlFlowGraph = {
     println("visitNum");
-    return null;
+    return null
   }
 
   override def visitStr(node: Str): ControlFlowGraph = {
     println("visitStr");
-    return null;
+    return null
   }
 
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
     println("visitAttribute");
-    return null;
+    return null
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
     println("visitSubscript");
-    return null;
+    return null
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
     println("visitName");
-    return null;
+    return null
   }
 
   override def visitList(node: org.python.antlr.ast.List): ControlFlowGraph = {
     println("visitList");
-    return null;
+    return null
   }
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
     println("visitTuple");
-    return null;
+    return null
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
     println("visitEllipsis");
-    return null;
+    return null
   }
 
   override def visitSlice(node: Slice): ControlFlowGraph = {
     println("visitSlice");
-    return null;
+    return null
   }
 
   override def visitExtSlice(node: ExtSlice): ControlFlowGraph = {
     println("visitExtSlice");
-    return null;
+    return null
   }
 
   override def visitIndex(node: Index): ControlFlowGraph = {
     println("visitIndex");
-    return null;
+    return null
   }
 
   override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
     println("visitExceptHandler");
-    return null;
+    return null
   }
 }

@@ -90,7 +90,18 @@ case class ControlFlowGraph(
     val filteredEdges = edges.foldLeft(Map[Node, Set[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
     return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
-
+  
+  // Removes all NoOpNodes
+  def minify(): ControlFlowGraph = {
+    val nodesToRemove = nodes.foldLeft(Set[Node]()) {(acc, node) =>
+      node match {
+        case node: NoOpNode => acc + node
+        case node => acc
+      }
+    }
+    return nodesToRemove.foldLeft(this) {(acc, node) => acc.removeNode(node)}
+  }
+  
   def exportToFile(fileName: String): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
