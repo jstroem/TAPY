@@ -8,8 +8,9 @@ import tapy.constants.BinOp._
 abstract class SignAnalysis (graph: ControlFlowGraph) extends Analysis[Sign] {
 
 //  def generateConstraint(cfgNode: Node): Constraint[Sign] = {}
-//  def nodeDependencies(cfgNode: Node): List[Node] = {}
-
+  def nodeDependencies (cfgNode: Node): List[Node] = {
+    graph.getNodePredecessors(cfgNode).toList
+  }
 
   def abstractBinop(a: Sign, b: Sign, binop: BinOp): Sign = binop match {
     case PLUS => (a, b) match {
