@@ -6,24 +6,24 @@ import scala.collection.JavaConversions._
 import java.util.IdentityHashMap
 
 case class ControlFlowGraph(
-    entryNodes: List[Node],
-    exitNodes: List[Node],
-    nodes: List[Node],
-    edges: Map[Node, List[Node]]) {
+    entryNodes: Set[Node],
+    exitNodes: Set[Node],
+    nodes: Set[Node],
+    edges: Map[Node, Set[Node]]) {
   
-  def getNodePredecessors(node: Node): List[Node] = {
-    return edges.foldLeft(List[Node]()) {(acc, entry) => if (entry._2.contains(node)) entry._1 :: acc else acc}
+  def getNodePredecessors(node: Node): Set[Node] = {
+    return edges.foldLeft(Set[Node]()) {(acc, entry) => if (entry._2.contains(node)) acc + entry._1 else acc}
   }
 
-  def getNodeSuccessors(node: Node): List[Node] = {
+  def getNodeSuccessors(node: Node): Set[Node] = {
     return edges.get(node) match {
       case Some(successors) => successors
-      case None => List[Node]()
+      case None => Set()
     }
   }
   
   def addNode(node: Node): ControlFlowGraph = {
-    return new ControlFlowGraph(entryNodes, exitNodes, node :: nodes, edges)
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes + node, edges)
   }
   
   def addNodes(newNodes: List[Node]): ControlFlowGraph = {
@@ -31,18 +31,18 @@ case class ControlFlowGraph(
   }
   
   def setEntryNode(node: Node): ControlFlowGraph = {
-    return new ControlFlowGraph(node :: List(), exitNodes, nodes, edges)
+    return new ControlFlowGraph(Set(node), exitNodes, nodes, edges)
   }
   
-  def setEntryNodes(newEntryNodes: List[Node]): ControlFlowGraph = {
+  def setEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(newEntryNodes, exitNodes, nodes, edges)
   }
   
   def setExitNode(node: Node): ControlFlowGraph = {
-    return new ControlFlowGraph(entryNodes, node :: List(), nodes, edges)
+    return new ControlFlowGraph(entryNodes, Set(node), nodes, edges)
   }
   
-  def setExitNodes(newExitNodes: List[Node]): ControlFlowGraph = {
+  def setExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, newExitNodes, nodes, edges)
   }
                   
@@ -53,13 +53,13 @@ case class ControlFlowGraph(
 
   def connectNodes(pred: Node, succ: Node): ControlFlowGraph = {
     val newPredSuccessors = edges.get(pred) match {
-      case Some(succs) => succ :: succs
-      case None => succ :: List[Node]()
+      case Some(succs) => succs + succ
+      case None => Set(succ)
     }
     return new ControlFlowGraph(entryNodes, exitNodes, nodes, edges + (pred -> newPredSuccessors))
   }
 
-  def connectNodes(predecessors: List[Node], successors: List[Node]): ControlFlowGraph = {
+  def connectNodes(predecessors: Set[Node], successors: Set[Node]): ControlFlowGraph = {
     val newEdges = predecessors.foldLeft(edges) {(acc, pred) =>
       acc.get(pred) match {
         case Some(currentPredSuccessors) =>
@@ -71,12 +71,12 @@ case class ControlFlowGraph(
     return new ControlFlowGraph(entryNodes, exitNodes, nodes, newEdges)
   }
 
-  def connectNodes(pred: Node, succs: List[Node]): ControlFlowGraph = {
-    return connectNodes(pred :: List(), succs)
+  def connectNodes(pred: Node, succs: Set[Node]): ControlFlowGraph = {
+    return connectNodes(Set(pred), succs)
   }
 
-  def connectNodes(preds: List[Node], succ: Node): ControlFlowGraph = {
-    return connectNodes(preds, succ :: List())
+  def connectNodes(preds: Set[Node], succ: Node): ControlFlowGraph = {
+    return connectNodes(preds, Set(succ))
   }
 
   /**
@@ -87,13 +87,14 @@ case class ControlFlowGraph(
     val filteredEntryNodes = entryNodes.filter({(startNode) => startNode != node})
     val filteredExitNodes = exitNodes.filter({(exitNode) => exitNode != node})
     val filteredNodes = nodes.filter({(otherNode) => otherNode != node})
-    val filteredEdges = edges.foldLeft(Map[Node, List[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
+    val filteredEdges = edges.foldLeft(Map[Node, Set[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
     return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
 
-  def exportToFile(fileName: String): Unit = {
+  def exportToFile(fileName: String): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
+    return this
   }
   
   def generateGraphvizGraph() : GraphvizExporter.Graph = {
@@ -128,10 +129,10 @@ case class ControlFlowGraph(
 }
 
 object ControlFlowGraph {
-  final val EMPTY = new ControlFlowGraph(List(), List(), List(), Map())
+  final val EMPTY = new ControlFlowGraph(Set(), Set(), Set(), Map())
   
   final def makeSingleton(node: Node): ControlFlowGraph = {
-    val nodes = node :: List()
+    val nodes = Set(node)
     return new ControlFlowGraph(nodes, nodes, nodes, Map())
   }
 }

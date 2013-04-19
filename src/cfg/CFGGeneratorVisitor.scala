@@ -1,5 +1,6 @@
 package tapy.cfg
 
+import scala.collection.immutable.Set
 import tapy.constants
 import scala.collection.immutable.List
 import tapy.export._
@@ -31,7 +32,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val iterator = statements.iterator()
     while (iterator.hasNext()) {
       val stmCfg = iterator.next().accept(this);
-      stmCfg.entryNodes.get(0) match {
+      stmCfg.entryNodes.head match {
         case node: EntryNode =>
           stmsCfg = stmsCfg.combineGraphs(stmCfg)
             .setEntryNodes(stmsCfg.entryNodes)
@@ -39,7 +40,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         case node: BreakNode =>
           return stmsCfg.combineGraphs(stmCfg)
             .setEntryNodes(stmsCfg.entryNodes)
-            .setExitNodes(List()) // !
+            .setExitNodes(Set()) // !
             .connectNodes(stmsCfg.exitNodes, stmCfg.entryNodes)
         case node =>
           stmsCfg = stmsCfg.combineGraphs(stmCfg)
@@ -139,25 +140,37 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitAssign(node: Assign): ControlFlowGraph = {
     println("visitAssign");
 
-    var variableNode: Boolean = false
-
-    // Find out whether this is a variable or property assignment
-    val targets = node.getInternalTargets()
-
-    if (targets.size() == 1) {
-      // Generate the CFG node of the assignment
-      return targets.get(0) match {
+    // Normalize
+    //   x_1 = ... = x_k = exp
+    // into
+    //   x_k = exp
+    //   ...
+    //   x_1 = x_2
+    var oldTarget: expr = null
+    var j = 0
+    return node.getInternalTargets().toList.foldRight(ControlFlowGraph.makeSingleton(new NoOpNode("Assignment entry"))) {(target, acc) =>
+      // 1) Generate the CFG of a single assignment (which may be a tuple)
+      val targetCfg = target match {
         case t: Name =>
           // Single assignment
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, node.getInternalValue().accept(ASTPrettyPrinter)))
+          if (oldTarget == null)
+            ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, node.getInternalValue().accept(ASTPrettyPrinter)))
+          else
+            ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, oldTarget.accept(ASTPrettyPrinter)))
 
         case t: Subscript =>
           // Single assignment
-          ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, node.accept(ASTPrettyPrinter)))
+          if (oldTarget == null)
+            ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, node.accept(ASTPrettyPrinter)))
+          else
+            ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, oldTarget.accept(ASTPrettyPrinter)))
 
         case t: Attribute =>
           // Single assignment
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, node.accept(ASTPrettyPrinter)))
+          if (oldTarget == null)
+            ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, node.accept(ASTPrettyPrinter)))
+          else
+            ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, oldTarget.accept(ASTPrettyPrinter)))
 
         case t: Tuple => {
           // Multiple assignment
@@ -168,16 +181,23 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
           //   x_1 = tmp[0]
           //   ...
           //   x_k = tmp[k]
-          val tmpVariableName = nextTempVariable()
-          val tmpAssignmentCfgNode = new WriteVariableNode(tmpVariableName, 0, s"${node.getInternalValue().accept(ASTPrettyPrinter)}")
-
-          var assignmentCfg = ControlFlowGraph.makeSingleton(tmpAssignmentCfgNode)
-
+          
+          val (tmpVariableName: String, tmpAssignmentCfg: ControlFlowGraph) =
+            if (oldTarget == null) {
+              // This is x_k, so we need to create a temporary variable for exp
+              val tmpVariableName = nextTempVariable()
+              (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, s"${node.getInternalValue().accept(ASTPrettyPrinter)}")))
+            } else
+              // This is x_i for some i < k, so don't create a temporary variable
+              (oldTarget.accept(ASTPrettyPrinter), acc)
+  
+          var assignmentCfg = tmpAssignmentCfg
+  
           val iterator = t.getInternalElts().iterator()
           var i = 0
-          var ithMinusOneAssignmentCfgNode: Node = tmpAssignmentCfgNode
+          var ithMinusOneAssignmentCfg = tmpAssignmentCfg
           while (iterator.hasNext()) {
-            // 1) Make the node for this particular assignment
+            // A) Make the node for this particular assignment
             val ithAssignmentCfgNode: Node = iterator.next() match {
               case t: Name => new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName[$i]")
               case t: Subscript => new WriteDictionaryNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]")
@@ -194,29 +214,48 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
                 }
                 throw new NotImplementedException()
             }
-
-            // 2) Add it to the multiple assignment cfg
-            assignmentCfg = assignmentCfg.addNode(ithAssignmentCfgNode)
-              .connectNodes(ithMinusOneAssignmentCfgNode, ithAssignmentCfgNode)
-              .setExitNode(ithAssignmentCfgNode)
-
+            val ithAssignmentCfg = ControlFlowGraph.makeSingleton(ithAssignmentCfgNode)
+  
+            // B) Add it to the multiple assignment CFG
+            assignmentCfg = assignmentCfg.combineGraphs(ithAssignmentCfg)
+                                         .connectNodes(ithMinusOneAssignmentCfg.exitNodes, ithAssignmentCfg.entryNodes)
+                                         .setEntryNodes(assignmentCfg.entryNodes)
+                                         .setExitNodes(ithAssignmentCfg.exitNodes)
+            assignmentCfg.exportToFile("iteration-" + j + "-" + i)
+            
             i = i + 1
-            ithMinusOneAssignmentCfgNode = ithAssignmentCfgNode
+            ithMinusOneAssignmentCfg = ithAssignmentCfg
           }
 
-          return assignmentCfg
+          assignmentCfg
         }
-
-        case _ =>
+  
+        case t =>
           try {
           } catch {
             case e: Exception =>
           }
           throw new NotImplementedException()
       }
-    } else {
-      // Does this even occur? Seems like a "bug" in the AST since multiple assignment is handled by a tuple (see above).
-      throw new NotImplementedException()
+      
+      // 2) Update oldTarget and combine the accumulator with the generated CFG of the single assignment
+      oldTarget = target
+      
+      j = j + 1
+      
+      target match {
+        case t: Tuple =>
+          // Accumulator has already been connected to targetCfg (!)
+          println("RETURN TUPLE")
+          acc.combineGraphs(targetCfg)
+             .setEntryNodes(acc.entryNodes)
+             .setExitNodes(targetCfg.exitNodes).exportToFile("iteration-" + j)
+        case t =>
+          acc.combineGraphs(targetCfg)
+             .connectNodes(acc.exitNodes, targetCfg.entryNodes)
+             .setEntryNodes(acc.entryNodes)
+             .setExitNodes(targetCfg.exitNodes).exportToFile("iteration-" + j)
+      }
     }
   }
 
@@ -381,15 +420,15 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitBreak(node: Break): ControlFlowGraph = {
     val breakCfgNode = BreakNode("Break")
-    val breakCfgNodes = List(breakCfgNode)
+    val breakCfgNodes = Set[Node](breakCfgNode)
     if (this.forExitCfgNode != null) {
       // Notice: The break CFG node does not actually contain
       // the for exit CFG node, but the visitFor-method handles this
-      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> List(this.forExitCfgNode)))
+      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> Set(this.forExitCfgNode)))
     } else if (this.whileExitCfgNode != null) {
       // Notice: The break CFG node does not actually contain
       // the while exit CFG node, but the visitWhile-method handles this
-      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> List(this.whileExitCfgNode)))
+      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> Set(this.whileExitCfgNode)))
     }
     throw new InternalError("Break statement outside for or while loop.")
   }
@@ -429,7 +468,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null;
   }
 
-  override def visitSet(node: Set): ControlFlowGraph = {
+  override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
     println("visitSet");
     return null;
   }
