@@ -101,7 +101,7 @@ case class ControlFlowGraph(
     def nodeToString(node: Node): String = {
       val entryNodeStr = if (entryNodes.contains(node)) "\nEntry node" else ""
       val exitNodeStr = if (exitNodes.contains(node)) "\nExit node" else ""
-      return node.toString() + entryNodeStr + exitNodeStr
+      return node.toString().dropRight(38) + ")" + entryNodeStr + exitNodeStr // dropRight: Remove node id
     }
 
     var nodeMap = new IdentityHashMap[Node, GraphvizExporter.Node]()
