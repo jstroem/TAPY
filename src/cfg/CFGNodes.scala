@@ -52,10 +52,10 @@ case class RaiseNode(value_reg:Int, label: String, id: String = UUID.randomUUID(
 case class ExceptNode(types:List[String],result_reg:Option[Int], label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Binary operation; result = arg1 op arg2
-case class BinOpNode(op: constants.BinOp,arg1_reg:Int,arg2_reg:Int,result_reg:Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class BinOpNode(op: constants.BinOp.Value,arg1_reg:Int,arg2_reg:Int,result_reg:Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Unary operation: result = op arg1
-case class UnaryOpNode(op: constants.UnOp,arg1_reg:Int,result_reg:Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class UnaryOpNode(op: constants.UnOp.Value,arg1_reg:Int,result_reg:Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Print node; print value
 case class PrintNode(value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)

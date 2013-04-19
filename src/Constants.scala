@@ -1,11 +1,15 @@
 package tapy.constants
 
-class UnOp extends Enumeration {
+object UnOp extends Enumeration {
+  type UnOp = Value
+  
   //	not, ~
   val NOT, TILDE  = Value
 }
 
-class BinOp extends Enumeration {
+object BinOp extends Enumeration {
+  type BinOp = Value
+  
   //  +     -      <=   >=   <   >   ==  !=   in  is, *     /    %    //    >>   <<   &    ^    |   **
   val PLUS, MINUS, LTE, GTE, LT, GT, EQ, NEQ, IN, IS, MULT, DIV, MOD, IDIV, SHR, SHL, AND, XOR, OR, POW = Value
 }

@@ -51,20 +51,20 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return stmsCfg;
   }
 
-  def operatorTypeToBinop(operator: operatorType): String = operator match {
-    case operatorType.UNDEFINED => "undefined"
-    case operatorType.Add => "=="
-    case operatorType.Sub => "!="
-    case operatorType.Mult => "<"
-    case operatorType.Div => "<="
-    case operatorType.Mod => ">"
-    case operatorType.Pow => ">="
-    case operatorType.LShift => "is"
-    case operatorType.RShift => "is not"
-    case operatorType.BitOr => "in"
-    case operatorType.BitXor => "not in"
-    case operatorType.BitAnd => "not in"
-    case operatorType.FloorDiv => "not in"
+  def operatorTypeToBinop(operator: operatorType): constants.BinOp.Value = operator match {
+    case operatorType.UNDEFINED => null
+    case operatorType.Add => constants.BinOp.PLUS
+    case operatorType.Sub => constants.BinOp.MINUS
+    case operatorType.Mult => constants.BinOp.MULT
+    case operatorType.Div => constants.BinOp.DIV
+    case operatorType.Mod => constants.BinOp.MOD
+    case operatorType.Pow => constants.BinOp.POW
+    case operatorType.LShift => constants.BinOp.SHL
+    case operatorType.RShift => constants.BinOp.SHR
+    case operatorType.BitOr => constants.BinOp.OR
+    case operatorType.BitXor => constants.BinOp.XOR
+    case operatorType.BitAnd => constants.BinOp.AND
+    case operatorType.FloorDiv => constants.BinOp.IDIV
   }
 
   /* Abstract methods from VisitorBase */
@@ -222,11 +222,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
     println("visitAugAssign");
-    // TODO
-    //node.getInternalOp()
-    //node.getInternalTarget()
-    //node.getInternalValue()
-    return null;
+    val op = operatorTypeToBinop(node.getInternalOp())
+    return ControlFlowGraph.makeSingleton(new BinOpNode(op, 0, 0, 0, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitPrint(node: Print): ControlFlowGraph = {
