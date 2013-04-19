@@ -2,6 +2,7 @@ package tapy.cfg
 
 import org.python.antlr._
 import org.python.antlr.ast._
+import org.python.antlr.base.excepthandler
 import scala.collection.JavaConversions._
 import scala.Boolean
 
@@ -31,11 +32,47 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     case cmpopType.NotIn => "not in"
   }
 
+  def unaryopTypeToString(unaryOp: unaryopType) : String = unaryOp match {
+    case unaryopType.UNDEFINED => "undefined"
+    case unaryopType.Invert => "~"
+    case unaryopType.Not => "not"
+    case unaryopType.UAdd => "+"
+    case unaryopType.USub => "-"
+  }
+
+  def operatorToString(op: operatorType) : String = op match {
+    case operatorType.UNDEFINED => "UNDEFINED"
+    case operatorType.Add => "+"
+    case operatorType.Sub => "-"
+    case operatorType.Mult => "*"
+    case operatorType.Div => "/"
+    case operatorType.Mod => "%"
+    case operatorType.Pow => "**"
+    case operatorType.LShift => ">>"
+    case operatorType.RShift => "<<"
+    case operatorType.BitOr => "|"
+    case operatorType.BitXor => "^"
+    case operatorType.BitAnd => "&"
+    case operatorType.FloorDiv => "//"
+  }
+
   def visitArguments(node: arguments) : String = {
     val defs = node.getInternalDefaults()
     val args = node.getInternalArgs()
     val argsDefaults = args.toList.zipWithIndex.map({ case (arg,idx) => if (idx < args.length - defs.length) arg.accept(this); else arg.accept(this) + "=" + defs.get(idx-(args.length - defs.length)).accept(this);})
     return implodeStringList(argsDefaults, ", ")
+  }
+
+  def visitComprehension(node: comprehension) : String = {
+    val target = node.getInternalTarget().accept(this)
+    val iter = node.getInternalIter().accept(this)
+    val ifs = if (!node.getInternalIfs().isEmpty()) node.getInternalIfs().toList.foldLeft(" ")((acc,node) => acc + " if " + node.accept(this)) else ""
+    return s"for $target in $iter$ifs"
+  }
+
+  def visitExcepthandler(node: excepthandler) : String = node match {
+    case node : ExceptHandler => visitExceptHandler(node)
+    case _ => return "<except handler not implemented>"
   }
   
   var indent : String = ""
@@ -80,7 +117,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     val body = implodeList(node.getInternalBody(), "\n")
     decIndent()
     
-    return indent(s"def $name($args):\n$body")
+    return indent(s"\ndef $name($args):\n$body")
   }
   
   override def visitClassDef(node: ClassDef): String = {
@@ -95,7 +132,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitReturn(node: Return): String = {
-    return indent("return" + node.getInternalValue().accept(this))
+    return indent("return " + node.getInternalValue().accept(this))
   }
   
   override def visitDelete(node: Delete): String = {
@@ -103,13 +140,16 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitAssign(node: Assign): String = {
-    val targets = implodeList(node.getInternalTargets(), ", ")
+    val targets = implodeList(node.getInternalTargets(), " = ")
     val value = node.getInternalValue().accept(this)
     return indent(s"$targets = $value")
   }
   
   override def visitAugAssign(node: AugAssign): String = {
-    return indent("<aug assign not implemented>")
+    val target = node.getInternalTarget().accept(this)
+    val operator = operatorToString(node.getInternalOp())
+    val value = node.getInternalValue().accept(this)
+    return indent(s"$target $operator= $value")
   }
   
   override def visitPrint(node: Print): String = {
@@ -121,11 +161,30 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitFor(node: For): String = {
-    return indent("<for not implemented>")
+    val target = node.getInternalTarget().accept(this)
+    val iter = node.getInternalIter().accept(this)
+    incIndent()
+    val else_branch = if (!node.getInternalOrelse().isEmpty()) implodeList(node.getInternalOrelse(), "\n") else ""
+    val then_branch = implodeList(node.getInternalBody(), "\n")
+    decIndent()
+    if (node.getInternalOrelse().isEmpty())
+      return indent(s"for $target in $iter:\n$then_branch")
+    else
+      return indent(s"for $target in $iter:\n$then_branch\n${indent}else:\n$else_branch")
   }
   
   override def visitWhile(node: While): String = {
-    return indent("<while not implemented>")
+    val test = node.getInternalTest().accept(this)
+
+    incIndent()
+    val else_branch = if (!node.getInternalOrelse().isEmpty()) implodeList(node.getInternalOrelse(), "\n") else ""
+    val then_branch = implodeList(node.getInternalBody(), "\n")
+    decIndent()
+
+    if (node.getInternalOrelse().isEmpty())
+      return indent(s"while $test:\n$then_branch")
+    else
+      return indent(s"while $test:\n$then_branch\n${indent}else:\n$else_branch")
   }
   
   override def visitIf(node: If): String = {
@@ -133,25 +192,35 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     
     incIndent()
     val then_branch = implodeList(node.getInternalBody(), "\n")
-    val else_branch = if (node.getInternalOrelse() != null) implodeList(node.getInternalOrelse(), "\n") else ""
+    val else_branch = if (!node.getInternalOrelse().isEmpty()) implodeList(node.getInternalOrelse(), "\n") else ""
     decIndent()
-    
-    if (node.getInternalOrelse() == null)
-      return s"if $test:\n$then_branch\n"
+
+    if (node.getInternalOrelse().isEmpty())
+      return indent(s"if $test:\n$then_branch")
     else
-      return s"if $test:\n$then_branch\n${indent}else:\n$else_branch"
+      return indent(s"if $test:\n$then_branch\n${indent}else:\n$else_branch")
   }
   
   override def visitWith(node: With): String = {
     return indent("<with not implemented>")
   }
   
-  override def visitRaise(node: Raise): String = {
-    return indent("<raise not implemented>")
+  override def visitRaise(node: Raise) : String = {
+    val itype = if (node.getInternalType() != null) node.getInternalType().accept(this) else ""
+    val inst = if (node.getInternalInst() != null) node.getInternalInst().accept(this) else ""
+    val tback = if (node.getInternalTback() != null) node.getInternalTback().accept(this) else ""
+    return indent("raise " + implodeStringList(scala.List(itype, inst, tback), ", ", true))
   }
   
   override def visitTryExcept(node: TryExcept): String = {
-    return indent("<try except not implemented>")
+    incIndent()
+    val try_branch = implodeList(node.getInternalBody(), "\n")
+    val else_branch = if (!node.getInternalOrelse().isEmpty()) implodeList(node.getInternalOrelse(), "\n") else ""
+    decIndent()
+    val excepters = if (!node.getInternalHandlers().isEmpty()) node.getInternalHandlers().toList.map((node) => visitExcepthandler(node)) else scala.List()
+    val except = implodeStringList(excepters, "\n", true)
+
+    return implodeStringList(scala.List(indent(s"try:\n$try_branch"), except, else_branch), "\n", true)
   }
   
   override def visitTryFinally(node: TryFinally): String = {
@@ -184,17 +253,17 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitExpr(node: Expr): String = {
     println("visitExpr");
-    return node.getInternalValue().accept(this);
+    return indent(node.getInternalValue().accept(this));
   }
   
   override def visitPass(node: Pass): String = {
     println("visitPass");
-    return "<not implemented>";
+    return indent("pass");
   }
   
   override def visitBreak(node: Break): String = {
     println("visitBreak");
-    return "<not implemented>";
+    return indent("break");
   }
   
   override def visitContinue(node: Continue): String = {
@@ -209,11 +278,14 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitBinOp(node: BinOp): String = {
     println("visitBinOp");
-    return "<not implemented>";
+    return "("+node.getInternalLeft.accept(this) + " " + operatorToString(node.getInternalOp) +" " + node.getInternalRight.accept(this)+")"
   }
   
   override def visitUnaryOp(node: UnaryOp): String = {
     println("visitUnaryOp");
+
+    return indent(unaryopTypeToString(node.getInternalOp()) + " " + node.getInternalOperand().accept(this))
+
     return "<not implemented>";
   }
   
@@ -248,8 +320,11 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitListComp(node: ListComp): String = {
-    println("visitListComp");
-    return "<not implemented>";
+    val elt = node.getInternalElt().accept(this)
+    val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
+
+    node.getInternalGenerators().toList.foreach((node) => visitComprehension(node))
+    return s"[$elt$generators]"
   }
   
   override def visitSetComp(node: SetComp): String = {
@@ -264,7 +339,11 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitGeneratorExp(node: GeneratorExp): String = {
     println("visitGeneratorExp");
-    return "<not implemented>";
+    val elt = node.getInternalElt().accept(this)
+    val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
+
+    node.getInternalGenerators().toList.foreach((node) => visitComprehension(node))
+    return s"$elt$generators";
   }
   
   override def visitYield(node: Yield): String = {
@@ -274,7 +353,6 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitCompare(node: Compare): String = {
     println("visitCompare");
-    println("getInternalComparators: " + implodeList(node.getInternalComparators(), ", "))
 
     val pairList = node.getInternalComparators().toList zip node.getInternalOps().toList
 
@@ -283,6 +361,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitCall(node: Call): String = {
+    println("visitCall")
     val func = node.getInternalFunc().accept(this);
 
     if (node.getInternalKeywords().length > 0)
@@ -317,7 +396,14 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitStr(node: Str): String = {
     println("visitStr");
-    return "\"" + node.getInternalS().toString() + "\""; // HACK
+    return "\"" + node.getInternalS().toString().replaceAll("\\\\", "\\\\\\\\")
+                                                .replaceAll("\n","\\\\n")
+                                                .replaceAll("\t", "\\\\t")
+                                                .replaceAll("\r", "\\\\r")
+                                                .replaceAll("\b", "\\\\b")
+                                                .replaceAll("\f", "\\\\f")
+                                                .replaceAll("\"", "\\\\\"")
+                                                .replaceAll("\'", "\\\\\'") + "\""; // HACK
   }
   
   override def visitAttribute(node: Attribute): String = {
@@ -359,8 +445,11 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitSlice(node: Slice): String = {
-    println("visitSlice");
-    return "<not implemented>";
+
+    val lower = if (node.getInternalLower() != null) node.getInternalLower().accept(this) else ""
+    val upper = if (node.getInternalUpper() != null) node.getInternalUpper().accept(this) else ""
+    val step = if (node.getInternalStep() != null) ":"+node.getInternalStep().accept(this) else ""
+    return s"$lower:$upper$step";
   }
   
   override def visitExtSlice(node: ExtSlice): String = {
@@ -375,6 +464,15 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitExceptHandler(node: ExceptHandler): String = {
     println("visitExceptHandler");
-    return "<not implemented>";
+    val itype = if (node.getInternalType() != null) node.getInternalType().accept(this) else ""
+    val iname = if (node.getInternalName() != null) node.getInternalName().accept(this) else ""
+    incIndent()
+    val then_branch = implodeList(node.getInternalBody(), "\n")
+    decIndent()
+    if (itype != "" && iname != "")
+      return indent(s"except $itype as $iname:\n$then_branch")
+    if (itype != "")
+      return indent(s"except $itype:\n$then_branch")
+    return indent(s"except:\n$then_branch")
   }
 }

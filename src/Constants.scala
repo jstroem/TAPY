@@ -3,8 +3,8 @@ package tapy.constants
 object UnOp extends Enumeration {
   type UnOp = Value
   
-  //	not, ~
-  val NOT, TILDE  = Value
+  //  not, ~,     -,     +
+  val NOT, TILDE, MINUS, PLUS  = Value
 }
 
 object BinOp extends Enumeration {
