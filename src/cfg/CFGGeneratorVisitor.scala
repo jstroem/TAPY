@@ -142,10 +142,59 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       }
       acc}
   }
+  
+  var assignTmpIndices = List()
+  def visitMultipleAssign(node: Assign, oldTarget: expr, elts: java.util.List[expr], acc: ControlFlowGraph): ControlFlowGraph = {
+    // Multiple assignment
+    // Normalize
+    //   x_1, ..., x_k = exp
+    // into
+    //   tmp = exp
+    //   x_1 = tmp[0]
+    //   ...
+    //   x_k = tmp[k]
+    val (tmpVariableName: String, tmpAssignmentCfg: ControlFlowGraph) =
+      if (oldTarget == null) {
+        // This is x_k, so we need to create a temporary variable for exp
+        val tmpVariableName = nextTempVariable()
+        (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, s"${node.getInternalValue().accept(ASTPrettyPrinter)}")))
+      } else
+        // This is x_i for some i < k, so don't create a temporary variable
+        (oldTarget.accept(ASTPrettyPrinter), acc)
 
+    var i = 0
+    elts.toList.foldLeft(tmpAssignmentCfg) {(acc, el) =>
+      // A) Make the node for this particular assignment
+      val ithAssignmentCfg = el match {
+        case t: Name =>
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName[$i]"))
+          
+        case t: Subscript =>
+          ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]"))
+          
+        case t: Attribute =>
+          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]"))
+          
+        case t: Tuple =>
+          throw new NotImplementedException()
+        
+        case t =>
+          throw new NotImplementedException()
+      }
+      
+      i = i + 1
+      
+      println("Number of exit nodes: " + acc.exitNodes.size())
+      
+      // B) Add it to the multiple assignment CFG
+      acc.combineGraphs(ithAssignmentCfg)
+         .connectNodes(acc.exitNodes, ithAssignmentCfg.entryNodes)
+         .setEntryNodes(acc.entryNodes)
+         .setExitNodes(ithAssignmentCfg.exitNodes).exportToFile("inner-iteration-" + i)
+    }
+  }
+  
   override def visitAssign(node: Assign): ControlFlowGraph = {
-    println("visitAssign");
-
     // Normalize
     //   x_1 = ... = x_k = exp
     // into
@@ -159,73 +208,30 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       // 1) Generate the CFG of a single assignment (which may be a tuple)
       val label = if (oldTarget == null) node.getInternalValue().accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
       val targetCfg = target match {
-        case t: Name => ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
-        case t: Subscript =>ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
-        case t: Attribute => ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
-        case t: Tuple => {
-          // Multiple assignment
-          // Normalize
-          //   x_1, ..., x_k = exp
-          // into
-          //   tmp = exp
-          //   x_1 = tmp[0]
-          //   ...
-          //   x_k = tmp[k]
-          val (tmpVariableName: String, tmpAssignmentCfg: ControlFlowGraph) =
-            if (oldTarget == null) {
-              // This is x_k, so we need to create a temporary variable for exp
-              val tmpVariableName = nextTempVariable()
-              (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, s"${node.getInternalValue().accept(ASTPrettyPrinter)}")))
-            } else
-              // This is x_i for some i < k, so don't create a temporary variable
-              (oldTarget.accept(ASTPrettyPrinter), acc)
+        case t: Name =>
+          visitMultipleAssign(node, target, List(t), ControlFlowGraph.makeSingleton(new NoOpNode("")))
+          // ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
+        
+        case t: Subscript =>
+          ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
+        
+        case t: Attribute =>
+          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
+        
+        case t: Tuple =>
+          visitMultipleAssign(node, oldTarget, t.getInternalElts(), acc)
   
-          var i = 0
-          var ithMinusOneAssignmentCfg = tmpAssignmentCfg
-          
-          t.getInternalElts().toList.foldRight(tmpAssignmentCfg) {(el, acc) =>
-            // A) Make the node for this particular assignment
-            val ithAssignmentCfgNode: Node = el match {
-              case t: Name => new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName[$i]")
-              case t: Subscript => new WriteDictionaryNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]")
-              case t: Attribute => new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]")
-              case t: Tuple => {
-                null
-              }
-              case t => throw new NotImplementedException()
-            }
-            val ithAssignmentCfg = ControlFlowGraph.makeSingleton(ithAssignmentCfgNode)
-            
-            val ithMinusOneAssignmentCfgCopy = ithMinusOneAssignmentCfg
-            ithMinusOneAssignmentCfg = ithAssignmentCfg
-            i = i + 1
-            
-            // B) Add it to the multiple assignment CFG
-            acc.combineGraphs(ithAssignmentCfg)
-               .connectNodes(ithMinusOneAssignmentCfgCopy.exitNodes, ithAssignmentCfg.entryNodes)
-               .setEntryNodes(acc.entryNodes)
-               .setExitNodes(ithAssignmentCfg.exitNodes)
-          }
-        }
-  
-        case t => throw new NotImplementedException()
+        case t =>
+          throw new NotImplementedException()
       }
       
       // 2) Update oldTarget and combine the accumulator with the generated CFG of the single assignment
       oldTarget = target
       
-      target match {
-        case t: Tuple =>
-          // Accumulator has already been connected to targetCfg (!)
-          acc.combineGraphs(targetCfg)
-             .setEntryNodes(acc.entryNodes)
-             .setExitNodes(targetCfg.exitNodes)
-        case t =>
-          acc.combineGraphs(targetCfg)
-             .connectNodes(acc.exitNodes, targetCfg.entryNodes)
-             .setEntryNodes(acc.entryNodes)
-             .setExitNodes(targetCfg.exitNodes)
-      }
+      acc.combineGraphs(targetCfg)
+         .connectNodes(acc.exitNodes, targetCfg.entryNodes)
+         .setEntryNodes(acc.entryNodes)
+         .setExitNodes(targetCfg.exitNodes)
     }
   }
 
