@@ -208,7 +208,12 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitWith(node: With): String = {
-    return indent("<with not implemented>")
+    val ctx = node.getInternalContext_expr().accept(this)
+    val opt = if (node.getInternalOptional_vars() != null) " as " + node.getInternalOptional_vars().accept(this) else ""
+    incIndent()
+    val body = implodeList(node.getInternalBody(), "\n")
+    decIndent()
+    return indent(s"with $ctx$opt:\n$body")
   }
   
   override def visitRaise(node: Raise) : String = {
