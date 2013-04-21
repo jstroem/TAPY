@@ -52,7 +52,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     }
   }
 
-  def operatorTypeToBinop(operator: operatorType): constants.BinOp.Value = operator match {
+  def operatorTypeToBinOp(operator: operatorType): constants.BinOp.Value = operator match {
     case operatorType.UNDEFINED => null
     case operatorType.Add => constants.BinOp.PLUS
     case operatorType.Sub => constants.BinOp.MINUS
@@ -66,6 +66,20 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     case operatorType.BitXor => constants.BinOp.XOR
     case operatorType.BitAnd => constants.BinOp.AND
     case operatorType.FloorDiv => constants.BinOp.IDIV
+  }
+  
+  def boolopTypeToBoolOp(operator: boolopType): constants.BoolOp.Value = operator match {
+    case boolopType.UNDEFINED => null
+    case boolopType.And => constants.BoolOp.AND
+    case boolopType.Or => constants.BoolOp.OR
+  }
+
+  def unaryopTypeToUnOp(operator: unaryopType): constants.UnOp.Value = operator match {
+    case unaryopType.UNDEFINED => null
+    case unaryopType.Invert => constants.UnOp.TILDE
+    case unaryopType.Not => constants.UnOp.NOT
+    case unaryopType.UAdd => constants.UnOp.PLUS
+    case unaryopType.USub => constants.UnOp.MINUS
   }
 
   /* Abstract methods from VisitorBase */
@@ -487,19 +501,16 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     throw new InternalError("Continue statement outside for or while loop.")
   }
 
-  override def visitBoolOp(node: BoolOp): ControlFlowGraph = {
-    println("visitBoolOp");
-    return null
+  override def visitBoolOp(node: ast.BoolOp): ControlFlowGraph = {
+    return ControlFlowGraph.makeSingleton(new BoolOpNode(boolopTypeToBoolOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
-    println("visitBinOp");
-    return null
+    return ControlFlowGraph.makeSingleton(new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
-    println("visitUnaryOp");
-    return null
+    return ControlFlowGraph.makeSingleton(new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), 0, 0, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {

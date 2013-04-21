@@ -13,3 +13,10 @@ object BinOp extends Enumeration {
   //  +     -      <=   >=   <   >   ==  !=   in  is, *     /    %    //    >>   <<   &    ^    |   **
   val PLUS, MINUS, LTE, GTE, LT, GT, EQ, NEQ, IN, IS, MULT, DIV, MOD, IDIV, SHR, SHL, AND, XOR, OR, POW = Value
 }
+
+object BoolOp extends Enumeration {
+  type BoolOp = Value
+  
+  //  and  or
+  val AND, OR = Value
+}
