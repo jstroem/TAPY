@@ -440,7 +440,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitGlobal(node: Global): ControlFlowGraph = {
     println("visitGlobal");
-    return null
+    return node.getInternalNameNodes().foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Global entry"))) {(acc, name) =>
+      val nameGlobalNode = new GlobalNode(name.getInternalId(), name.getInternalId())
+      acc.addNode(nameGlobalNode)
+         .connectNodes(acc.exitNodes, nameGlobalNode)
+         .setExitNode(nameGlobalNode)
+    }
   }
 
   override def visitExpr(node: Expr): ControlFlowGraph = {

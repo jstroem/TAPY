@@ -10,21 +10,17 @@ case class EntryNode(label: String, id: String = UUID.randomUUID().toString()) e
 case class ExitNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Write variable; variable = value
-case class WriteVariableNode(variable: String, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-
-// Read variable; result = variable
-case class ReadVariableNode(variable: String, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-
 // Write property into base (object/class); base.property = value
-case class WritePropertyNode(base_reg: Int, property: String, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-
-// Read property from base (object/class); result =  base.property
-case class ReadPropertyNode(base_reg: Int, property: String, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-
 // Write property into dictionary: base[property] = value
+case class WriteVariableNode(variable: String, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class WritePropertyNode(base_reg: Int, property: String, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WriteIndexableNode(base_reg: Int, property_reg: Int, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
+// Read variable; result = variable
+// Read property from base (object/class); result =  base.property
 // Read property from dictionary: result = base[property]
+case class ReadVariableNode(variable: String, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ReadPropertyNode(base_reg: Int, property: String, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ReadIndexableNode(base_reg: Int, property_reg: Int, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Del
@@ -68,3 +64,6 @@ case class PrintNode(value_reg: Int, label: String, id: String = UUID.randomUUID
 // For and while nodes
 case class ForInNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WhileNode(cond_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+
+// Misc
+case class GlobalNode(variable: String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
