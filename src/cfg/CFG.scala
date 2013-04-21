@@ -79,15 +79,11 @@ case class ControlFlowGraph(
     return connectNodes(preds, Set(succ))
   }
 
-  /**
-    * Notice that this method does not add a new entry node, if the last entry node is removed.
-    * The same holds for the exit node.
-    */
   def removeNode(node: Node): ControlFlowGraph = {
-    val filteredEntryNodes = entryNodes.filter({(startNode) => startNode != node})
-    val filteredExitNodes = exitNodes.filter({(exitNode) => exitNode != node})
-    val filteredNodes = nodes.filter({(otherNode) => otherNode != node})
-    val filteredEdges = edges.foldLeft(Map[Node, Set[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> entry._2.filter({(succ) => succ != node}))}
+    val filteredEntryNodes = if (entryNodes.contains(node)) entryNodes - node ++ getNodeSuccessors(node) else entryNodes
+    val filteredExitNodes = if (exitNodes.contains(node)) exitNodes - node ++ getNodePredecessors(node) else exitNodes
+    val filteredNodes = nodes - node
+    val filteredEdges = edges.foldLeft(Map[Node, Set[Node]]()) {(acc, entry) => if (entry._1 == node) acc else acc + (entry._1 -> (entry._2 - node))}
     return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredNodes, filteredEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
   }
   
@@ -105,6 +101,10 @@ case class ControlFlowGraph(
   def exportToFile(fileName: String): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
+    
+    GraphvizExporter.export(minify().generateGraphvizGraph(), new PrintStream(fileName + ".cfg.min.dot"))
+    Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.min.gif " + fileName + ".cfg.min.dot")
+    
     return this
   }
   

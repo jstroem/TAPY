@@ -23,3 +23,6 @@ run:
 		then scala -cp "bin;./lib/jython-2.7-b1.jar" tapy.Main $(FILES); fi
 	@if (test "${OSNAME}" = "Darwin"); \
 		then scala -cp "bin:./lib/jython-2.7-b1.jar" tapy.Main $(FILES); fi
+	rm -f test/*.dot
+	rm -f test/*/*.dot	
+	rm -f test/*/*/*.dot
