@@ -6,6 +6,7 @@ import scala.collection.immutable.List
 import tapy.export._
 import org.python.antlr.PythonTree
 import org.python.antlr.ast._
+import org.python.antlr.ast
 import org.python.antlr.base._
 import scala.collection.JavaConversions._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
@@ -30,7 +31,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   /* Helper methods */
 
   def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph = {
-    return statements.toList.foldRight(ControlFlowGraph.makeSingleton(entryNode)) {(stm, acc) =>
+    return statements.toList.foldLeft(ControlFlowGraph.makeSingleton(entryNode)) {(acc, stm) =>
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
         case node: EntryNode =>
@@ -133,51 +134,48 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitDelete(node: Delete): ControlFlowGraph = {
     return node.getInternalTargets().toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Del entry"))) {(acc, target) =>
       val targetCfg = target match {
-        case t: Name => ControlFlowGraph.makeSingleton(new DelVariableNode(t.getInternalId(), t.accept(ASTPrettyPrinter)))
-        case t: Subscript => ControlFlowGraph.makeSingleton(new DelDictionaryNode(0, 0, t.accept(ASTPrettyPrinter)))
-        case t: Attribute => ControlFlowGraph.makeSingleton(new DelPropertyNode(0, t.getInternalAttr(), t.accept(ASTPrettyPrinter)))
-        case t: org.python.antlr.ast.List => throw new NotImplementedException()
-        case t: Tuple => throw new NotImplementedException()
-        case t => throw new NotImplementedException()
+        case t: Name =>
+          ControlFlowGraph.makeSingleton(new DelVariableNode(t.getInternalId(), t.accept(ASTPrettyPrinter)))
+          
+        case t: Subscript =>
+          ControlFlowGraph.makeSingleton(new DelIndexableNode(0, 0, t.accept(ASTPrettyPrinter)))
+          
+        case t: Attribute =>
+          ControlFlowGraph.makeSingleton(new DelPropertyNode(0, t.getInternalAttr(), t.accept(ASTPrettyPrinter)))
+          
+        case t: ast.List =>
+          throw new NotImplementedException()
+          
+        case t: Tuple =>
+          throw new NotImplementedException()
+          
+        case t =>
+          throw new NotImplementedException()
       }
       acc}
   }
   
-  var j = 0
-  def visitMultipleAssign(node: Assign, oldTarget: expr, elts: java.util.List[expr], acc: ControlFlowGraph): ControlFlowGraph = {
-    // Multiple assignment
-    // Normalize
-    //   x_1, ..., x_k = exp
-    // into
-    //   tmp = exp
-    //   x_1 = tmp[0]
-    //   ...
-    //   x_k = tmp[k]
-    val (tmpVariableName: String, tmpAssignmentCfg: ControlFlowGraph) =
-      if (oldTarget == null) {
-        // This is x_k, so we need to create a temporary variable for exp
-        val tmpVariableName = nextTempVariable()
-        (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, s"${node.getInternalValue().accept(ASTPrettyPrinter)}")))
-      } else
-        // This is x_i for some i < k, so don't create a temporary variable
-        (oldTarget.accept(ASTPrettyPrinter), acc)
-
+  def visitAssignAux(node: Assign, tmpVariableName: String, elts: java.util.List[expr], indexes: List[Int] = List()): ControlFlowGraph = {
+    val indexesStr = indexes.foldLeft("") {(acc, index) => s"[$index]$acc"}
+    
     var i = 0
-    return elts.toList.foldLeft(tmpAssignmentCfg) {(acc, el) =>
-      // A) Make the node for this particular assignment
+    return elts.toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry"))) {(acc, el) =>
+      // A) Make the CFG for this particular assignment
       val ithAssignmentCfg = el match {
         case t: Name =>
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName[$i]"))
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName$indexesStr[$i]"))
           
         case t: Subscript =>
-          ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]"))
+          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName$indexesStr[$i]"))
           
         case t: Attribute =>
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName[$i]"))
-          
+          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName$indexesStr[$i]"))
+        
         case t: Tuple =>
-          // TODO: oldTarget should be changed: if oldTarget was null, a temporary variable was already created
-          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
+          visitAssignAux(node, tmpVariableName, t.getInternalElts(), i :: indexes)
+        
+        case t: ast.List =>
+          visitAssignAux(node, tmpVariableName, t.getInternalElts(), i :: indexes)
         
         case t =>
           throw new NotImplementedException()
@@ -185,51 +183,64 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       
       i = i + 1
       
-      // B) Add it to the multiple assignment CFG
-      j = j + 1
+      // B) Add it to the assignment CFG
       acc.combineGraphs(ithAssignmentCfg)
          .connectNodes(acc.exitNodes, ithAssignmentCfg.entryNodes)
          .setEntryNodes(acc.entryNodes)
-         .setExitNodes(ithAssignmentCfg.exitNodes).exportToFile("test/language-features/iteration" + j)
+         .setExitNodes(ithAssignmentCfg.exitNodes)
     }
   }
   
+  /*
+   * Normalize
+   *   x_1 = ... = x_k = exp
+   * into (if k >= 2)
+   *   tmp = exp
+   *   x_k = tmp
+   *   ...
+   *   x_1 = tmp
+   */
   override def visitAssign(node: Assign): ControlFlowGraph = {
-    // Normalize
-    //   x_1 = ... = x_k = exp
-    // into
-    //   x_k = exp
-    //   ...
-    //   x_1 = x_2
-    var oldTarget: expr = null
+    val targets = node.getInternalTargets()
     
-    // Import to use foldRight, such that x_k is taken first:
-    return node.getInternalTargets().toList.foldRight(ControlFlowGraph.makeSingleton(new NoOpNode("Assignment entry"))) {(target, acc) =>
-      // 1) Generate the CFG of a single assignment (which may be a tuple)
-      val label = if (oldTarget == null) node.getInternalValue().accept(ASTPrettyPrinter) else oldTarget.accept(ASTPrettyPrinter)
+    // Create a temporary variable to store the expression in if:
+    // - there are at least two targets; or
+    // - there is only one target, and that particular target is a tuple or list
+    val (tmpVariableName: String, initialAcc: ControlFlowGraph) =
+      if (targets.size() >= 2 || targets.get(0).isInstanceOf[Tuple] || targets.get(0).isInstanceOf[ast.List]) {
+        val tmpVariableName = nextTempVariable()
+        (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, node.getInternalValue().accept(ASTPrettyPrinter))))
+      } else
+        ("", ControlFlowGraph.makeSingleton(new NoOpNode("Assignment entry")))
+    
+    // Important to use foldRight, such that x_k is taken first
+    var i = 0
+    return targets.toList.foldRight(initialAcc) {(target, acc) =>
+      // 1) Generate the CFG for a single target (which may be a tuple or list)
+      val label = if (tmpVariableName.length() == 0) node.getInternalValue().accept(ASTPrettyPrinter) else tmpVariableName
       val targetCfg = target match {
         case t: Name =>
           ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
         
         case t: Subscript =>
-          ControlFlowGraph.makeSingleton(new WriteDictionaryNode(0, 0, 0, label))
+          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, label))
         
         case t: Attribute =>
           ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
         
-        case t: Tuple =>
-          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
+        case t: Tuple => 
+          visitAssignAux(node, tmpVariableName, t.getInternalElts())
   
-        case t: org.python.antlr.ast.List =>
-          visitMultipleAssign(node, oldTarget, t.getInternalElts(), ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry")))
+        case t: ast.List =>
+          visitAssignAux(node, tmpVariableName, t.getInternalElts())
           
         case t =>
           throw new NotImplementedException()
       }
       
-      // 2) Update oldTarget and combine the accumulator with the generated CFG of the single assignment
-      oldTarget = target
+      i = i + 1
       
+      // 2) Combine the accumulator with the generated CFG of the single assignment
       acc.combineGraphs(targetCfg)
          .connectNodes(acc.exitNodes, targetCfg.entryNodes)
          .setEntryNodes(acc.entryNodes)
@@ -534,7 +545,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null
   }
 
-  override def visitList(node: org.python.antlr.ast.List): ControlFlowGraph = {
+  override def visitList(node: ast.List): ControlFlowGraph = {
     println("visitList");
     return null
   }

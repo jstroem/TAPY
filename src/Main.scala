@@ -48,7 +48,7 @@ object Main {
       GraphvizExporter.export(graphvizGraph, new PrintStream(dir + fname+".cfg.dot"))
       Runtime.getRuntime().exec("dot -Tgif -o "+dir + fname+".cfg.gif " + dir + fname+".cfg.dot")
     } catch {
-      case e: Exception => println("(error)")
+      case e: Exception => e.printStackTrace()
     }
   }
 

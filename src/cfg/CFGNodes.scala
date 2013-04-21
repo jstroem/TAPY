@@ -22,14 +22,14 @@ case class WritePropertyNode(base_reg: Int, property: String, value_reg: Int, la
 case class ReadPropertyNode(base_reg: Int, property: String, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Write property into dictionary: base[property] = value
-case class WriteDictionaryNode(base_reg: Int, property_reg: Int, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class WriteIndexableNode(base_reg: Int, property_reg: Int, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Read property from dictionary: result = base[property]
-case class ReadDictionaryNode(base_reg: Int, property_reg: Int, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ReadIndexableNode(base_reg: Int, property_reg: Int, result_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Del
 case class DelVariableNode(variable: String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class DelDictionaryNode(base_reg: Int, property_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class DelIndexableNode(base_reg: Int, property_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class DelPropertyNode(base_reg: Int, property: String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // No Operation node; pass
