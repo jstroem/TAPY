@@ -16,6 +16,16 @@ case class WriteVariableNode(variable: String, value_reg: Int, label: String, id
 case class WritePropertyNode(base_reg: Int, property: String, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WriteIndexableNode(base_reg: Int, property_reg: Int, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
+case class ConstantBooleanNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantNumberNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantStringNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantNoneNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+
+case class NewListNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class NewDictionaryNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class NewTupleNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class NewSetNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+
 // Read variable; result = variable
 // Read property from base (object/class); result =  base.property
 // Read property from dictionary: result = base[property]
@@ -66,3 +76,5 @@ case class WhileNode(cond_reg: Int, label: String, id: String = UUID.randomUUID(
 
 // Misc
 case class GlobalNode(variable: String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+
+case class AssertIterable(reg: Int, length: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
