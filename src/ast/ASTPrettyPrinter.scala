@@ -410,7 +410,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitRepr(node: Repr): String = {
     println("visitRepr");
-    return "<not implemented>";
+    return "`"+node.getInternalValue().accept(this)+"`"
   }
   
   override def visitNum(node: Num): String = {
