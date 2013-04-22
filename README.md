@@ -28,3 +28,6 @@ http://stackoverflow.com/questions/1848474/method-resolution-order-mro-in-new-st
 
 Hidden features of python
 http://stackoverflow.com/questions/101268/hidden-features-of-python
+
+Weird members
+http://docs.python.org/2/library/inspect.html#types-and-members
