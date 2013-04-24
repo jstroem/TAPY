@@ -449,11 +449,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   
   override def visitList(node: List): String = {
     println("visitList");
-    
-    // TODO: What is ctx used for?
-    val ctx = node.getInternalCtx()
     val elts = implodeList(node.getInternalElts(), ", ")
-    
     return s"[$elts]";
   }
   

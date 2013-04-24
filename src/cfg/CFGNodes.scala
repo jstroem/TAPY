@@ -1,5 +1,6 @@
 package tapy.cfg
 
+import org.python.core._
 import java.util.UUID
 import tapy.constants
 
@@ -17,7 +18,10 @@ case class WritePropertyNode(base_reg: Int, property: String, value_reg: Int, la
 case class WriteIndexableNode(base_reg: Int, property_reg: Int, value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 case class ConstantBooleanNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantNumberNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantIntNode(int: PyInteger, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantFloatNode(float: PyFloat, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantLongNode(long: PyLong, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantComplexNode(complex: PyComplex, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ConstantStringNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ConstantNoneNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 

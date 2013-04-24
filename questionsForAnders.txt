@@ -3,3 +3,14 @@ Registers
 Control Flow I expressions
 
 Interprocedural
+
+
+Class definitions:
+- PT laver vi dem parallelt i CFG'en.
+- Problem:
+	class C():
+		x = 10
+	C.x // 10
+- Løsning:
+	Blive ved med at lave dem parallelt (fordi kode deri på nær field assignments - I guess - først
+	køres ved konstruktion af et objekt), og indsætte en knude i der indikerer at klassen C blev deklareret på det pågældende pkt?
