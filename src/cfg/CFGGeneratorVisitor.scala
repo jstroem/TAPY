@@ -637,7 +637,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val emptyDictRegister = nextRegister()
     val emptyDictCfg = ControlFlowGraph.makeSingleton(new NewDictionaryNode(emptyDictRegister, "{}"))
     
-    return node.getInternalKeys().toList.zip(node.getInternalValues().toList).foldLeft(emptyDictCfg) {(acc,entry) =>
+    val dictCfg = node.getInternalKeys().toList.zip(node.getInternalValues().toList).foldLeft(emptyDictCfg) {(acc,entry) =>
       val keyCfg = entry._1.accept(this)
       val keyRegister = this.lastExpressionRegister
       
@@ -655,6 +655,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
          .setEntryNodes(acc.entryNodes)
          .setExitNode(writeNode)
     }
+    this.lastExpressionRegister = emptyDictRegister
+    
+    return dictCfg
+    
   }
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
@@ -724,7 +728,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitStr");
     val strRegister = nextRegister()
     this.lastExpressionRegister = strRegister
-    return ControlFlowGraph.makeSingleton(new ConstantStringNode(strRegister, node.accept(ASTPrettyPrinter)))
+    return ControlFlowGraph.makeSingleton(new ConstantStringNode(strRegister, node.getInternalS().toString(), node.accept(ASTPrettyPrinter)))
   }
 
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
