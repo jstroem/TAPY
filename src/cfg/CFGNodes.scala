@@ -29,7 +29,7 @@ case class WritePropertyNode(baseReg: Int, property: String, valueReg: Int, id: 
   override def toString = s"${reg(baseReg)}.$property = ${reg(valueReg)}\n(WritePropertyNode)"
 }
 case class WriteIndexableNode(baseReg: Int, propertyReg: Int, valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(baseReg)}.${reg(propertyReg)} = ${reg(valueReg)}\n(WriteIndexableNode)"
+  override def toString = s"${reg(baseReg)}[${reg(propertyReg)}] = ${reg(valueReg)}\n(WriteIndexableNode)"
 }
 
 //Constant expressions.
@@ -56,16 +56,19 @@ case class ConstantNoneNode(resultReg: Int, id: UUID = UUID.randomUUID()) extend
 }
 
 case class NewListNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(NewListNode)"
+  override def toString = s"${reg(resultReg)} = []\n(NewListNode)"
 }
 case class NewDictionaryNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(NewDictionaryNode)"
+  override def toString = s"${reg(resultReg)} = {}\n(NewDictionaryNode)"
 }
 case class NewTupleNode(resultReg: Int, valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(NewTupleNode)"
+  override def toString() = {
+    val arg_string = valueRegs.foldLeft("") ({(s,r) => s+","+reg(r)})
+    s"($arg_string)\n(NewTupleNode)"
+  }
 }
 case class NewSetNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(NewSetNode)"
+  override def toString = s"${reg(resultReg)} = {}\n(NewSetNode)"
 }
 
 // Read variable; result = variable
@@ -115,7 +118,7 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
 // Function invokation and Object creation calls; result = [base.]function(arguments)
 case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
-    val arg_string = argument_regs.foldLeft("") ({(s,r) => s+reg(r)})
+    val arg_string = argument_regs.foldLeft("") ({(s,r) => s+","+reg(r)})
     s"${reg(resultReg)} = ${reg(functionReg)}($arg_string)\n(CallNode)"
   }
 }
