@@ -16,7 +16,7 @@ clean:
 
 compile:
 	mkdir -p bin
-	scalac -classpath $(COMPILEFLAGS) lib/*.jar -d bin src/*.scala src/*/*.scala
+	scalac $(COMPILEFLAGS) -classpath lib/*.jar -d bin src/*.scala src/*/*.scala
 
 run:
 	@if (test "${OSNAME}" = "CYGWIN_NT-6.2-WOW64"); \
