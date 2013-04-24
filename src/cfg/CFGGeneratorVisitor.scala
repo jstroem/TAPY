@@ -523,7 +523,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
           val reg = lastExpressionRegister
           (cfg,reg)
     })
-    val foldedCfg = cfgsAndRegisters.foldLeft(ControlFlowGraph.EMPTY)((acc,a) => {
+    val foldedCfg = cfgsAndRegisters.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("BoolOp entry")))((acc,a) => {
       var (cfg,reg) = a
       var readValue = acc.combineGraphs(cfg)
                          .connectNodes(acc.exitNodes, cfg.entryNodes)
