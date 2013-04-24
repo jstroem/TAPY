@@ -433,7 +433,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitRaise(node: Raise): ControlFlowGraph = {
     println("visitRaise");
-    return null
+    val cfg = node.getInternalType().accept(this)
+    val raiseNode = new RaiseNode(lastExpressionRegister,s"Raise $lastExpressionRegister")
+    return cfg.addNode(raiseNode)
+              .connectNodes(cfg.exitNodes, raiseNode)
+              .setExitNode(raiseNode)
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
