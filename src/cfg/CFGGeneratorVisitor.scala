@@ -396,8 +396,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitIf(node: If): ControlFlowGraph = {
     println("visitIf")
+    val condCfg = node.getInternalTest().accept(this)
 
-    val ifEntryCfgNode: IfNode = new IfNode(0, s"if ${node.getInternalTest().accept(ASTPrettyPrinter)}: ...")
+    val ifEntryCfgNode: IfNode = new IfNode(lastExpressionRegister, "")
     val ifExitCfgNode = new NoOpNode("If exit")
 
     // Construct the CFG's for the two branches
@@ -406,17 +407,22 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
     if (elseCfg.getNodeSuccessors(ifEntryCfgNode).size() == 0) {
       // There is no or-else branch
-      return thenCfg.addNode(ifExitCfgNode)
-        .connectNodes(ifEntryCfgNode, ifExitCfgNode)
-        .connectNodes(thenCfg.exitNodes, ifExitCfgNode)
-        .setExitNode(ifExitCfgNode)
+      return thenCfg.combineGraphs(condCfg)
+                    .addNode(ifExitCfgNode)
+                    .connectNodes(condCfg.exitNodes, ifEntryCfgNode)
+                    .connectNodes(ifEntryCfgNode, ifExitCfgNode)
+                    .connectNodes(thenCfg.exitNodes, ifExitCfgNode)
+                    .setEntryNodes(condCfg.entryNodes)
+                    .setExitNode(ifExitCfgNode)
     } else {
       // TODO: Break node must not go to the IfExitNode in ex. 10
       return thenCfg.combineGraphs(elseCfg)
-        .addNode(ifExitCfgNode)
-        .connectNodes(thenCfg.exitNodes ++ elseCfg.exitNodes, ifExitCfgNode)
-        .setEntryNode(ifEntryCfgNode)
-        .setExitNode(ifExitCfgNode)
+                    .combineGraphs(condCfg)
+                    .addNode(ifExitCfgNode)
+                    .connectNodes(condCfg.exitNodes, ifEntryCfgNode)
+                    .connectNodes(thenCfg.exitNodes ++ elseCfg.exitNodes, ifExitCfgNode)
+                    .setEntryNodes(condCfg.entryNodes)
+                    .setExitNode(ifExitCfgNode)
     }
   }
 
