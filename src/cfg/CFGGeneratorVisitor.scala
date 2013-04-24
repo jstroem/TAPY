@@ -520,7 +520,39 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitBoolOp(node: ast.BoolOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new BoolOpNode(boolopTypeToBoolOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
+    //Assume that node.getInternalValues().length >= 2
+    val exprs = node.getInternalValues().toList
+    val result_reg = nextRegister()
+    val ifExitNode = new NoOpNode("If exit")
+
+
+    val cfgBoolOps = exprs.tail.foldLeft(exprs.head.accept(this))((acc,a) => {
+      val leftExpr = lastExpressionRegister
+      val ifNode = IfNode(leftExpr, s"if ($leftExpr)")
+      val untilIfCfg = acc.addNode(ifNode)
+                        .connectNodes(acc.exitNodes, ifNode)
+                        .setExitNode(ifNode)    
+      var oneSideCfg = boolopTypeToBoolOp(node.getInternalOp()) match {
+        case constants.BoolOp.AND => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, false, "False"))
+        case constants.BoolOp.OR => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, true, "True"))
+      }
+      oneSideCfg = oneSideCfg.addNode(ifExitNode)
+                             .connectNodes(oneSideCfg.entryNodes, ifExitNode)
+      untilIfCfg.addNodes(oneSideCfg.nodes)
+                .connectNodes(untilIfCfg.exitNodes, oneSideCfg.entryNodes)
+    })
+    var otherSideCfg = boolopTypeToBoolOp(node.getInternalOp()) match {
+      case constants.BoolOp.AND => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, true, "True"))
+      case constants.BoolOp.OR => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, false, "False"))
+    }
+    otherSideCfg = otherSideCfg.addNode(ifExitNode)
+                               .connectNodes(otherSideCfg.entryNodes, ifExitNode)
+    lastExpressionRegister = result_reg
+
+    return cfgBoolOps.addNodes(otherSideCfg.nodes)
+                     .connectNodes(cfgBoolOps.exitNodes, otherSideCfg.entryNodes)
+                     .connectNodes(otherSideCfg.exitNodes, ifExitNode)
+                     .setExitNode(ifExitNode)
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
@@ -599,17 +631,21 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitNum(node: Num): ControlFlowGraph = {
     println("visitNum");
+    val result_reg = nextRegister()
+    lastExpressionRegister = result_reg
     return node.getInternalN() match {
-      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(pyInt, node.accept(ASTPrettyPrinter)))
-      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(pyLong, node.accept(ASTPrettyPrinter)))
-      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(pyFloat, node.accept(ASTPrettyPrinter)))
-      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(pyComplex, node.accept(ASTPrettyPrinter)))
+      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(result_reg, pyInt, node.accept(ASTPrettyPrinter)))
+      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(result_reg, pyLong, node.accept(ASTPrettyPrinter)))
+      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(result_reg, pyFloat, node.accept(ASTPrettyPrinter)))
+      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(result_reg, pyComplex, node.accept(ASTPrettyPrinter)))
     }
   }
 
   override def visitStr(node: Str): ControlFlowGraph = {
     println("visitStr");
-    return null
+    val result_reg = nextRegister()
+    lastExpressionRegister = result_reg
+    return ControlFlowGraph.makeSingleton(new ConstantStringNode(result_reg, node.getInternalS().toString(), node.accept(ASTPrettyPrinter)))
   }
 
   // base_reg: Int, property: String, result_reg: Int
