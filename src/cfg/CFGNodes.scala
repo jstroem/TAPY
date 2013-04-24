@@ -4,27 +4,56 @@ import org.python.core._
 import java.util.UUID
 import tapy.constants
 
-abstract class Node(label: String, id: String)
+abstract class Node(label: String, id: String) {
+  protected def reg(r: Int) = s"(reg: $r)"
+}
 
 // Class and function declaration (exit and entry)
-case class EntryNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ExitNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class EntryNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = "EntryNode"
+}
+case class ExitNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = "ExitNode"
+}
 
 // Write variable; variable = value
 // Write property into base (object/class); base.property = value
 // Write property into dictionary: base[property] = value
-case class WriteVariableNode(variable: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class WriteRegisterNode(resultReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class WritePropertyNode(baseReg: Int, property: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class WriteIndexableNode(baseReg: Int, propertyReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class WriteVariableNode(variable: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"$variable = ${reg(valueReg)}"
+}
+case class WriteRegisterNode(resultReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = ${reg(valueReg)}"
+}
+case class WritePropertyNode(baseReg: Int, property: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(baseReg)}.$property = ${reg(valueReg)}"
+}
+case class WriteIndexableNode(baseReg: Int, propertyReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(baseReg)}.${reg(propertyReg)} = ${reg(valueReg)}"
+}
 
-case class ConstantBooleanNode(resultReg: Int, bool: Boolean, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantIntNode(resultReg: Int, int: PyInteger, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantFloatNode(resultReg: Int, float: PyFloat, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantLongNode(resultReg: Int, long: PyLong, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantComplexNode(resultReg: Int, complex: PyComplex, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantStringNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ConstantNoneNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+//Constant expressions.
+case class ConstantBooleanNode(resultReg: Int, bool: Boolean, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $bool"
+}
+case class ConstantIntNode(resultReg: Int, int: PyInteger, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $int"
+}
+case class ConstantFloatNode(resultReg: Int, float: PyFloat, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $float"
+}
+case class ConstantLongNode(resultReg: Int, long: PyLong, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $long"
+}
+case class ConstantComplexNode(resultReg: Int, complex: PyComplex, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $complex"
+}
+case class ConstantStringNode(resultReg: Int, string : String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $string"
+}
+case class ConstantNoneNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = None"
+}
 
 case class NewListNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class NewDictionaryNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
@@ -34,9 +63,15 @@ case class NewSetNode(resultReg: Int, label: String, id: String = UUID.randomUUI
 // Read variable; result = variable
 // Read property from base (object/class); result =  base.property
 // Read property from dictionary: result = base[property]
-case class ReadVariableNode(variable: String, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ReadVariableNode(variable: String, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = $variable"
+}
+case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.$property"
+}
+case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id) {
+  override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.${reg(propertyReg)}"
+}
 
 // Del
 case class DelVariableNode(variable: String, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
