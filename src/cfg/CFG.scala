@@ -46,8 +46,28 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   def getNodeSuccessors(node: Node): Set[Node] = {
     getRegularNodeSuccessors(node)
   }
+<<<<<<< HEAD
 
   @deprecated 
+=======
+  
+  def addNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes + node, edges)
+  }
+  
+  def addNodes(newNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, nodes ++ newNodes, edges)
+  }
+  
+  def setEntryNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(Set(node), exitNodes, nodes, edges)
+  }
+  
+  def setEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(newEntryNodes, exitNodes, nodes, edges)
+  }
+  
+>>>>>>> 5e289f1ca09c346db680ff2336458a65e4368e64
   def setExitNode(node: Node): ControlFlowGraph = {
     setExitNodes(Set(node))
   }
