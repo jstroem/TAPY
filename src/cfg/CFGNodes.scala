@@ -72,7 +72,7 @@ case class BinOpNode(op: constants.BinOp.Value, arg1Reg: Int, arg2Reg: Int, resu
 case class UnOpNode(op: constants.UnOp.Value, arg1Reg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Print node; print value
-case class PrintNode(valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class PrintNode(dest: Option[Int], valueRegs: List[Int], label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // For and while nodes
 case class ForInNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)

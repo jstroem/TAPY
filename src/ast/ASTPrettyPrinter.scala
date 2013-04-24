@@ -159,11 +159,11 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitPrint(node: Print): String = {
-    val dest = if (node.getInternalDest() != null) node.getInternalDest().accept(this) else ""
-    val nl = if (node.getInternalNl()) "true" else "false"
+    val dest = if (node.getInternalDest() != null) ">> " + node.getInternalDest().accept(this)+ ", " else ""
+    val nl = if (node.getInternalNl()) "" else ","
     val values = implodeList(node.getInternalValues(), ", ")
     
-    return indent(s"print $values")
+    return indent(s"print $dest$values$nl")
   }
   
   override def visitFor(node: For): String = {
