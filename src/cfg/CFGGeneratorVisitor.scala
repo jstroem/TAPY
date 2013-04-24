@@ -152,11 +152,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitReturn(node: Return): ControlFlowGraph = {
     val exprCfg = node.getInternalValue().accept(this)
-    val returnCfg = ControlFlowGraph.makeSingleton(new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter)))
-    return exprCfg.addNodes(returnCfg.nodes)
-                  .connectNodes(exprCfg.exitNodes, returnCfg.entryNodes)
+    val returnNode = new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter))
+    return exprCfg.addNode(returnNode)
+                  .connectNodes(exprCfg.exitNodes, returnNode)
                   .setEntryNodes(exprCfg.entryNodes)
-                  .setExitNodes(returnCfg.exitNodes)
+                  .setExitNode(returnNode)
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {
@@ -520,39 +520,46 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitBoolOp(node: ast.BoolOp): ControlFlowGraph = {
-    //Assume that node.getInternalValues().length >= 2
     val exprs = node.getInternalValues().toList
     val result_reg = nextRegister()
     val ifExitNode = new NoOpNode("If exit")
 
-
-    val cfgBoolOps = exprs.tail.foldLeft(exprs.head.accept(this))((acc,a) => {
-      val leftExpr = lastExpressionRegister
-      val ifNode = IfNode(leftExpr, s"if ($leftExpr)")
-      val untilIfCfg = acc.addNode(ifNode)
-                        .connectNodes(acc.exitNodes, ifNode)
-                        .setExitNode(ifNode)    
-      var oneSideCfg = boolopTypeToBoolOp(node.getInternalOp()) match {
-        case constants.BoolOp.AND => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, false, "False"))
-        case constants.BoolOp.OR => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, true, "True"))
-      }
-      oneSideCfg = oneSideCfg.addNode(ifExitNode)
-                             .connectNodes(oneSideCfg.entryNodes, ifExitNode)
-      untilIfCfg.addNodes(oneSideCfg.nodes)
-                .connectNodes(untilIfCfg.exitNodes, oneSideCfg.entryNodes)
+    val cfgsAndRegisters : List[(ControlFlowGraph,Int)] = exprs.map((a) => {
+          val cfg = a.accept(this)
+          val reg = lastExpressionRegister
+          (cfg,reg)
     })
-    var otherSideCfg = boolopTypeToBoolOp(node.getInternalOp()) match {
-      case constants.BoolOp.AND => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, true, "True"))
-      case constants.BoolOp.OR => ControlFlowGraph.makeSingleton(new ConstantBooleanNode(result_reg, false, "False"))
+    val foldedCfg = cfgsAndRegisters.foldLeft(ControlFlowGraph.EMPTY)((acc,a) => {
+      var (cfg,reg) = a
+      var readValue = acc.combineGraphs(cfg)
+                         .connectNodes(acc.exitNodes, cfg.entryNodes)
+                         .setExitNodes(cfg.exitNodes)
+                         .setEntryNodes(acc.entryNodes)
+      val ifNode = IfNode(reg, s"if ($reg)")
+      val untilIfCfg = readValue.addNode(ifNode)
+                                .connectNodes(readValue.exitNodes, ifNode)
+                                .setExitNode(ifNode)
+      val oneSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
+        case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, false, "False")
+        case constants.BoolOp.OR => new ConstantBooleanNode(result_reg, true, "True")
+      }
+      untilIfCfg.addNode(oneSideNode)
+                .connectNodes(untilIfCfg.exitNodes, oneSideNode)
+                .addNode(ifExitNode)
+                .connectNodes(oneSideNode, ifExitNode)
+    })
+    val otherSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
+      case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, true, "True")
+      case constants.BoolOp.OR => new ConstantBooleanNode(result_reg, false, "False")
     }
-    otherSideCfg = otherSideCfg.addNode(ifExitNode)
-                               .connectNodes(otherSideCfg.entryNodes, ifExitNode)
+
     lastExpressionRegister = result_reg
 
-    return cfgBoolOps.addNodes(otherSideCfg.nodes)
-                     .connectNodes(cfgBoolOps.exitNodes, otherSideCfg.entryNodes)
-                     .connectNodes(otherSideCfg.exitNodes, ifExitNode)
-                     .setExitNode(ifExitNode)
+    return foldedCfg.addNode(otherSideNode)
+                    .connectNodes(foldedCfg.exitNodes, otherSideNode)
+                    .addNode(ifExitNode)
+                    .connectNodes(otherSideNode, ifExitNode)
+                    .setExitNode(ifExitNode)
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
