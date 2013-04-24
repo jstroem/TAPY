@@ -313,7 +313,27 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitPrint(node: Print): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new PrintNode(0, node.accept(ASTPrettyPrinter)))
+    val exprCfg = if (node.getInternalDest() != null) node.getInternalDest().accept(this) else ControlFlowGraph.makeSingleton(new NoOpNode("No Dest"))
+    val destReg = if (node.getInternalDest() != null) Some(lastExpressionRegister) else None
+    val valueCfgs = node.getInternalValues().toList.map((a) => {
+      val cfg = a.accept(this)
+      val reg = lastExpressionRegister
+      (cfg,reg)
+    })
+    val (cfg,valueRegs) = valueCfgs.foldLeft((exprCfg,List()) : (ControlFlowGraph,List[Int]))((acc,a) => {
+      val (cfg,reg) = a
+      val (accCfg,valueRegs) = acc
+      val newCfg = accCfg.combineGraphs(cfg)
+                         .connectNodes(accCfg.exitNodes, cfg.entryNodes)
+                         .setEntryNodes(accCfg.entryNodes)
+                         .setExitNodes(cfg.exitNodes)
+      (newCfg, reg :: valueRegs)
+    })
+
+    val printNode = new PrintNode(destReg, valueRegs, "")
+    return cfg.addNode(printNode)
+              .connectNodes(cfg.exitNodes, printNode)
+              .setExitNode(printNode)
   }
 
   override def visitFor(node: For): ControlFlowGraph = {
