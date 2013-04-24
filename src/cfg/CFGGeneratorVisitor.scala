@@ -584,7 +584,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val lookupCfg = node.getInternalFunc().accept(this)
     
     // 2) Call it
-    val callNode = new CallNode(0, None, 0, List(), node.accept(ASTPrettyPrinter))
+    val callNode = new CallNode(nextRegister(), lastExpressionRegister, List(), node.accept(ASTPrettyPrinter))
     lookupCfg.addNode(callNode).connectNodes(lookupCfg.exitNodes, callNode).setExitNode(callNode)
   }
 
@@ -608,22 +608,41 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null
   }
 
-  // base_reg: Int, property: String, result_reg: Int
-  // base_reg: Int, property_reg: Int, result_reg: Int
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
     println("visitAttribute");
     val lookupCfg = node.getInternalValue().accept(this)
-    val readNode = new ReadPropertyNode(lastExpressionRegister, node.getInternalAttr(), nextRegister(), node.accept(ASTPrettyPrinter))
+    
+    val readRegister = nextRegister()
+    val readNode = new ReadPropertyNode(this.lastExpressionRegister, node.getInternalAttr(), readRegister, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = readRegister
+    
     return lookupCfg.addNode(readNode).connectNodes(lookupCfg.exitNodes, readNode).setExitNode(readNode)
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
     println("visitSubscript");
-    return null
+    val lookupBaseCfg = node.getInternalValue().accept(this)
+    val baseRegister = this.lastExpressionRegister
+    
+    val lookupPropertyCfg = node.getInternalSlice().accept(this)
+    val propertyRegister = this.lastExpressionRegister
+    
+    val readRegister = nextRegister()
+    val readNode = new ReadIndexableNode(baseRegister, propertyRegister, readRegister, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = readRegister
+    
+    lookupBaseCfg.combineGraphs(lookupPropertyCfg)
+                 .addNode(readNode)
+                 .connectNodes(lookupBaseCfg.exitNodes, lookupPropertyCfg.entryNodes)
+                 .setEntryNodes(lookupBaseCfg.entryNodes)
+                 .connectNodes(lookupPropertyCfg.exitNodes, readNode)
+                 .setExitNode(readNode)
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nextRegister(), node.accept(ASTPrettyPrinter)))
+    val nameRegister = nextRegister()
+    this.lastExpressionRegister = nameRegister
+    return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nameRegister, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitList(node: ast.List): ControlFlowGraph = {

@@ -58,7 +58,7 @@ case class ReturnNode(result_reg: Int, label: String, id: String = UUID.randomUU
 case class ExceptionalReturnNode(label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)
-case class CallNode(result_reg: Int, base_reg: Option[Int], function_reg: Int, argument_regs: List[Int], label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class CallNode(result_reg: Int, function_reg: Int, argument_regs: List[Int], label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Raise error; Raise value
 case class RaiseNode(value_reg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
