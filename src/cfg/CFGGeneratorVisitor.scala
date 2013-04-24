@@ -284,18 +284,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     })
     val (cfg,valueRegs) = valueCfgs.foldLeft((exprCfg,List()) : (ControlFlowGraph,List[Int]))((acc,a) => {
       val (cfg,reg) = a
-      val (accCfg,valueRegs) = acc
-      val newCfg = accCfg.combine(cfg)
-                         .connect(accCfg.exitNodes, cfg.entryNodes)
-                         .setEntryNodes(accCfg.entryNodes)
-                         .setExitNodes(cfg.exitNodes)
-      (newCfg, reg :: valueRegs)
+      val (accCfg, valueRegs) = acc
+      (accCfg.append(cfg), reg :: valueRegs)
     })
 
-    val printNode = new PrintNode(destReg, valueRegs)
-    return cfg.addNode(printNode)
-              .connect(cfg.exitNodes, printNode)
-              .setExitNode(printNode)
+    return cfg.append(new PrintNode(destReg, valueRegs))
   }
 
   override def visitFor(node: For): ControlFlowGraph = {
@@ -385,8 +378,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
                     .setExitNode(ifExitCfgNode)
     } else {
       // TODO: Break node must not go to the IfExitNode in ex. 10
-      return thenCfg.combine(elseCfg)
-                    .combine(condCfg)
+      return thenCfg.combine(Set(elseCfg, condCfg))
                     .addNode(ifExitCfgNode)
                     .connect(condCfg.exitNodes, ifEntryCfgNode)
                     .connect(thenCfg.exitNodes ++ elseCfg.exitNodes, ifExitCfgNode)
@@ -403,10 +395,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitRaise(node: Raise): ControlFlowGraph = {
     println("visitRaise");
     val cfg = node.getInternalType().accept(this)
-    val raiseNode = new RaiseNode(lastExpressionRegister)
-    return cfg.addNode(raiseNode)
-              .connect(cfg.exitNodes, raiseNode)
-              .setExitNode(raiseNode)
+    return cfg.append(new RaiseNode(lastExpressionRegister))
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
@@ -442,10 +431,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitGlobal(node: Global): ControlFlowGraph = {
     println("visitGlobal");
     return node.getInternalNameNodes().foldLeft(new ControlFlowGraph(new NoOpNode("Global entry"))) {(acc, name) =>
-      val nameGlobalNode = new GlobalNode(name.getInternalId())
-      acc.addNode(nameGlobalNode)
-         .connect(acc.exitNodes, nameGlobalNode)
-         .setExitNode(nameGlobalNode)
+      acc.append(new GlobalNode(name.getInternalId()))
     }
   }
 
@@ -483,10 +469,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val result_reg = nextRegister()
     val ifExitNode = new NoOpNode("If exit")
 
-    val cfgsAndRegisters : List[(ControlFlowGraph,Int)] = exprs.map((a) => {
-          val cfg = a.accept(this)
-          val reg = lastExpressionRegister
-          (cfg,reg)
+    val cfgsAndRegisters : List[(ControlFlowGraph, Int)] = exprs.map((a) => {
+      val cfg = a.accept(this)
+      val reg = lastExpressionRegister
+      (cfg,reg)
     })
     val foldedCfg = cfgsAndRegisters.foldLeft(new ControlFlowGraph(new NoOpNode("BoolOp entry")))((acc,a) => {
       var (cfg,reg) = a
@@ -514,11 +500,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
     lastExpressionRegister = result_reg
 
-    return foldedCfg.addNode(otherSideNode)
-                    .connect(foldedCfg.exitNodes, otherSideNode)
-                    .addNode(ifExitNode)
-                    .connect(otherSideNode, ifExitNode)
-                    .setExitNode(ifExitNode)
+    return foldedCfg.append(otherSideNode).append(ifExitNode)
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
@@ -531,25 +513,15 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
     lastExpressionRegister = resultRegister
 
-    return leftCfg.combine(rightCfg)
-                  .connect(leftCfg.exitNodes, rightCfg.entryNodes)
-                  .setEntryNodes(leftCfg.entryNodes)
-                  .addNode(binOpNode)
-                  .connect(rightCfg.exitNodes, binOpNode)
-                  .setExitNode(binOpNode)
+    return leftCfg.append(rightCfg).append(binOpNode)
   }
 
   override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
     val cfg = node.getInternalOperand().accept(this)
-    val register = lastExpressionRegister
+    val register = this.lastExpressionRegister
     val resultRegister = nextRegister()
-    val unaryOpNode = new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister)
-
-    lastExpressionRegister = resultRegister
-
-    return cfg.addNode(unaryOpNode)
-              .connect(cfg.exitNodes, unaryOpNode)
-              .setExitNode(unaryOpNode)
+    this.lastExpressionRegister = resultRegister
+    return cfg.append(new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister))
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
@@ -570,19 +542,15 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
     lastExpressionRegister = resultRegister
 
-    return condCfg.addNode(ifNode)
-                  .addNode(ifExitNode)
+    return condCfg.addNodes(Set(ifNode, ifExitNode, writeThenNode, writeElseNode))
+                  .combine(Set(thenCfg, elseCfg))
                   .connect(condCfg.exitNodes, ifNode)
                   //Add Then cfg
-                  .combine(thenCfg)
                   .connect(ifNode, thenCfg.entryNodes)
-                  .addNode(writeThenNode)
                   .connect(thenCfg.exitNodes, writeThenNode)
                   .connect(writeThenNode, ifExitNode)
                   //add Else cfg
-                  .combine(elseCfg)
                   .connect(ifNode, elseCfg.entryNodes)
-                  .addNode(writeElseNode)
                   .connect(elseCfg.exitNodes, writeElseNode)
                   .connect(writeElseNode, ifExitNode)
                   //Set entry and exit nodes
@@ -605,8 +573,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       
       val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister)
       
-      acc.combine(keyCfg)
-         .combine(valueCfg)
+      acc.combine(Set(keyCfg, valueCfg))
          .addNode(writeNode)
          .connect(acc.exitNodes, keyCfg.entryNodes)
          .connect(keyCfg.exitNodes, valueCfg.entryNodes)
@@ -648,7 +615,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
               .setEntryNodes(accCfg.entryNodes)
               .setExitNode(callAddNode)
       })
-    } else return newSetCfg
+    } else
+      return newSetCfg
   }
 
   override def visitListComp(node: ListComp): ControlFlowGraph = {
@@ -683,13 +651,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitCall(node: Call): ControlFlowGraph = {
     println("visitCall");
-    
-    // 1) Lookup the function
+    // TODO: Fix arguments
     val lookupCfg = node.getInternalFunc().accept(this)
-    
-    // 2) Call it
-    val callNode = new CallNode(nextRegister(), lastExpressionRegister, List())
-    lookupCfg.addNode(callNode).connect(lookupCfg.exitNodes, callNode).setExitNode(callNode)
+    lookupCfg.append(new CallNode(nextRegister(), lastExpressionRegister, List()))
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
@@ -735,9 +699,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister)
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
-    return lookupCfg.addNode(attributeNode)
-                    .connect(lookupCfg.exitNodes, attributeNode)
-                    .setExitNode(attributeNode)
+    return lookupCfg.append(attributeNode)
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
@@ -816,19 +778,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val elCfg = el.accept(this)
       registers = this.lastExpressionRegister :: registers
       
-      acc.combine(elCfg)
-         .connect(acc.exitNodes, elCfg.entryNodes)
-         .setEntryNodes(acc.entryNodes)
-         .setExitNodes(elCfg.exitNodes)
+      acc.append(elCfg)
     }
     
     val tupleRegister = nextRegister()
-    val tupleNode = new NewTupleNode(tupleRegister, registers.reverse)
     this.lastExpressionRegister = tupleRegister
     
-    return valuesCfg.addNode(tupleNode)
-                    .connect(valuesCfg.exitNodes, tupleNode)
-                    .setExitNode(tupleNode)
+    return valuesCfg.append(new NewTupleNode(tupleRegister, registers.reverse))
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
