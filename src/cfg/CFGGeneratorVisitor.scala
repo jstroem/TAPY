@@ -594,7 +594,35 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitIfExp(node: IfExp): ControlFlowGraph = {
     println("visitIfExp");
-    return null
+    val condCfg = node.getInternalTest().accept(this)
+    val resultRegister = nextRegister()
+    val ifNode = IfNode(lastExpressionRegister, s"if ($lastExpressionRegister)")
+    val ifExitNode = new NoOpNode("If exit")
+    val thenCfg = node.getInternalBody().accept(this)
+    val writeThenNode = WriteRegisterNode(resultRegister,lastExpressionRegister, "")
+    val elseCfg = node.getInternalOrelse().accept(this)
+    val writeElseNode = WriteRegisterNode(resultRegister,lastExpressionRegister, "")
+
+    lastExpressionRegister = resultRegister
+
+    return condCfg.addNode(ifNode)
+                  .addNode(ifExitNode)
+                  .connectNodes(condCfg.exitNodes, ifNode)
+                  //Add Then cfg
+                  .combineGraphs(thenCfg)
+                  .connectNodes(ifNode, thenCfg.entryNodes)
+                  .addNode(writeThenNode)
+                  .connectNodes(thenCfg.exitNodes, writeThenNode)
+                  .connectNodes(writeThenNode, ifExitNode)
+                  //add Else cfg
+                  .combineGraphs(elseCfg)
+                  .connectNodes(ifNode, elseCfg.entryNodes)
+                  .addNode(writeElseNode)
+                  .connectNodes(elseCfg.exitNodes, writeElseNode)
+                  .connectNodes(writeElseNode, ifExitNode)
+                  //Set entry and exit nodes
+                  .setEntryNodes(condCfg.entryNodes)
+                  .setExitNode(ifExitNode)
   }
 
   override def visitDict(node: Dict): ControlFlowGraph = {
