@@ -273,22 +273,52 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     
     var i = 0
     return elts.toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Assign tuple entry"))) {(acc, el) =>
+      val indexRegister = nextRegister()
+      val indexNode = new ConstantIntNode(indexRegister, new PyInteger(i))
+      
+      val lookupRegister = nextRegister()
+      val lookupNode = new ReadIndexableNode(tmpVariableRegister, indexRegister, lookupRegister)
+      
+      val lookupCfg = ControlFlowGraph.makeSingleton(indexNode)
+                                      .addNode(lookupNode)
+                                      .connectNodes(indexNode, lookupNode)
+                                      .setExitNode(lookupNode)
+          
       // A) Make the CFG for this particular assignment
       val elAssignCfg = el match {
         case t: Name =>
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), tmpVariableRegister))
+          val writeNode = new WriteVariableNode(t.getInternalId(), lookupRegister)
+          lookupCfg.addNode(writeNode)
+                   .connectNodes(lookupNode, writeNode)
+                   .setExitNode(writeNode)
         
         case t: Subscript =>
-          visitSubscript(t, tmpVariableRegister)
+          val subscriptCfg = visitSubscript(t, lookupRegister)
+          lookupCfg.combineGraphs(subscriptCfg)
+                   .connectNodes(lookupCfg.exitNodes, subscriptCfg.entryNodes)
+                   .setEntryNodes(lookupCfg.entryNodes)
+                   .setExitNodes(subscriptCfg.exitNodes)
         
         case t: Attribute =>
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), tmpVariableRegister))
+          val attributeCfg = visitAttribute(t, lookupRegister)
+          lookupCfg.combineGraphs(attributeCfg)
+                   .connectNodes(lookupCfg.exitNodes, attributeCfg.entryNodes)
+                   .setEntryNodes(lookupCfg.entryNodes)
+                   .setExitNodes(attributeCfg.exitNodes)
         
         case t: Tuple =>
-          visitAssignAux(node, tmpVariableRegister, t.getInternalElts(), i :: indexes)
+          val tupleCfg = visitAssignAux(node, lookupRegister, t.getInternalElts(), i :: indexes)
+          lookupCfg.combineGraphs(tupleCfg)
+                   .connectNodes(lookupCfg.exitNodes, tupleCfg.entryNodes)
+                   .setEntryNodes(lookupCfg.entryNodes)
+                   .setExitNodes(tupleCfg.exitNodes)
         
         case t: ast.List =>
-          visitAssignAux(node, tmpVariableRegister, t.getInternalElts(), i :: indexes)
+          val listCfg = visitAssignAux(node, lookupRegister, t.getInternalElts(), i :: indexes)
+          lookupCfg.combineGraphs(listCfg)
+                   .connectNodes(lookupCfg.exitNodes, listCfg.entryNodes)
+                   .setEntryNodes(lookupCfg.entryNodes)
+                   .setExitNodes(listCfg.exitNodes)
         
         case t =>
           throw new NotImplementedException()
@@ -785,15 +815,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitSubscript");
     val lastExpressionRegister = this.lastExpressionRegister
     
-    println("lookup base")
     val lookupBaseCfg = node.getInternalValue().accept(this)
     val baseRegister = this.lastExpressionRegister
     
-    println("lookup property")
     val lookupPropertyCfg = node.getInternalSlice().accept(this)
     val propertyRegister = this.lastExpressionRegister
-    
-    println("done lookup")
     
     val readRegister = nextRegister()
     val subscriptNode =

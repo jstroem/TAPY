@@ -81,7 +81,7 @@ case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, id: 
   override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.$property\n(ReadPropertyNode)"
 }
 case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.${reg(propertyReg)}\n(ReadIndexableNode)"
+  override def toString = s"${reg(resultReg)} = ${reg(baseReg)}[${reg(propertyReg)}]\n(ReadIndexableNode)"
 }
 
 // Del
