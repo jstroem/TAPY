@@ -40,17 +40,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return statements.toList.foldLeft(new ControlFlowGraph(entryNode)) {(acc, stm) =>
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
-        case node: EntryNode =>
-          acc.combine(stmCfg)
-             .setEntryNodes(acc.entryNodes)
-             .setExitNodes(acc.exitNodes)
-        case node: BreakNode =>
-          acc.combine(stmCfg)
-             .setEntryNodes(acc.entryNodes)
-             .setExitNodes(Set()) // !
-             .connect(acc.exitNodes, stmCfg.entryNodes)
-        case node =>
-          acc.append(stmCfg)
+        case node: EntryNode => acc.combine(stmCfg).setEntryNodes(acc.entryNodes).setExitNodes(acc.exitNodes)
+        case node: BreakNode => acc.append(stmCfg).setExitNodes(Set()) // !
+        case node => acc.append(stmCfg)
       }
     }
   }
@@ -108,12 +100,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitExpression(node: Expression): ControlFlowGraph = {
-    println("visitExpression");
+    println("visitExpression")
     return null
   }
 
   override def visitSuite(node: Suite): ControlFlowGraph = {
-    println("visitSuite");
+    println("visitSuite")
     return null
   }
 
@@ -124,9 +116,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val exitCfgNode = new ExitNode(node.getInternalName())
 
     val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
-
-    // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
-    return bodyCfg.append(new ControlFlowGraph(exitCfgNode))
+    return bodyCfg.append(exitCfgNode)
   }
 
   override def visitClassDef(node: ClassDef): ControlFlowGraph = {
@@ -136,37 +126,24 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val exitCfgNode = new ExitNode(node.getInternalName())
 
     val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
-
-    // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
-    return bodyCfg.append(new ControlFlowGraph(exitCfgNode))
+    return bodyCfg.append(exitCfgNode)
   }
 
   override def visitReturn(node: Return): ControlFlowGraph = {
     val exprCfg = node.getInternalValue().accept(this)
     val returnNode = new ReturnNode(this.lastExpressionRegister)
-    return exprCfg.append(new ControlFlowGraph(returnNode))
+    return exprCfg.append(returnNode)
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {
     return node.getInternalTargets().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Del entry"))) {(acc, target) =>
       val targetCfg = target match {
-        case t: Name =>
-          new ControlFlowGraph(new DelVariableNode(t.getInternalId()))
-          
-        case t: Subscript =>
-          new ControlFlowGraph(new DelIndexableNode(0, 0))
-          
-        case t: Attribute =>
-          new ControlFlowGraph(new DelPropertyNode(0, t.getInternalAttr()))
-          
-        case t: ast.List =>
-          visitDeleteAux(t.getInternalElts())
-          
-        case t: Tuple =>
-          visitDeleteAux(t.getInternalElts())
-          
-        case t =>
-          throw new NotImplementedException()
+        case t: Name => new ControlFlowGraph(new DelVariableNode(t.getInternalId()))
+        case t: Subscript => new ControlFlowGraph(new DelIndexableNode(0, 0))
+        case t: Attribute => new ControlFlowGraph(new DelPropertyNode(0, t.getInternalAttr()))
+        case t: ast.List => visitDeleteAux(t.getInternalElts())
+        case t: Tuple => visitDeleteAux(t.getInternalElts())
+        case t => throw new NotImplementedException()
       }
       
       // 2) Combine the accumulator with the generated CFG of the single assignment
@@ -178,23 +155,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return elts.toList.foldLeft(new ControlFlowGraph(new NoOpNode("Del tuple entry"))) {(acc, el) =>
       // A) Make the CFG for this particular assignment
       val elDelCfg = el match {
-        case t: Name =>
-          new ControlFlowGraph(new DelVariableNode(t.getInternalId()))
-          
-        case t: Subscript =>
-          new ControlFlowGraph(new DelIndexableNode(0, 0))
-          
-        case t: Attribute =>
-          new ControlFlowGraph(new DelPropertyNode(0, t.getInternalAttr()))
-        
-        case t: Tuple =>
-          visitDeleteAux(t.getInternalElts())
-        
-        case t: ast.List =>
-          visitDeleteAux(t.getInternalElts())
-        
-        case t =>
-          throw new NotImplementedException()
+        case t: Name => new ControlFlowGraph(new DelVariableNode(t.getInternalId()))
+        case t: Subscript => new ControlFlowGraph(new DelIndexableNode(0, 0))
+        case t: Attribute => new ControlFlowGraph(new DelPropertyNode(0, t.getInternalAttr()))
+        case t: Tuple => visitDeleteAux(t.getInternalElts())
+        case t: ast.List => visitDeleteAux(t.getInternalElts())
+        case t => throw new NotImplementedException()
       }
       
       // B) Add it to the assignment CFG
@@ -248,14 +214,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val lookupRegister = nextRegister()
       val lookupNode = new ReadIndexableNode(tmpVariableRegister, indexRegister, lookupRegister)
       
-      val lookupCfg = new ControlFlowGraph(indexNode)
-                                      .addNode(lookupNode)
-                                      .connect(indexNode, lookupNode)
-                                      .setExitNode(lookupNode)
+      val lookupCfg = new ControlFlowGraph(indexNode).append(lookupNode)
           
       // A) Make the CFG for this particular assignment
       val elAssignCfg = el match {
-        case t: Name => lookupCfg.append(new ControlFlowGraph(new WriteVariableNode(t.getInternalId(), lookupRegister)))
+        case t: Name => lookupCfg.append(new WriteVariableNode(t.getInternalId(), lookupRegister))
         case t: Subscript => lookupCfg.append(visitSubscript(t, lookupRegister))
         case t: Attribute => lookupCfg.append(visitAttribute(t, lookupRegister))
         case t: Tuple => lookupCfg.append(visitAssignAux(node, lookupRegister, t.getInternalElts()))
@@ -270,7 +233,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
-    println("visitAugAssign");
+    println("visitAugAssign")
     return null
   }
 
@@ -292,7 +255,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitFor(node: For): ControlFlowGraph = {
-    println("visitFor");
+    println("visitFor")
 
     val forEntryCfgNode = new ForInNode()
     val forExitCfgNode = new NoOpNode("For exit")
@@ -326,7 +289,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitWhile(node: While): ControlFlowGraph = {
-    println("visitWhile");
+    println("visitWhile")
 
     val whileEntryCfgNode = new WhileNode(0)
     val whileExitCfgNode = new NoOpNode("While exit")
@@ -388,55 +351,55 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitWith(node: With): ControlFlowGraph = {
-    println("visitWith");
+    println("visitWith")
     return null
   }
 
   override def visitRaise(node: Raise): ControlFlowGraph = {
-    println("visitRaise");
+    println("visitRaise")
     val cfg = node.getInternalType().accept(this)
     return cfg.append(new RaiseNode(lastExpressionRegister))
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
-    println("visitTryExcept");
+    println("visitTryExcept")
     return null
   }
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
-    println("visitTryFinally");
+    println("visitTryFinally")
     return null
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
-    println("visitAssert");
+    println("visitAssert")
     return null
   }
 
   override def visitImport(node: Import): ControlFlowGraph = {
-    println("visitImport");
+    println("visitImport")
     return null
   }
 
   override def visitImportFrom(node: ImportFrom): ControlFlowGraph = {
-    println("visitImportFrom");
+    println("visitImportFrom")
     return null
   }
 
   override def visitExec(node: Exec): ControlFlowGraph = {
-    println("visitExec");
+    println("visitExec")
     return null
   }
 
   override def visitGlobal(node: Global): ControlFlowGraph = {
-    println("visitGlobal");
+    println("visitGlobal")
     return node.getInternalNameNodes().foldLeft(new ControlFlowGraph(new NoOpNode("Global entry"))) {(acc, name) =>
       acc.append(new GlobalNode(name.getInternalId()))
     }
   }
 
   override def visitExpr(node: Expr): ControlFlowGraph = {
-    println("visitExpr");
+    println("visitExpr")
     return node.getInternalValue().accept(this)
   }
 
@@ -476,22 +439,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     })
     val foldedCfg = cfgsAndRegisters.foldLeft(new ControlFlowGraph(new NoOpNode("BoolOp entry")))((acc,a) => {
       var (cfg,reg) = a
-      var readValue = acc.combine(cfg)
-                         .connect(acc.exitNodes, cfg.entryNodes)
-                         .setExitNodes(cfg.exitNodes)
-                         .setEntryNodes(acc.entryNodes)
-      val ifNode = IfNode(reg)
-      val untilIfCfg = readValue.addNode(ifNode)
-                                .connect(readValue.exitNodes, ifNode)
-                                .setExitNode(ifNode)
+      var readValue = acc.append(cfg)
+      val untilIfCfg = readValue.append(new IfNode(reg))
       val oneSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
         case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, false)
         case constants.BoolOp.OR => new ConstantBooleanNode(result_reg, true)
       }
-      untilIfCfg.addNode(oneSideNode)
-                .connect(untilIfCfg.exitNodes, oneSideNode)
-                .addNode(ifExitNode)
-                .connect(oneSideNode, ifExitNode)
+      untilIfCfg.append(oneSideNode).append(ifExitNode)
     })
     val otherSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
       case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, true)
@@ -525,12 +479,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
-    println("visitLambda");
+    println("visitLambda")
     return null
   }
 
   override def visitIfExp(node: IfExp): ControlFlowGraph = {
-    println("visitIfExp");
+    println("visitIfExp")
     val condCfg = node.getInternalTest().accept(this)
     val resultRegister = nextRegister()
     val ifNode = IfNode(lastExpressionRegister)
@@ -559,7 +513,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitDict(node: Dict): ControlFlowGraph = {
-    println("visitDict");
+    println("visitDict")
     
     val emptyDictRegister = nextRegister()
     val emptyDictCfg = new ControlFlowGraph(new NewDictionaryNode(emptyDictRegister))
@@ -573,29 +527,22 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       
       val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister)
       
-      acc.combine(Set(keyCfg, valueCfg))
-         .addNode(writeNode)
-         .connect(acc.exitNodes, keyCfg.entryNodes)
-         .connect(keyCfg.exitNodes, valueCfg.entryNodes)
-         .connect(valueCfg.exitNodes, writeNode)
-         .setEntryNodes(acc.entryNodes)
-         .setExitNode(writeNode)
+      acc.append(keyCfg).append(valueCfg).append(writeNode)
     }
     this.lastExpressionRegister = emptyDictRegister
     
     return dictCfg
-    
   }
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
-    println("visitSet");
+    println("visitSet")
     val resultReg = nextRegister()
     val newSetCfg = new ControlFlowGraph(NewSetNode(resultReg))
 
     val pair = node.getInternalElts().toList.map((a) => {
       val cfg = a.accept(this)
       val reg = lastExpressionRegister
-      (cfg,reg)
+      (cfg, reg)
     })
 
     lastExpressionRegister = resultReg
@@ -606,63 +553,57 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
       val newSetAndAddFuncCfg = newSetCfg.addNode(readGetFuncNode).connect(newSetCfg.exitNodes, readGetFuncNode).setExitNode(readGetFuncNode)
       return pair.foldLeft(newSetAndAddFuncCfg)((accCfg,a) => {
-        val (cfg,reg) = a
-        val callAddNode = CallNode(nextRegister(), addFuncReg, List(reg))
-        accCfg.combine(cfg)
-              .connect(accCfg.exitNodes, cfg.entryNodes)
-              .addNode(callAddNode)
-              .connect(cfg.exitNodes, callAddNode)
-              .setEntryNodes(accCfg.entryNodes)
-              .setExitNode(callAddNode)
+        val (cfg, reg) = a
+        accCfg.append(cfg).append(new CallNode(nextRegister(), addFuncReg, List(reg)))
       })
     } else
       return newSetCfg
   }
 
   override def visitListComp(node: ListComp): ControlFlowGraph = {
-    println("visitListComp");
+    println("visitListComp")
     return null
   }
 
   override def visitSetComp(node: SetComp): ControlFlowGraph = {
-    println("visitSetComp");
+    println("visitSetComp")
     return null
   }
 
   override def visitDictComp(node: DictComp): ControlFlowGraph = {
-    println("visitDictComp");
+    println("visitDictComp")
     return null
   }
 
   override def visitGeneratorExp(node: GeneratorExp): ControlFlowGraph = {
-    println("visitGeneratorExp");
+    println("visitGeneratorExp")
     return null
   }
 
   override def visitYield(node: Yield): ControlFlowGraph = {
-    println("visitYield");
+    println("visitYield")
     return null
   }
 
   override def visitCompare(node: Compare): ControlFlowGraph = {
-    println("visitCompare");
+    println("visitCompare")
     return null
   }
 
   override def visitCall(node: Call): ControlFlowGraph = {
-    println("visitCall");
+    println("visitCall")
     // TODO: Fix arguments
     val lookupCfg = node.getInternalFunc().accept(this)
     lookupCfg.append(new CallNode(nextRegister(), lastExpressionRegister, List()))
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
-    println("visitRepr");
+    println("visitRepr")
     return null
   }
 
   override def visitNum(node: Num): ControlFlowGraph = {
-    println("visitNum");
+    println("visitNum")
     val numRegister = nextRegister()
     this.lastExpressionRegister = numRegister
     return node.getInternalN() match {
@@ -674,7 +615,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitStr(node: Str): ControlFlowGraph = {
-    println("visitStr");
+    println("visitStr")
     val strRegister = nextRegister()
     this.lastExpressionRegister = strRegister
     return new ControlFlowGraph(new ConstantStringNode(strRegister, node.getInternalS().toString()))
@@ -707,7 +648,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
   
   def visitSubscript(node: Subscript, assignFromRegister: Int): ControlFlowGraph = {
-    println("visitSubscript");
+    println("visitSubscript")
     val lastExpressionRegister = this.lastExpressionRegister
     
     val lookupBaseCfg = node.getInternalValue().accept(this)
@@ -740,7 +681,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitList(node: ast.List): ControlFlowGraph = {
-    println("visitList");
+    println("visitList")
     val resultReg = nextRegister()
     val newListCfg = new ControlFlowGraph(NewListNode(resultReg))
 
@@ -771,7 +712,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
-    println("visitTuple");
+    println("visitTuple")
     
     var registers = List[Int]()
     val valuesCfg = node.getInternalElts().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Tuple entry"))) {(acc, el) =>
@@ -788,27 +729,27 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
-    println("visitEllipsis");
+    println("visitEllipsis")
     return null
   }
 
   override def visitSlice(node: Slice): ControlFlowGraph = {
-    println("visitSlice");
+    println("visitSlice")
     return null
   }
 
   override def visitExtSlice(node: ExtSlice): ControlFlowGraph = {
-    println("visitExtSlice");
+    println("visitExtSlice")
     return null
   }
 
   override def visitIndex(node: Index): ControlFlowGraph = {
-    println("visitIndex");
+    println("visitIndex")
     return node.getInternalValue().accept(this)
   }
 
   override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
-    println("visitExceptHandler");
+    println("visitExceptHandler")
     return null
   }
 }
