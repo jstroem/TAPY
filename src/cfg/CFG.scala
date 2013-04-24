@@ -31,33 +31,33 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Renamed ~> Deprecated
    */
 
-  @deprecated
+  @deprecated("exitNodes is renamed to regularExitNodes", "Apr 24")
   def exitNodes = regularExitNodes
 
-  @deprecated
+  @deprecated("edges is renamed to regularEdges", "Apr 24")
   def edges = regularEdges
 
-  @deprecated
+  @deprecated("getNodePredecessors is renamed to getRegularNodePredecessors", "Apr 24")
   def getNodePredecessors(node: Node): Set[Node] = {
     getRegularNodePredecessors(node)
   }
 
-  @deprecated
+  @deprecated("getNodePredecessors is renamed to getRegularNodeSuccessors", "Apr 24")
   def getNodeSuccessors(node: Node): Set[Node] = {
     getRegularNodeSuccessors(node)
   }
   
-  @deprecated 
+  @deprecated("setExitNode is renamed to setRegularExitNode", "Apr 24")
   def setExitNode(node: Node): ControlFlowGraph = {
     setExitNodes(Set(node))
   }
 
-  @deprecated  
+  @deprecated("setExitNodes is renamed to setRegularExitNodes", "Apr 24")  
   def setExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     new ControlFlowGraph(entryNodes, newExitNodes, nodes, edges)
   }
 
-  @deprecated
+  @deprecated("connectNodes is renamed to addRegularEdges", "Apr 24")
   def connectNodes(predecessors: Set[Node], successors: Set[Node]): ControlFlowGraph = {
     val newEdges = predecessors.foldLeft(edges) {(acc, pred) =>
       acc.get(pred) match {
@@ -70,17 +70,17 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return new ControlFlowGraph(entryNodes, exitNodes, nodes, newEdges)
   }
 
-  @deprecated
+  @deprecated("connectNodes is renamed to addRegularEdges", "Apr 24")
   def connectNodes(pred: Node, succ: Node): ControlFlowGraph = {
     connectNodes(Set(pred), Set(succ))
   }
 
-  @deprecated
+  @deprecated("connectNodes is renamed to addRegularEdges", "Apr 24")
   def connectNodes(pred: Node, succs: Set[Node]): ControlFlowGraph = {
     connectNodes(Set(pred), succs)
   }
 
-  @deprecated
+  @deprecated("connectNodes is renamed to addRegularEdges", "Apr 24")
   def connectNodes(preds: Set[Node], succ: Node): ControlFlowGraph = {
     connectNodes(preds, Set(succ))
   }
@@ -134,7 +134,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   }
 
   def setRegularExitNode(node: Node): ControlFlowGraph = {
-    setExitNodes(Set(node))
+    setRegularExitNodes(Set(node))
   }
     
   def setRegularExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
@@ -142,7 +142,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   }
 
   def setExceptionExitNode(node: Node): ControlFlowGraph = {
-    setExitNodes(Set(node))
+    setExceptionExitNodes(Set(node))
   }
 
   def setExceptionExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
@@ -162,7 +162,8 @@ case class ControlFlowGraph(entryNodes: Set[Node],
                          filteredExceptionExitNodes, 
                          filteredNodes, 
                          filteredRegularEdges, 
-                         filteredExceptionEdges).connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
+                         filteredExceptionEdges).addRegularEdges(getRegularNodePredecessors(node), getRegularNodeSuccessors(node))
+                                                .addExceptionEdges(getExceptionNodePredecessors(node), getExceptionNodeSuccessors(node))
   }
   
   /*
