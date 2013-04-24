@@ -9,10 +9,10 @@ abstract class Node(id: UUID) {
 }
 
 // Class and function declaration (exit and entry)
-case class EntryNode(id: UUID = UUID.randomUUID()) extends Node(id) {
+case class EntryNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = "EntryNode"
 }
-case class ExitNode(id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ExitNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = "ExitNode"
 }
 
@@ -112,19 +112,17 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
   override def toString = "return ${reg(resultReg)}\n(ReturnNode)"
 }
 
-// Exceptional Return; 
-case class ExceptionalReturnNode(id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(ExceptionalReturnNode)"
-}
-
 // Function invokation and Object creation calls; result = [base.]function(arguments)
 case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(functionReg)}...TODO\n(CallNode)"
+  override def toString() = {
+    val arg_string = argument_regs.foldLeft("") ({(s,r) => s+reg(r)})
+    s"${reg(resultReg)} = ${reg(functionReg)}($arg_string)\n(CallNode)"
+  }
 }
 
 // Raise error; Raise value
 case class RaiseNode(valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(RaiseNode)"
+  override def toString = s"raise ${reg(valueReg)}\n(RaiseNode)"
 }
 
 // Except an exception; except [(]types[)] [as result]: 
@@ -141,7 +139,9 @@ case class UnOpNode(op: constants.UnOp.Value, arg1Reg: Int, resultReg: Int, id: 
 }
 
 // Print node; print value
-case class PrintNode(dest: Option[Int], valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id)
+case class PrintNode(dest: Option[Int], valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"TODO\n(Print)"
+}
 
 // For and while nodes
 case class ForInNode(id: UUID = UUID.randomUUID()) extends Node(id) {
