@@ -229,33 +229,29 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
    *   ...
    *   x_1 = tmp
    */
+  // TODO add asserts
   override def visitAssign(node: Assign): ControlFlowGraph = {
     val targets = node.getInternalTargets()
     
     // Create a temporary variable to store the expression in if:
     // - there are at least two targets; or
     // - there is only one target, and that particular target is a tuple or list
-    val (tmpVariableName: String, initialAcc: ControlFlowGraph) =
-      if (targets.size() >= 2 || targets.get(0).isInstanceOf[Tuple] || targets.get(0).isInstanceOf[ast.List]) {
-        val tmpVariableName = nextTempVariable()
-        (tmpVariableName, ControlFlowGraph.makeSingleton(new WriteVariableNode(tmpVariableName, 0, node.getInternalValue().accept(ASTPrettyPrinter))))
-      } else
-        ("", ControlFlowGraph.makeSingleton(new NoOpNode("Assign entry")))
+    val tmpVariableName = nextTempVariable()
+    val tmpVariableCfg = node.getInternalValue().accept(this)
     
     // Important to use foldRight, such that x_k is taken first
     var i = 0
-    return targets.toList.foldRight(initialAcc) {(target, acc) =>
+    return targets.toList.foldRight(tmpVariableCfg) {(target, acc) =>
       // 1) Generate the CFG for a single target (which may be a tuple or list)
-      val label = if (tmpVariableName.length() == 0) node.getInternalValue().accept(ASTPrettyPrinter) else tmpVariableName
       val targetCfg = target match {
         case t: Name =>
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, label))
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), this.lastExpressionRegister, tmpVariableName))
         
         case t: Subscript =>
-          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, label))
+          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, tmpVariableName))
         
         case t: Attribute =>
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, label))
+          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, tmpVariableName))
         
         case t: Tuple => 
           visitAssignAux(node, tmpVariableName, t.getInternalElts())
@@ -543,7 +539,28 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitDict(node: Dict): ControlFlowGraph = {
     println("visitDict");
-    return null
+    // TODO
+    val emptyDictRegister = nextRegister()
+    val emptyDictCfg = ControlFlowGraph.makeSingleton(new NewDictionaryNode(emptyDictRegister, "{}"))
+    
+    return node.getInternalKeys().toList.zip(node.getInternalValues().toList).foldLeft(emptyDictCfg) {(acc,entry) =>
+      val keyCfg = entry._1.accept(this)
+      val keyRegister = this.lastExpressionRegister
+      
+      val valueCfg = entry._2.accept(this)
+      val valueRegister = this.lastExpressionRegister
+      
+      val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister, "")
+      
+      acc.combineGraphs(keyCfg)
+         .combineGraphs(valueCfg)
+         .addNode(writeNode)
+         .connectNodes(acc.exitNodes, keyCfg.entryNodes)
+         .connectNodes(keyCfg.exitNodes, valueCfg.entryNodes)
+         .connectNodes(valueCfg.exitNodes, writeNode)
+         .setEntryNodes(acc.entryNodes)
+         .setExitNode(writeNode)
+    }
   }
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
@@ -599,17 +616,21 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitNum(node: Num): ControlFlowGraph = {
     println("visitNum");
+    val numRegister = nextRegister()
+    this.lastExpressionRegister = numRegister
     return node.getInternalN() match {
-      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(pyInt, node.accept(ASTPrettyPrinter)))
-      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(pyLong, node.accept(ASTPrettyPrinter)))
-      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(pyFloat, node.accept(ASTPrettyPrinter)))
-      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(pyComplex, node.accept(ASTPrettyPrinter)))
+      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(numRegister, pyInt, node.accept(ASTPrettyPrinter)))
+      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(numRegister, pyLong, node.accept(ASTPrettyPrinter)))
+      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(numRegister, pyFloat, node.accept(ASTPrettyPrinter)))
+      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(numRegister, pyComplex, node.accept(ASTPrettyPrinter)))
     }
   }
 
   override def visitStr(node: Str): ControlFlowGraph = {
     println("visitStr");
-    return null
+    val strRegister = nextRegister()
+    this.lastExpressionRegister = strRegister
+    return ControlFlowGraph.makeSingleton(new ConstantStringNode(strRegister, node.accept(ASTPrettyPrinter)))
   }
 
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
@@ -656,7 +677,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
     println("visitTuple");
-    return null
+    // TODO
+    return ControlFlowGraph.makeSingleton(new NoOpNode("<TUPLE TODO>"))
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
