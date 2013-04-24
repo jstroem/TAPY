@@ -236,26 +236,30 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     // Create a temporary variable to store the expression
     val tmpVariableName = nextTempVariable()
     val tmpVariableCfg = node.getInternalValue().accept(this)
+    val tmpVariableRegister = this.lastExpressionRegister
+    
+    
     
     // Important to use foldRight, such that x_k is taken first
     var i = 0
+    println(targets.size())
     return targets.toList.foldRight(tmpVariableCfg) {(target, acc) =>
       // 1) Generate the CFG for a single target (which may be a tuple or list)
       val targetCfg = target match {
         case t: Name =>
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), this.lastExpressionRegister, tmpVariableName))
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), tmpVariableRegister, tmpVariableName))
         
         case t: Subscript =>
-          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, tmpVariableName))
+          visitSubscript(t, tmpVariableRegister)
         
         case t: Attribute =>
           ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, tmpVariableName))
         
         case t: Tuple => 
-          visitAssignAux(node, tmpVariableName, t.getInternalElts())
+          visitAssignAux(node, tmpVariableRegister, t.getInternalElts())
   
         case t: ast.List =>
-          visitAssignAux(node, tmpVariableName, t.getInternalElts())
+          visitAssignAux(node, tmpVariableRegister, t.getInternalElts())
           
         case t =>
           throw new NotImplementedException()
@@ -271,7 +275,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     }
   }
   
-  def visitAssignAux(node: Assign, tmpVariableName: String, elts: java.util.List[expr], indexes: List[Int] = List()): ControlFlowGraph = {
+  def visitAssignAux(node: Assign, tmpVariableRegister: Int, elts: java.util.List[expr], indexes: List[Int] = List()): ControlFlowGraph = {
     val indexesStr = indexes.foldLeft("") {(acc, index) => s"[$index]$acc"}
     
     var i = 0
@@ -279,19 +283,19 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       // A) Make the CFG for this particular assignment
       val elAssignCfg = el match {
         case t: Name =>
-          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), 0, s"$tmpVariableName$indexesStr[$i]"))
-          
+          ControlFlowGraph.makeSingleton(new WriteVariableNode(t.getInternalId(), tmpVariableRegister, ""))
+        
         case t: Subscript =>
-          ControlFlowGraph.makeSingleton(new WriteIndexableNode(0, 0, 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName$indexesStr[$i]"))
-          
+          visitSubscript(t, tmpVariableRegister)
+        
         case t: Attribute =>
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0, s"${t.accept(ASTPrettyPrinter)} = $tmpVariableName$indexesStr[$i]"))
+          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), tmpVariableRegister, ""))
         
         case t: Tuple =>
-          visitAssignAux(node, tmpVariableName, t.getInternalElts(), i :: indexes)
+          visitAssignAux(node, tmpVariableRegister, t.getInternalElts(), i :: indexes)
         
         case t: ast.List =>
-          visitAssignAux(node, tmpVariableName, t.getInternalElts(), i :: indexes)
+          visitAssignAux(node, tmpVariableRegister, t.getInternalElts(), i :: indexes)
         
         case t =>
           throw new NotImplementedException()
@@ -382,7 +386,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val whileEntryCfgNode = new WhileNode(0, s"while ${node.getInternalTest().accept(ASTPrettyPrinter)}: ...")
     val whileExitCfgNode = new NoOpNode("While exit")
     val whileOrElseEntryCfgNode = new NoOpNode("While else")
-
+    
     val oldForEntryCfgNode = this.forEntryCfgNode // In case of nested loops
     val oldForExitCfgNode = this.forExitCfgNode
     val oldWhileEntryCfgNode = this.whileEntryCfgNode
@@ -778,34 +782,59 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
-    println("visitAttribute");
+    visitAttribute(node, -1)
+  }
+  
+  def visitAttribute(node: Attribute, assignFromRegister: Int): ControlFlowGraph = {
+    println("visitAttribute")
+    val lastExpressionRegister = this.lastExpressionRegister
+    
     val lookupCfg = node.getInternalValue().accept(this)
+    val lookupRegister = this.lastExpressionRegister
     
     val readRegister = nextRegister()
-    val readNode = new ReadPropertyNode(this.lastExpressionRegister, node.getInternalAttr(), readRegister, node.accept(ASTPrettyPrinter))
-    this.lastExpressionRegister = readRegister
+    val attributeNode =
+      if (assignFromRegister >= 0)
+        new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister, "")
+      else
+        new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
-    return lookupCfg.addNode(readNode).connectNodes(lookupCfg.exitNodes, readNode).setExitNode(readNode)
+    return lookupCfg.addNode(attributeNode)
+                    .connectNodes(lookupCfg.exitNodes, attributeNode)
+                    .setExitNode(attributeNode)
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
+    return visitSubscript(node, -1)
+  }
+  
+  def visitSubscript(node: Subscript, assignFromRegister: Int): ControlFlowGraph = {
     println("visitSubscript");
+    val lastExpressionRegister = this.lastExpressionRegister
+    
+    println("lookup base")
     val lookupBaseCfg = node.getInternalValue().accept(this)
     val baseRegister = this.lastExpressionRegister
     
+    println("lookup property")
     val lookupPropertyCfg = node.getInternalSlice().accept(this)
     val propertyRegister = this.lastExpressionRegister
     
     val readRegister = nextRegister()
-    val readNode = new ReadIndexableNode(baseRegister, propertyRegister, readRegister, node.accept(ASTPrettyPrinter))
-    this.lastExpressionRegister = readRegister
+    val subscriptNode =
+      if (assignFromRegister >= 0)
+        new WriteIndexableNode(baseRegister, propertyRegister, assignFromRegister, node.accept(ASTPrettyPrinter))
+      else
+        new ReadIndexableNode(baseRegister, propertyRegister, readRegister, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
     lookupBaseCfg.combineGraphs(lookupPropertyCfg)
-                 .addNode(readNode)
+                 .addNode(subscriptNode)
                  .connectNodes(lookupBaseCfg.exitNodes, lookupPropertyCfg.entryNodes)
                  .setEntryNodes(lookupBaseCfg.entryNodes)
-                 .connectNodes(lookupPropertyCfg.exitNodes, readNode)
-                 .setExitNode(readNode)
+                 .connectNodes(lookupPropertyCfg.exitNodes, subscriptNode)
+                 .setExitNode(subscriptNode)
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
@@ -821,7 +850,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
     println("visitTuple");
-    // TODO
     
     var registers = List[Int]()
     val valuesCfg = node.getInternalElts().toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry"))) {(acc, el) =>
@@ -835,7 +863,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     }
     
     val tupleRegister = nextRegister()
-    val tupleNode = new NewTupleNode(tupleRegister, registers, node.accept(ASTPrettyPrinter))
+    val tupleNode = new NewTupleNode(tupleRegister, registers.reverse, node.accept(ASTPrettyPrinter))
     this.lastExpressionRegister = tupleRegister
     
     return valuesCfg.addNode(tupleNode)
