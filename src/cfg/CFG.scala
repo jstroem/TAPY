@@ -26,7 +26,7 @@ case class ControlFlowGraph(
     return new ControlFlowGraph(entryNodes, exitNodes, nodes + node, edges)
   }
   
-  def addNodes(newNodes: List[Node]): ControlFlowGraph = {
+  def addNodes(newNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes, nodes ++ newNodes, edges)
   }
   

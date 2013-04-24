@@ -1,5 +1,6 @@
 package tapy.cfg
 
+import org.python.core._
 import scala.collection.immutable.Set
 import tapy.constants
 import scala.collection.immutable.List
@@ -131,7 +132,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
 
     // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
-    return bodyCfg.addNodes(exitCfgNode :: List())
+    return bodyCfg.addNodes(Set(exitCfgNode))
       .setExitNode(exitCfgNode)
       .connectNodes(bodyCfg.exitNodes, exitCfgNode)
   }
@@ -144,7 +145,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val bodyCfg = generateCFGOfStatementList(entryCfgNode, node.getInternalBody())
 
     // No need to add entryCfgNode, as this has already been added to bodyCfg (and set to entry node)
-    return bodyCfg.addNodes(exitCfgNode :: List())
+    return bodyCfg.addNodes(Set(exitCfgNode))
       .setExitNode(exitCfgNode)
       .connectNodes(bodyCfg.exitNodes, exitCfgNode)
   }
@@ -152,7 +153,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitReturn(node: Return): ControlFlowGraph = {
     val exprCfg = node.getInternalValue().accept(this)
     val returnCfg = ControlFlowGraph.makeSingleton(new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter)))
-    return exprCfg.addNodes(returnCfg.nodes.toList)
+    return exprCfg.addNodes(returnCfg.nodes)
                   .connectNodes(exprCfg.exitNodes, returnCfg.entryNodes)
                   .setEntryNodes(exprCfg.entryNodes)
                   .setExitNodes(returnCfg.exitNodes)
@@ -582,7 +583,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitCall(node: Call): ControlFlowGraph = {
     println("visitCall");
-    return ControlFlowGraph.makeSingleton(new CallNode(0, None, 0, List(), node.accept(ASTPrettyPrinter)))
+    
+    // 1) Lookup the function
+    val lookupCfg = node.getInternalFunc().accept(this)
+    
+    // 2) Call it
+    val callNode = new CallNode(0, None, 0, List(), node.accept(ASTPrettyPrinter))
+    lookupCfg.addNode(callNode).connectNodes(lookupCfg.exitNodes, callNode).setExitNode(callNode)
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
@@ -592,7 +599,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitNum(node: Num): ControlFlowGraph = {
     println("visitNum");
-    return null
+    return node.getInternalN() match {
+      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(pyInt, node.accept(ASTPrettyPrinter)))
+      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(pyLong, node.accept(ASTPrettyPrinter)))
+      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(pyFloat, node.accept(ASTPrettyPrinter)))
+      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(pyComplex, node.accept(ASTPrettyPrinter)))
+    }
   }
 
   override def visitStr(node: Str): ControlFlowGraph = {
@@ -600,9 +612,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null
   }
 
+  // base_reg: Int, property: String, result_reg: Int
+  // base_reg: Int, property_reg: Int, result_reg: Int
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
     println("visitAttribute");
-    return null
+    val lookupCfg = node.getInternalValue().accept(this)
+    val readNode = new ReadPropertyNode(lastExpressionRegister, node.getInternalAttr(), nextRegister(), node.accept(ASTPrettyPrinter))
+    return lookupCfg.addNode(readNode).connectNodes(lookupCfg.exitNodes, readNode).setExitNode(readNode)
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
@@ -611,8 +627,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
-    println("visitName");
-    return null
+    return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nextRegister(), node.accept(ASTPrettyPrinter)))
   }
 
   override def visitList(node: ast.List): ControlFlowGraph = {
