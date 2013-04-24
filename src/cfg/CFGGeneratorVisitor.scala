@@ -22,11 +22,19 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   var whileEntryCfgNode: Node = null
   var whileExitCfgNode: Node = null
 
-  var nextTempVariableIndex = 0
+  var nextTempVariableIndex : Int = 0
   def nextTempVariable(): String = {
     nextTempVariableIndex = nextTempVariableIndex + 1
     return s"_tmp$nextTempVariableIndex"
   }
+
+  var nextRegisterIndex :Int  = 0
+  def nextRegister() : Int = {
+    nextRegisterIndex += 1
+    nextRegisterIndex
+  }
+
+  var lastExpressionRegister : Int = 0
 
   /* Helper methods */
 
@@ -142,7 +150,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitReturn(node: Return): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new ReturnNode(0, node.accept(ASTPrettyPrinter)))
+    val exprCfg = node.getInternalValue().accept(this)
+    val returnCfg = ControlFlowGraph.makeSingleton(new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter)))
+    return exprCfg.addNodes(returnCfg.nodes.toList)
+                  .connectNodes(exprCfg.exitNodes, returnCfg.entryNodes)
+                  .setEntryNodes(exprCfg.entryNodes)
+                  .setExitNodes(returnCfg.exitNodes)
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {
