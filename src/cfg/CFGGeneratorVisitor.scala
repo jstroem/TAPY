@@ -17,11 +17,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   /* State */
 
-  var forEntryCfgNode: Node = null
-  var forExitCfgNode: Node = null
-  
-  var whileEntryCfgNode: Node = null
-  var whileExitCfgNode: Node = null
+  var loopEntryCfgNode: Node = null
+  var loopExitCfgNode: Node = null
 
   var nextTempVariableIndex : Int = 0
   def nextTempVariable(): String = {
@@ -240,7 +237,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     
     // Important to use foldRight, such that x_k is taken first
     var i = 0
-    println(targets.size())
     return targets.toList.foldRight(tmpVariableCfg) {(target, acc) =>
       // 1) Generate the CFG for a single target (which may be a tuple or list)
       val targetCfg = target match {
@@ -251,9 +247,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
           visitSubscript(t, tmpVariableRegister)
         
         case t: Attribute =>
-          ControlFlowGraph.makeSingleton(new WritePropertyNode(0, t.getInternalAttr(), 0))
+          visitAttribute(t, tmpVariableRegister)
         
-        case t: Tuple => 
+        case t: Tuple =>
           visitAssignAux(node, tmpVariableRegister, t.getInternalElts())
   
         case t: ast.List =>
@@ -262,7 +258,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         case t =>
           throw new NotImplementedException()
       }
-      
       i = i + 1
       
       // 2) Combine the accumulator with the generated CFG of the single assignment
@@ -345,23 +340,17 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val forExitCfgNode = new NoOpNode("For exit")
     val forOrElseEntryCfgNode = new NoOpNode("For else")
 
-    val oldForEntryCfgNode = this.forEntryCfgNode // In case of nested loops
-    val oldForExitCfgNode = this.forExitCfgNode
-    val oldWhileEntryCfgNode = this.whileEntryCfgNode
-    val oldWhileExitCfgNode = this.whileExitCfgNode
+    val oldLoopEntryCfgNode = this.loopEntryCfgNode // In case of nested loops
+    val oldLoopExitCfgNode = this.loopExitCfgNode
 
-    this.forEntryCfgNode = forEntryCfgNode
-    this.forExitCfgNode = forExitCfgNode
-    this.whileEntryCfgNode = null
-    this.whileExitCfgNode = null
+    this.loopEntryCfgNode = forEntryCfgNode
+    this.loopExitCfgNode = forExitCfgNode
 
     val forBodyCfg = generateCFGOfStatementList(forEntryCfgNode, node.getInternalBody())
     val forOrElseCfg = generateCFGOfStatementList(forOrElseEntryCfgNode, node.getInternalOrelse())
     
-    this.forEntryCfgNode = oldForEntryCfgNode // Recover in case of nested loops
-    this.forExitCfgNode = oldForExitCfgNode
-    this.whileEntryCfgNode = oldWhileEntryCfgNode
-    this.whileExitCfgNode = oldWhileExitCfgNode
+    this.loopEntryCfgNode = oldLoopEntryCfgNode // Recover in case of nested loops
+    this.loopExitCfgNode = oldLoopExitCfgNode
 
     val forCfg = forBodyCfg.combineGraphs(forOrElseCfg)
                            .addNode(forExitCfgNode)
@@ -385,21 +374,14 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val whileExitCfgNode = new NoOpNode("While exit")
     val whileOrElseEntryCfgNode = new NoOpNode("While else")
     
-    val oldForEntryCfgNode = this.forEntryCfgNode // In case of nested loops
-    val oldForExitCfgNode = this.forExitCfgNode
-    val oldWhileEntryCfgNode = this.whileEntryCfgNode
-    val oldWhileExitCfgNode = this.whileExitCfgNode
-
-    this.forExitCfgNode = null
-    this.whileExitCfgNode = whileExitCfgNode
+    val oldLoopEntryCfgNode = this.loopEntryCfgNode // In case of nested loops
+    val oldLoopExitCfgNode = this.loopExitCfgNode
 
     val whileBodyCfg = generateCFGOfStatementList(whileEntryCfgNode, node.getInternalBody())
     val whileOrElseCfg = generateCFGOfStatementList(whileOrElseEntryCfgNode, node.getInternalOrelse())
     
-    this.forEntryCfgNode = oldForEntryCfgNode // Recover in case of nested loops
-    this.forExitCfgNode = oldForExitCfgNode
-    this.whileEntryCfgNode = oldWhileEntryCfgNode
-    this.whileExitCfgNode = oldWhileExitCfgNode
+    this.loopEntryCfgNode = oldLoopEntryCfgNode // Recover in case of nested loops
+    this.loopExitCfgNode = oldLoopExitCfgNode
 
     val whileCfg = whileBodyCfg.combineGraphs(whileOrElseCfg)
       .addNode(whileExitCfgNode)
@@ -514,14 +496,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitBreak(node: Break): ControlFlowGraph = {
     val breakCfgNode = BreakNode("Break")
     val breakCfgNodes = Set[Node](breakCfgNode)
-    if (this.forExitCfgNode != null) {
+    if (this.loopExitCfgNode != null) {
       // Notice: The break CFG node does not actually contain
-      // the for exit CFG node, but the visitFor-method handles this
-      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> Set(this.forExitCfgNode)))
-    } else if (this.whileExitCfgNode != null) {
-      // Notice: The break CFG node does not actually contain
-      // the while exit CFG node, but the visitWhile-method handles this
-      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> Set(this.whileExitCfgNode)))
+      // the for exit CFG node, but the visitFor/visitWhile-method handles this
+      return new ControlFlowGraph(breakCfgNodes, breakCfgNodes, breakCfgNodes, Map(breakCfgNode -> Set(this.loopExitCfgNode)))
     }
     throw new InternalError("Break statement outside for or while loop.")
   }
@@ -529,14 +507,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitContinue(node: Continue): ControlFlowGraph = {
     val continueCfgNode = BreakNode("Continue")
     val continueCfgNodes = Set[Node](continueCfgNode)
-    if (this.forEntryCfgNode != null) {
+    if (this.loopEntryCfgNode != null) {
       // Notice: The break CFG node does not actually contain
-      // the for exit CFG node, but the visitFor-method handles this
-      return new ControlFlowGraph(continueCfgNodes, continueCfgNodes, continueCfgNodes, Map(continueCfgNode -> Set(this.forEntryCfgNode)))
-    } else if (this.whileEntryCfgNode != null) {
-      // Notice: The break CFG node does not actually contain
-      // the while exit CFG node, but the visitWhile-method handles this
-      return new ControlFlowGraph(continueCfgNodes, continueCfgNodes, continueCfgNodes, Map(continueCfgNode -> Set(this.whileEntryCfgNode)))
+      // the for exit CFG node, but the visitFor/visitWhile-method handles this
+      return new ControlFlowGraph(continueCfgNodes, continueCfgNodes, continueCfgNodes, Map(continueCfgNode -> Set(this.loopEntryCfgNode)))
     }
     throw new InternalError("Continue statement outside for or while loop.")
   }
