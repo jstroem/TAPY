@@ -687,7 +687,33 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
     println("visitSet");
-    return null
+    val newSetCfg = ControlFlowGraph.makeSingleton(NewSetNode(nextRegister(), ""))
+    val resultReg = lastExpressionRegister
+
+    val pair = node.getInternalElts().toList.map((a) => {
+      val cfg = a.accept(this)
+      val reg = lastExpressionRegister
+      (cfg,reg)
+    })
+
+    lastExpressionRegister = resultReg
+
+    if (pair.length > 0) {
+      val readGetFuncNode = ReadPropertyNode(resultReg, "add", nextRegister(), "")
+      val getFuncReg = lastExpressionRegister
+
+      val newSetAndGetFuncCfg = newSetCfg.addNode(readGetFuncNode).connectNodes(newSetCfg.exitNodes, readGetFuncNode).setExitNode(readGetFuncNode)
+      return pair.foldLeft(newSetAndGetFuncCfg)((accCfg,a) => {
+        val (cfg,reg) = a
+        val callGetNode = CallNode(nextRegister(), getFuncReg, List(reg), "")
+        accCfg.combineGraphs(cfg)
+              .connectNodes(accCfg.exitNodes, cfg.entryNodes)
+              .addNode(callGetNode)
+              .connectNodes(cfg.exitNodes, callGetNode)
+              .setEntryNodes(accCfg.entryNodes)
+              .setExitNode(callGetNode)
+      })
+    } else return newSetCfg
   }
 
   override def visitListComp(node: ListComp): ControlFlowGraph = {
