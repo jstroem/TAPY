@@ -93,7 +93,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
                          filteredNodes, 
                          filteredRegularEdges, 
                          filteredExceptionEdges)
-      .connectNodes(getNodePredecessors(node), getNodeSuccessors(node))
+      .connect(getNodePredecessors(node), getNodeSuccessors(node))
       .addExceptionEdges(getExceptionNodePredecessors(node), getExceptionNodeSuccessors(node))
   }
   
@@ -107,14 +107,14 @@ case class ControlFlowGraph(entryNodes: Set[Node],
       edgeMap + (pred -> (currSuccs ++ successors))}
   }
 
-  def connectNodes(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
+  def connect(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
     val newRegularEdges = addEdges(preds, succs, edges)
     new ControlFlowGraph( entryNodes, exitNodes, exceptionExitNodes, nodes, newRegularEdges, exceptionEdges)
   }
 
-  def connectNodes(pred: Node, succs: Set[Node]): ControlFlowGraph = { connectNodes(Set(pred), succs) }
-  def connectNodes(preds: Set[Node], succ: Node): ControlFlowGraph = { connectNodes(preds, Set(succ)) }
-  def connectNodes(pred: Node, succ: Node): ControlFlowGraph = { connectNodes(Set(pred), Set(succ)) }
+  def connect(pred: Node, succs: Set[Node]): ControlFlowGraph = { connect(Set(pred), succs) }
+  def connect(preds: Set[Node], succ: Node): ControlFlowGraph = { connect(preds, Set(succ)) }
+  def connect(pred: Node, succ: Node): ControlFlowGraph = { connect(Set(pred), Set(succ)) }
 
   def addExceptionEdges(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
     val newExceptionEdges = addEdges(preds, succs, exceptionEdges)
@@ -130,10 +130,10 @@ case class ControlFlowGraph(entryNodes: Set[Node],
       map + (key -> (a.getOrElse(key, Set[T]()) ++ b.getOrElse(key, Set[T]())))}
   }
 
-  def combineGraphs(o: ControlFlowGraph): ControlFlowGraph = {
+  def combine(o: ControlFlowGraph): ControlFlowGraph = {
     val newRegularEdges = mapMerge(edges, o.edges)
     val newExceptionEdges = mapMerge(exceptionEdges, o.exceptionEdges)
-    new ControlFlowGraph(entryNodes ++ o.entryNodes, 
+    return new ControlFlowGraph(entryNodes ++ o.entryNodes, 
                          exitNodes ++ o.exitNodes,
                          exceptionExitNodes ++ o.exceptionExitNodes,
                          nodes ++ o.nodes,
@@ -141,15 +141,12 @@ case class ControlFlowGraph(entryNodes: Set[Node],
                          newExceptionEdges)
   }
 
-  def combineGraphsSpecialized(o: ControlFlowGraph): ControlFlowGraph = {
-    val newRegularEdges = mapMerge(edges, o.edges)
-    val newExceptionEdges = mapMerge(exceptionEdges, o.exceptionEdges)
-    new ControlFlowGraph(entryNodes, 
-                         o.exitNodes,
-                         exceptionExitNodes ++ o.exceptionExitNodes,
-                         nodes ++ o.nodes,
-                         newRegularEdges,
-                         newExceptionEdges)
+  def combine(os: Set[ControlFlowGraph]): ControlFlowGraph = {
+    return os.foldLeft(this) {(acc, o) => acc.combine(o)}
+  }
+  
+  def append(o: ControlFlowGraph): ControlFlowGraph = {
+    return combine(o).setEntryNodes(entryNodes).setExitNodes(o.exitNodes).connect(exitNodes, o.entryNodes)
   }
   
   // Removes all NoOpNodes
