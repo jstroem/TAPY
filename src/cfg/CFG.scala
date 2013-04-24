@@ -266,10 +266,10 @@ case class ControlFlowGraph(entryNodes: Set[Node],
 }
 
 object ControlFlowGraph {
-  final val EMPTY = new ControlFlowGraph(Set(), Set(), Set(), Map())
+  final val EMPTY = new ControlFlowGraph(Set(), Set(), Set(), Set(), Map(), Map())
   
   final def makeSingleton(node: Node): ControlFlowGraph = {
     val nodes = Set(node)
-    return new ControlFlowGraph(nodes, nodes, nodes, Map())
+    return new ControlFlowGraph(nodes, nodes, Set(), nodes, Map(), Map())
   }
 }

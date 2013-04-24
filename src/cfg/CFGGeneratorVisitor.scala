@@ -238,8 +238,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val tmpVariableCfg = node.getInternalValue().accept(this)
     val tmpVariableRegister = this.lastExpressionRegister
     
-    
-    
     // Important to use foldRight, such that x_k is taken first
     var i = 0
     println(targets.size())
@@ -821,6 +819,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val lookupPropertyCfg = node.getInternalSlice().accept(this)
     val propertyRegister = this.lastExpressionRegister
     
+    println("done lookup")
+    
     val readRegister = nextRegister()
     val subscriptNode =
       if (assignFromRegister >= 0)
@@ -838,6 +838,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
+    println("visitName")
     val nameRegister = nextRegister()
     this.lastExpressionRegister = nameRegister
     return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nameRegister))
@@ -888,7 +889,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitIndex(node: Index): ControlFlowGraph = {
     println("visitIndex");
-    return null
+    return node.getInternalValue().accept(this)
   }
 
   override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
