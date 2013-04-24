@@ -557,11 +557,34 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
+    val leftCfg = node.getInternalLeft().accept(this)
+    val leftRegister = lastExpressionRegister
+    val rightCfg = node.getInternalRight().accept(this)
+    val rightRegister = lastExpressionRegister
+    val resultRegister = nextRegister()
+    val binOpNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), leftRegister, rightRegister, resultRegister, node.accept(ASTPrettyPrinter))
+
+    lastExpressionRegister = resultRegister
+
+    return leftCfg.combineGraphs(rightCfg)
+                  .connectNodes(leftCfg.exitNodes, rightCfg.entryNodes)
+                  .setEntryNodes(leftCfg.entryNodes)
+                  .addNode(binOpNode)
+                  .connectNodes(rightCfg.exitNodes, binOpNode)
+                  .setExitNode(binOpNode)
   }
 
   override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), 0, 0, node.accept(ASTPrettyPrinter)))
+    val cfg = node.getInternalOperand().accept(this)
+    val register = lastExpressionRegister
+    val resultRegister = nextRegister()
+    val unaryOpNode = new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister, node.accept(ASTPrettyPrinter))
+
+    lastExpressionRegister = resultRegister
+
+    return cfg.addNode(unaryOpNode)
+              .connectNodes(cfg.exitNodes, unaryOpNode)
+              .setExitNode(unaryOpNode)
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
