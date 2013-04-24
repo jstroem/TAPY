@@ -31,3 +31,35 @@ http://stackoverflow.com/questions/101268/hidden-features-of-python
 
 Weird members
 http://docs.python.org/2/library/inspect.html#types-and-members
+
+
+
+
+TODO
+=====
+This is missing to the registers
+
+	function
+	class
+	delete
+	assign
+	augassign
+	for
+	while
+	with
+	try-except
+	try-final
+	assert
+	lambda
+	listcomp
+	setcomp
+	distcomp
+	generatorexp
+	yield
+	compare
+	call (arguments)
+	repr
+	ellipsis
+	slice
+	extSlice
+	exceptHandler
