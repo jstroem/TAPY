@@ -14,6 +14,7 @@ case class ExitNode(label: String, id: String = UUID.randomUUID().toString()) ex
 // Write property into base (object/class); base.property = value
 // Write property into dictionary: base[property] = value
 case class WriteVariableNode(variable: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class WriteRegisterNode(resultReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WritePropertyNode(baseReg: Int, property: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WriteIndexableNode(baseReg: Int, propertyReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
@@ -68,7 +69,6 @@ case class ExceptNode(types: List[String], resultReg: Option[Int], label: String
 
 // Binary operation; result = arg1 op arg2
 case class BinOpNode(op: constants.BinOp.Value, arg1Reg: Int, arg2Reg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class BoolOpNode(op: constants.BoolOp.Value, leftReg: Int, rightReg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class UnOpNode(op: constants.UnOp.Value, arg1Reg: Int, resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Print node; print value
