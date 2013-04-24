@@ -63,8 +63,8 @@ case class NewDictionaryNode(resultReg: Int, id: UUID = UUID.randomUUID()) exten
 }
 case class NewTupleNode(resultReg: Int, valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
-    val arg_string = valueRegs.foldLeft("") ({(s,r) => s+","+reg(r)})
-    s"($arg_string)\n(NewTupleNode)"
+    val arg_string = valueRegs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
+    s"${reg(resultReg)} = ($arg_string)\n(NewTupleNode)"
   }
 }
 case class NewSetNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
@@ -118,7 +118,7 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
 // Function invokation and Object creation calls; result = [base.]function(arguments)
 case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
-    val arg_string = argument_regs.foldLeft("") ({(s,r) => s+","+reg(r)})
+    val arg_string = argument_regs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
     s"${reg(resultReg)} = ${reg(functionReg)}($arg_string)\n(CallNode)"
   }
 }
