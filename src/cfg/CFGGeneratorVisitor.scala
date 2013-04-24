@@ -152,7 +152,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitReturn(node: Return): ControlFlowGraph = {
     val exprCfg = node.getInternalValue().accept(this)
-    val returnNode = new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter))
+    val returnNode = new ReturnNode(this.lastExpressionRegister)
     return exprCfg.addNode(returnNode)
                   .connectNodes(exprCfg.exitNodes, returnNode)
                   .setEntryNodes(exprCfg.entryNodes)
@@ -592,7 +592,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val rightCfg = node.getInternalRight().accept(this)
     val rightRegister = lastExpressionRegister
     val resultRegister = nextRegister()
-    val binOpNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), leftRegister, rightRegister, resultRegister, node.accept(ASTPrettyPrinter))
+    val binOpNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), leftRegister, rightRegister, resultRegister)
 
     lastExpressionRegister = resultRegister
 
@@ -608,7 +608,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val cfg = node.getInternalOperand().accept(this)
     val register = lastExpressionRegister
     val resultRegister = nextRegister()
-    val unaryOpNode = new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister, node.accept(ASTPrettyPrinter))
+    val unaryOpNode = new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister)
 
     lastExpressionRegister = resultRegister
 
@@ -727,7 +727,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val lookupCfg = node.getInternalFunc().accept(this)
     
     // 2) Call it
-    val callNode = new CallNode(nextRegister(), lastExpressionRegister, List(), node.accept(ASTPrettyPrinter))
+    val callNode = new CallNode(nextRegister(), lastExpressionRegister, List())
     lookupCfg.addNode(callNode).connectNodes(lookupCfg.exitNodes, callNode).setExitNode(callNode)
   }
 
@@ -741,10 +741,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val numRegister = nextRegister()
     this.lastExpressionRegister = numRegister
     return node.getInternalN() match {
-      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(numRegister, pyInt, node.accept(ASTPrettyPrinter)))
-      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(numRegister, pyLong, node.accept(ASTPrettyPrinter)))
-      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(numRegister, pyFloat, node.accept(ASTPrettyPrinter)))
-      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(numRegister, pyComplex, node.accept(ASTPrettyPrinter)))
+      case pyInt: PyInteger => ControlFlowGraph.makeSingleton(new ConstantIntNode(numRegister, pyInt))
+      case pyLong: PyLong => ControlFlowGraph.makeSingleton(new ConstantLongNode(numRegister, pyLong))
+      case pyFloat: PyFloat => ControlFlowGraph.makeSingleton(new ConstantFloatNode(numRegister, pyFloat))
+      case pyComplex: PyComplex => ControlFlowGraph.makeSingleton(new ConstantComplexNode(numRegister, pyComplex))
     }
   }
 
@@ -752,7 +752,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitStr");
     val strRegister = nextRegister()
     this.lastExpressionRegister = strRegister
-    return ControlFlowGraph.makeSingleton(new ConstantStringNode(strRegister, node.getInternalS().toString(), node.accept(ASTPrettyPrinter)))
+    return ControlFlowGraph.makeSingleton(new ConstantStringNode(strRegister, node.getInternalS().toString()))
   }
 
   override def visitAttribute(node: Attribute): ControlFlowGraph = {
@@ -769,9 +769,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val readRegister = nextRegister()
     val attributeNode =
       if (assignFromRegister >= 0)
-        new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister, "")
+        new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister)
       else
-        new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister, node.accept(ASTPrettyPrinter))
+        new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister)
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
     return lookupCfg.addNode(attributeNode)
@@ -798,9 +798,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val readRegister = nextRegister()
     val subscriptNode =
       if (assignFromRegister >= 0)
-        new WriteIndexableNode(baseRegister, propertyRegister, assignFromRegister, node.accept(ASTPrettyPrinter))
+        new WriteIndexableNode(baseRegister, propertyRegister, assignFromRegister)
       else
-        new ReadIndexableNode(baseRegister, propertyRegister, readRegister, node.accept(ASTPrettyPrinter))
+        new ReadIndexableNode(baseRegister, propertyRegister, readRegister)
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
     lookupBaseCfg.combineGraphs(lookupPropertyCfg)
@@ -814,7 +814,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitName(node: Name): ControlFlowGraph = {
     val nameRegister = nextRegister()
     this.lastExpressionRegister = nameRegister
-    return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nameRegister, node.accept(ASTPrettyPrinter)))
+    return ControlFlowGraph.makeSingleton(new ReadVariableNode(node.getInternalId(), nameRegister))
   }
 
   override def visitList(node: ast.List): ControlFlowGraph = {
@@ -837,7 +837,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     }
     
     val tupleRegister = nextRegister()
-    val tupleNode = new NewTupleNode(tupleRegister, registers.reverse, node.accept(ASTPrettyPrinter))
+    val tupleNode = new NewTupleNode(tupleRegister, registers.reverse)
     this.lastExpressionRegister = tupleRegister
     
     return valuesCfg.addNode(tupleNode)
