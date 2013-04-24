@@ -152,11 +152,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitReturn(node: Return): ControlFlowGraph = {
     val exprCfg = node.getInternalValue().accept(this)
-    val returnCfg = ControlFlowGraph.makeSingleton(new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter)))
-    return exprCfg.addNodes(returnCfg.nodes)
-                  .connectNodes(exprCfg.exitNodes, returnCfg.entryNodes)
+    val returnNode = new ReturnNode(this.lastExpressionRegister, node.accept(ASTPrettyPrinter))
+    return exprCfg.addNode(returnNode)
+                  .connectNodes(exprCfg.exitNodes, returnNode)
                   .setEntryNodes(exprCfg.entryNodes)
-                  .setExitNodes(returnCfg.exitNodes)
+                  .setExitNode(returnNode)
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {
@@ -233,9 +233,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitAssign(node: Assign): ControlFlowGraph = {
     val targets = node.getInternalTargets()
     
-    // Create a temporary variable to store the expression in if:
-    // - there are at least two targets; or
-    // - there is only one target, and that particular target is a tuple or list
+    // Create a temporary variable to store the expression
     val tmpVariableName = nextTempVariable()
     val tmpVariableCfg = node.getInternalValue().accept(this)
     
@@ -516,15 +514,77 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitBoolOp(node: ast.BoolOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new BoolOpNode(boolopTypeToBoolOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
+    val exprs = node.getInternalValues().toList
+    val result_reg = nextRegister()
+    val ifExitNode = new NoOpNode("If exit")
+
+    val cfgsAndRegisters : List[(ControlFlowGraph,Int)] = exprs.map((a) => {
+          val cfg = a.accept(this)
+          val reg = lastExpressionRegister
+          (cfg,reg)
+    })
+    val foldedCfg = cfgsAndRegisters.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("BoolOp entry")))((acc,a) => {
+      var (cfg,reg) = a
+      var readValue = acc.combineGraphs(cfg)
+                         .connectNodes(acc.exitNodes, cfg.entryNodes)
+                         .setExitNodes(cfg.exitNodes)
+                         .setEntryNodes(acc.entryNodes)
+      val ifNode = IfNode(reg, s"if ($reg)")
+      val untilIfCfg = readValue.addNode(ifNode)
+                                .connectNodes(readValue.exitNodes, ifNode)
+                                .setExitNode(ifNode)
+      val oneSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
+        case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, false, "False")
+        case constants.BoolOp.OR => new ConstantBooleanNode(result_reg, true, "True")
+      }
+      untilIfCfg.addNode(oneSideNode)
+                .connectNodes(untilIfCfg.exitNodes, oneSideNode)
+                .addNode(ifExitNode)
+                .connectNodes(oneSideNode, ifExitNode)
+    })
+    val otherSideNode = boolopTypeToBoolOp(node.getInternalOp()) match {
+      case constants.BoolOp.AND => new ConstantBooleanNode(result_reg, true, "True")
+      case constants.BoolOp.OR => new ConstantBooleanNode(result_reg, false, "False")
+    }
+
+    lastExpressionRegister = result_reg
+
+    return foldedCfg.addNode(otherSideNode)
+                    .connectNodes(foldedCfg.exitNodes, otherSideNode)
+                    .addNode(ifExitNode)
+                    .connectNodes(otherSideNode, ifExitNode)
+                    .setExitNode(ifExitNode)
   }
 
   override def visitBinOp(node: BinOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), 0, 0, 0, node.accept(ASTPrettyPrinter)))
+    val leftCfg = node.getInternalLeft().accept(this)
+    val leftRegister = lastExpressionRegister
+    val rightCfg = node.getInternalRight().accept(this)
+    val rightRegister = lastExpressionRegister
+    val resultRegister = nextRegister()
+    val binOpNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), leftRegister, rightRegister, resultRegister, node.accept(ASTPrettyPrinter))
+
+    lastExpressionRegister = resultRegister
+
+    return leftCfg.combineGraphs(rightCfg)
+                  .connectNodes(leftCfg.exitNodes, rightCfg.entryNodes)
+                  .setEntryNodes(leftCfg.entryNodes)
+                  .addNode(binOpNode)
+                  .connectNodes(rightCfg.exitNodes, binOpNode)
+                  .setExitNode(binOpNode)
   }
 
   override def visitUnaryOp(node: UnaryOp): ControlFlowGraph = {
-    return ControlFlowGraph.makeSingleton(new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), 0, 0, node.accept(ASTPrettyPrinter)))
+    val cfg = node.getInternalOperand().accept(this)
+    val register = lastExpressionRegister
+    val resultRegister = nextRegister()
+    val unaryOpNode = new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister, node.accept(ASTPrettyPrinter))
+
+    lastExpressionRegister = resultRegister
+
+    return cfg.addNode(unaryOpNode)
+              .connectNodes(cfg.exitNodes, unaryOpNode)
+              .setExitNode(unaryOpNode)
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
@@ -550,7 +610,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val valueCfg = entry._2.accept(this)
       val valueRegister = this.lastExpressionRegister
       
-      val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister, "")
+      val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister, "<" + emptyDictRegister + ">[" + entry._1.accept(ASTPrettyPrinter) + "] = " + entry._2.accept(ASTPrettyPrinter))
       
       acc.combineGraphs(keyCfg)
          .combineGraphs(valueCfg)
@@ -678,7 +738,25 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitTuple(node: Tuple): ControlFlowGraph = {
     println("visitTuple");
     // TODO
-    return ControlFlowGraph.makeSingleton(new NoOpNode("<TUPLE TODO>"))
+    
+    var registers = List[Int]()
+    val valuesCfg = node.getInternalElts().toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry"))) {(acc, el) =>
+      val elCfg = el.accept(this)
+      registers = this.lastExpressionRegister :: registers
+      
+      acc.combineGraphs(elCfg)
+         .connectNodes(acc.exitNodes, elCfg.entryNodes)
+         .setEntryNodes(acc.entryNodes)
+         .setExitNodes(elCfg.exitNodes)
+    }
+    
+    val tupleRegister = nextRegister()
+    val tupleNode = new NewTupleNode(tupleRegister, registers, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = tupleRegister
+    
+    return valuesCfg.addNode(tupleNode)
+                    .connectNodes(valuesCfg.exitNodes, tupleNode)
+                    .setExitNode(tupleNode)
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {

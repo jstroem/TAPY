@@ -17,7 +17,7 @@ case class WriteVariableNode(variable: String, valueReg: Int, label: String, id:
 case class WritePropertyNode(baseReg: Int, property: String, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class WriteIndexableNode(baseReg: Int, propertyReg: Int, valueReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
-case class ConstantBooleanNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class ConstantBooleanNode(resultReg: Int, bool: Boolean, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ConstantIntNode(resultReg: Int, int: PyInteger, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ConstantFloatNode(resultReg: Int, float: PyFloat, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class ConstantLongNode(resultReg: Int, long: PyLong, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
@@ -27,7 +27,7 @@ case class ConstantNoneNode(resultReg: Int, label: String, id: String = UUID.ran
 
 case class NewListNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class NewDictionaryNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
-case class NewTupleNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
+case class NewTupleNode(resultReg: Int, valueRegs: List[Int], label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 case class NewSetNode(resultReg: Int, label: String, id: String = UUID.randomUUID().toString()) extends Node(label, id)
 
 // Read variable; result = variable
