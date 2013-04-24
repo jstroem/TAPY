@@ -687,8 +687,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
     println("visitSet");
-    val newSetCfg = ControlFlowGraph.makeSingleton(NewSetNode(nextRegister(), ""))
-    val resultReg = lastExpressionRegister
+    val resultReg = nextRegister()
+    val newSetCfg = ControlFlowGraph.makeSingleton(NewSetNode(resultReg, ""))
 
     val pair = node.getInternalElts().toList.map((a) => {
       val cfg = a.accept(this)
@@ -699,13 +699,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     lastExpressionRegister = resultReg
 
     if (pair.length > 0) {
-      val readGetFuncNode = ReadPropertyNode(resultReg, "add", nextRegister(), "")
-      val getFuncReg = lastExpressionRegister
+      val addFuncReg = nextRegister()
+      val readGetFuncNode = ReadPropertyNode(resultReg, "add", addFuncReg, "")
 
       val newSetAndGetFuncCfg = newSetCfg.addNode(readGetFuncNode).connectNodes(newSetCfg.exitNodes, readGetFuncNode).setExitNode(readGetFuncNode)
       return pair.foldLeft(newSetAndGetFuncCfg)((accCfg,a) => {
         val (cfg,reg) = a
-        val callGetNode = CallNode(nextRegister(), getFuncReg, List(reg), "")
+        val callGetNode = CallNode(nextRegister(), addFuncReg, List(reg), "")
         accCfg.combineGraphs(cfg)
               .connectNodes(accCfg.exitNodes, cfg.entryNodes)
               .addNode(callGetNode)
