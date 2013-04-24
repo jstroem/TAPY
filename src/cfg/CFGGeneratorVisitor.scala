@@ -233,9 +233,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitAssign(node: Assign): ControlFlowGraph = {
     val targets = node.getInternalTargets()
     
-    // Create a temporary variable to store the expression in if:
-    // - there are at least two targets; or
-    // - there is only one target, and that particular target is a tuple or list
+    // Create a temporary variable to store the expression
     val tmpVariableName = nextTempVariable()
     val tmpVariableCfg = node.getInternalValue().accept(this)
     
@@ -589,7 +587,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val valueCfg = entry._2.accept(this)
       val valueRegister = this.lastExpressionRegister
       
-      val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister, "")
+      val writeNode = new WriteIndexableNode(emptyDictRegister, keyRegister, valueRegister, "<" + emptyDictRegister + ">[" + entry._1.accept(ASTPrettyPrinter) + "] = " + entry._2.accept(ASTPrettyPrinter))
       
       acc.combineGraphs(keyCfg)
          .combineGraphs(valueCfg)
@@ -717,7 +715,25 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitTuple(node: Tuple): ControlFlowGraph = {
     println("visitTuple");
     // TODO
-    return ControlFlowGraph.makeSingleton(new NoOpNode("<TUPLE TODO>"))
+    
+    var registers = List[Int]()
+    val valuesCfg = node.getInternalElts().toList.foldLeft(ControlFlowGraph.makeSingleton(new NoOpNode("Tuple entry"))) {(acc, el) =>
+      val elCfg = el.accept(this)
+      registers = this.lastExpressionRegister :: registers
+      
+      acc.combineGraphs(elCfg)
+         .connectNodes(acc.exitNodes, elCfg.entryNodes)
+         .setEntryNodes(acc.entryNodes)
+         .setExitNodes(elCfg.exitNodes)
+    }
+    
+    val tupleRegister = nextRegister()
+    val tupleNode = new NewTupleNode(tupleRegister, registers, node.accept(ASTPrettyPrinter))
+    this.lastExpressionRegister = tupleRegister
+    
+    return valuesCfg.addNode(tupleNode)
+                    .connectNodes(valuesCfg.exitNodes, tupleNode)
+                    .setExitNode(tupleNode)
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
