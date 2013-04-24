@@ -696,12 +696,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       return pair.foldLeft(newListAndAppendFuncCfg)((accCfg,a) => {
         val (cfg,reg) = a
         val callAppendNode = CallNode(nextRegister(), appendFuncReg, List(reg))
-        accCfg.combine(cfg)
-              .connect(accCfg.exitNodes, cfg.entryNodes)
-              .addNode(callAppendNode)
-              .connect(cfg.exitNodes, callAppendNode)
-              .setEntryNodes(accCfg.entryNodes)
-              .setExitNode(callAppendNode)
+        accCfg.append(cfg).append(callAppendNode)
       })
     } else return newListCfg
   }
