@@ -665,12 +665,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         new ReadIndexableNode(baseRegister, propertyRegister, readRegister)
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
-    lookupBaseCfg.combine(lookupPropertyCfg)
-                 .addNode(subscriptNode)
-                 .connect(lookupBaseCfg.exitNodes, lookupPropertyCfg.entryNodes)
-                 .setEntryNodes(lookupBaseCfg.entryNodes)
-                 .connect(lookupPropertyCfg.exitNodes, subscriptNode)
-                 .setExitNode(subscriptNode)
+    lookupBaseCfg.append(lookupPropertyCfg).append(subscriptNode)
   }
 
   override def visitName(node: Name): ControlFlowGraph = {
