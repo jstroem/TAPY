@@ -80,6 +80,11 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   }
 
   def removeNode(node: Node): ControlFlowGraph = {
+    if (entryNodes.contains(node) || exitNodes.contains(node))
+      // Not always working in this case, so don't remove node.
+      // Problem: The exit-node may have outgoing edges (e.g. in case of loops).
+      return this 
+    
     val filteredEntryNodes = if (entryNodes.contains(node)) entryNodes - node ++ getNodeSuccessors(node) else entryNodes
     val filteredRegularExitNodes = if (exitNodes.contains(node)) exitNodes - node ++ getNodePredecessors(node) else exitNodes
     val filteredExceptionExitNodes = if (exceptionExitNodes.contains(node)) exceptionExitNodes - node ++ getExceptionNodePredecessors(node) else exceptionExitNodes

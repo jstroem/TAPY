@@ -247,7 +247,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val valueCfg = node.getInternalValue().accept(this)
     val valueRegister = this.lastExpressionRegister
     
-    val writeNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), targetRegister, valueRegister, targetRegister)
+    val writeNode = new BinOpNode(node.getInternalOp(), targetRegister, valueRegister, targetRegister)
     
     return targetCfg.append(valueCfg).append(writeNode)
   }
@@ -449,7 +449,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val rightRegister = lastExpressionRegister
     
     val resultRegister = nextRegister()
-    val binOpNode = new BinOpNode(operatorTypeToBinOp(node.getInternalOp()), leftRegister, rightRegister, resultRegister)
+    val binOpNode = new BinOpNode(node.getInternalOp(), leftRegister, rightRegister, resultRegister)
 
     lastExpressionRegister = resultRegister
 
@@ -461,7 +461,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val register = this.lastExpressionRegister
     val resultRegister = nextRegister()
     this.lastExpressionRegister = resultRegister
-    return cfg.append(new UnOpNode(unaryopTypeToUnOp(node.getInternalOp()), register, resultRegister))
+    return cfg.append(new UnOpNode(node.getInternalOp(), register, resultRegister))
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
@@ -575,7 +575,36 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   // TODO
   override def visitCompare(node: Compare): ControlFlowGraph = {
     println("visitCompare")
-    return null
+    
+    val pairs = node.getInternalComparators().toList.zip(node.getInternalOps().toList)
+    
+    val resultRegister = nextRegister()
+    val exitNode = new NoOpNode("Compare exit")
+    
+    var i = 0
+    val initialAcc = node.getInternalLeft().accept(this).addNode(exitNode)
+    val result = pairs.foldLeft(initialAcc) {(acc, pair) =>
+      val (exp, op) = pair
+      
+      val prevExpRegister = this.lastExpressionRegister
+      
+      val expCfg = exp.accept(this)
+      val expRegister = this.lastExpressionRegister
+      
+      val compareOpNode = new CompareOpNode(op, prevExpRegister, expRegister, resultRegister)
+      
+      i = i + 1
+      if (i < pairs.size()) {
+        val ifNode = new IfNode(resultRegister)
+        acc.append(expCfg).append(compareOpNode).append(ifNode).connect(ifNode, exitNode)
+      } else {
+        // Last iteration: Don't add an if-node, instead add an edge from the last comparison-node to the exit-node
+        acc.append(expCfg).append(compareOpNode).connect(compareOpNode, exitNode)
+      }
+    }
+    
+    this.lastExpressionRegister = resultRegister
+    return result.setExitNode(exitNode)
   }
 
   // TODO: Fix arguments

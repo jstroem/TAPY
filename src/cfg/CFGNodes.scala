@@ -3,6 +3,9 @@ package tapy.cfg
 import org.python.core._
 import java.util.UUID
 import tapy.constants
+import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.unaryopType
 
 abstract class Node(id: UUID) {
   protected def reg(r: Int) = s"<$r>"
@@ -145,14 +148,14 @@ case class ExceptNode(types: List[String], resultReg: Option[Int], id: UUID = UU
 }
 
 // Binary operation; result = arg1 op arg2
-case class BoolOp(op: constants.BoolOp.Value, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} TODO ${reg(arg2Reg)}\n(BinOpNode)"
+case class CompareOpNode(op: cmpopType, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} ${ASTPrettyPrinter.cmpopTypeToString(op)} ${reg(arg2Reg)}\n(BinOpNode)"
 }
-case class BinOpNode(op: constants.BinOp.Value, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} TODO ${reg(arg2Reg)}\n(BinOpNode)"
+case class BinOpNode(op: operatorType, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} ${ASTPrettyPrinter.operatorToString(op)} ${reg(arg2Reg)}\n(BinOpNode)"
 }
-case class UnOpNode(op: constants.UnOp.Value, arg1Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = TODO ${reg(arg1Reg)}\n(UnOpNode)"
+case class UnOpNode(op: unaryopType, arg1Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = ${ASTPrettyPrinter.unaryopTypeToString(op)} ${reg(arg1Reg)}\n(UnOpNode)"
 }
 
 // Print node; print value
