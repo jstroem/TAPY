@@ -8,12 +8,23 @@ abstract class Node(id: UUID) {
   protected def reg(r: Int) = s"<$r>"
 }
 
-// Class and function declaration (exit and entry)
-case class EntryNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "EntryNode"
+// Class and function declaration
+case class FunctionDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"FunctionDecl($name)"
+}
+case class ClassDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ClassDecl($name)"
+}
+
+// Class and function entries/exits
+case class ClassEntryNode(note: String, classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ClassEntryNode($note)"
+}
+case class FunctionEntryNode(note: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"FunctionEntryNode($note)"
 }
 case class ExitNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "ExitNode"
+  override def toString = s"ExitNode($note)"
 }
 
 // Write variable; variable = value
@@ -86,33 +97,33 @@ case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, id:
 
 // Del
 case class DelVariableNode(variable: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(DelVariableNode)"
+  override def toString = s"del $variable\n(DelVariableNode)"
 }
 case class DelIndexableNode(baseReg: Int, propertyReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(DelIndexableNode)"
+  override def toString = s"del ${reg(baseReg)}[${reg(propertyReg)}]\n(DelIndexableNode)"
 }
 case class DelPropertyNode(baseReg: Int, property: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(DelPropertyNode)"
+  override def toString = s"del ${reg(baseReg)}.$property\n(DelPropertyNode)"
 }
 
 // No Operation node; pass
 case class NoOpNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "$note\n(NoOpNode)"
+  override def toString = s"$note\n(NoOpNode)"
 }
 
 // Break node
 case class BreakNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "$note\n(BreakNode)"
+  override def toString = s"$note\n(BreakNode)"
 }
 
 // If statement: if (condition): then_block else: else_block
 case class IfNode(conditionReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "if ${reg(conditionReg)}\n(IfNode)"
+  override def toString = s"if ${reg(conditionReg)}\n(IfNode)"
 }
 
 // Return statement: return result
 case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = "return ${reg(resultReg)}\n(ReturnNode)"
+  override def toString = s"return ${reg(resultReg)}\n(ReturnNode)"
 }
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)
@@ -134,24 +145,25 @@ case class ExceptNode(types: List[String], resultReg: Option[Int], id: UUID = UU
 }
 
 // Binary operation; result = arg1 op arg2
+case class BoolOp(op: constants.BoolOp.Value, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} TODO ${reg(arg2Reg)}\n(BinOpNode)"
+}
 case class BinOpNode(op: constants.BinOp.Value, arg1Reg: Int, arg2Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(BinOpNode)"
+  override def toString = s"${reg(resultReg)} = ${reg(arg1Reg)} TODO ${reg(arg2Reg)}\n(BinOpNode)"
 }
 case class UnOpNode(op: constants.UnOp.Value, arg1Reg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(UnOpNode)"
+  override def toString = s"${reg(resultReg)} = TODO ${reg(arg1Reg)}\n(UnOpNode)"
 }
 
 // Print node; print value
 case class PrintNode(dest: Option[Int], valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(Print)"
+  val arg_string = valueRegs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
+  override def toString = s"print $arg_string\n(Print)"
 }
 
 // For and while nodes
 case class ForInNode(id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"TODO\n(ForInNode)"
-}
-case class WhileNode(condReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(WhileNode)"
 }
 
 // Misc

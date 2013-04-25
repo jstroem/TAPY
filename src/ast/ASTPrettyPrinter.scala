@@ -294,9 +294,9 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     return indent("continue")
   }
   
-  override def visitBoolOp(node: BoolOp): String = {
+  override def visitBoolOp(node: ast.BoolOp): String = {
     println("visitBoolOp")
-    return "("+implodeList(node.getInternalValues(), " "+boolopTypeToString(node.getInternalOp())+" ")+")"
+    return "(" + implodeList(node.getInternalValues(), " " + boolopTypeToString(node.getInternalOp()) + " ") + ")"
   }
   
   override def visitBinOp(node: BinOp): String = {

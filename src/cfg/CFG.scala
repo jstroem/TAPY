@@ -153,6 +153,18 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return combine(o).setEntryNodes(entryNodes).setExitNodes(o.exitNodes).connect(exitNodes, o.entryNodes)
   }
   
+  def append(os: Set[ControlFlowGraph]): ControlFlowGraph = {
+    return append(os.tail.foldLeft(os.head) {(acc, o) => acc.combine(o)})
+  }
+  
+  def insert(o: ControlFlowGraph): ControlFlowGraph = { return insert(o, Set[Node](), Set[Node]()) }
+  def insert(o: ControlFlowGraph, pred: Node, succ: Node): ControlFlowGraph = { return insert(o, Set(pred), Set(succ)) }
+  def insert(o: ControlFlowGraph, pred: Node, succs: Set[Node]): ControlFlowGraph = { return insert(o, Set(pred), succs) }
+  def insert(o: ControlFlowGraph, preds: Set[Node], succ: Node): ControlFlowGraph = { return insert(o, preds, Set(succ)) }
+  def insert(o: ControlFlowGraph, preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
+    return combine(o).setEntryNodes(entryNodes).setExitNodes(exitNodes).connect(preds, o.entryNodes).connect(o.exitNodes, succs)
+  }
+  
   // Removes all NoOpNodes
   def minify(): ControlFlowGraph = {
     val nodesToRemove = nodes.foldLeft(Set[Node]()) {(acc, node) =>
