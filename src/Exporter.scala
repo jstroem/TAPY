@@ -41,10 +41,11 @@ object GraphvizExporter {
   } 
 
   def drawEdges( edges: List[Edge], export:  java.io.PrintStream = System.out) = {
-    edges.foreach((edge) => edge.label match {
-       case Some(l) => export.println(tab + "\"%s\" -> \"%s\" [label=\"%s\"];".format(edge.from,edge.to, escape(l)))
-       case None => export.println(tab + "\"%s\" -> \"%s\"".format(edge.from, edge.to))
-     })
+    edges.foreach({(edge) =>
+                    val label = edge.label.getOrElse("")
+                    val style = edge.style.getOrElse(Solid())
+                    export.println(tab + "\"%s\" -> \"%s\" [shape=%s label=\"%s\"];".format(edge.from,edge.to, style, escape(label)))
+                  })
   }
 
   def drawRanks(ranks: Map[Int, List[Node]], export:  java.io.PrintStream = System.out) = {
@@ -55,7 +56,7 @@ object GraphvizExporter {
 
   def escape(s: String): String = {
     s.map(_ match { 
-        case '\n' => "\\n"
+            case '\n' => "\\n"
             case '\'' => "&apos;"
             case '"' => "&quot;"
             case '<' => "&lt;"
@@ -82,7 +83,19 @@ object GraphvizExporter {
   case class Square() extends Shape
   case class Record() extends Shape
   case class Node(label: String, id : String = UUID.randomUUID().toString(), shape: Option[Shape] = None, rank: Option[Int] = None)
-  case class Edge(from : String, to: String, label: Option[String] = None)
+
+  abstract class Line() {
+    override def toString(): String = {
+      var n = this
+      n match {
+        case n: Solid => "solid"
+        case n: Dashed => "dashed"
+      }
+    }
+  }
+  case class Solid() extends Line
+  case class Dashed() extends Line
+  case class Edge(from : String, to: String, label: Option[String] = None, style: Option[Line] = None)
 
   abstract class Graph() {
     def name() : String
