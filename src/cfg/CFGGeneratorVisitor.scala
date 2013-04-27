@@ -271,22 +271,43 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitFor(node: For): ControlFlowGraph = {
     println("visitFor")
 
-    val forEntryNode = new ForInNode() // TODO
+    var iterCfg = node.getInternalIter().accept(this)
+    val containerReg = lastExpressionRegister
+
+    val createIterFunctionReg = nextRegister()
+    val iterReg = nextRegister()
+    val nextObjFunctionReg = nextRegister()
+    val nextObjReg = nextRegister()
+
+    lastExpressionRegister = nextObjReg
+    val assignCfg = visitAssign(node.getInternalTarget())
+
+    val loopStartNode = new CallNode(nextObjReg, nextObjFunctionReg, List())
+    val exceptNode = new ExceptNode(List("StopIteration"))
     val forExitNode = new NoOpNode("For exit")
 
-    val oldLoopEntryNode = this.loopEntryNode // In case of nested loops
-    val oldLoopExitNode = this.loopExitNode
+    val forOrElseCfg = generateCFGOfStatementList(new NoOpNode("For-or-else entry"), node.getInternalOrelse())
 
-    this.loopEntryNode = forEntryNode
-    this.loopExitNode = forExitNode
+    loopExitNode = forExitNode
+    loopEntryNode = loopStartNode
 
     val forBodyCfg = generateCFGOfStatementList(new NoOpNode("For-body entry"), node.getInternalBody())
-    val forOrElseCfg = generateCFGOfStatementList(new NoOpNode("For-or-else entry"), node.getInternalOrelse())
-    
-    this.loopEntryNode = oldLoopEntryNode // Recover in case of nested loops
-    this.loopExitNode = oldLoopExitNode
 
-    return new ControlFlowGraph(forEntryNode).append(forOrElseCfg).append(forExitNode).insert(forBodyCfg, forEntryNode, forEntryNode)
+    iterCfg = iterCfg.append(new ReadPropertyNode(containerReg, "__iter__", createIterFunctionReg))
+                     .append(new CallNode(iterReg, createIterFunctionReg, List()))
+                     .append(new ReadPropertyNode(iterReg, "__next__", nextObjFunctionReg))
+                     .append(loopStartNode)
+                     .addNode(forExitNode)
+                     .append(assignCfg)
+
+    //Make exception state: If there is a StopIteration exception, the exceptNode is reached and afterwards going into the orElseCfg
+    iterCfg = iterCfg.addNode(exceptNode)
+                     .connectExcept(loopStartNode, exceptNode)
+                     .insert(forOrElseCfg, exceptNode, forExitNode)
+
+
+    //Add the forbody onto the cfg
+    iterCfg = iterCfg.insert(forBodyCfg, Set(), loopStartNode)
   }
 
   override def visitWhile(node: While): ControlFlowGraph = {
