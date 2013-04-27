@@ -130,7 +130,7 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
 }
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)
-case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], keywords: Map[String, Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
     val arg_string = argument_regs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
     s"${reg(resultReg)} = ${reg(functionReg)}($arg_string)\n(CallNode)"

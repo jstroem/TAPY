@@ -541,7 +541,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val newSetAndAddFuncCfg = newSetCfg.append(readGetFuncNode)
       return pair.foldLeft(newSetAndAddFuncCfg)((accCfg, a) => {
         val (elCfg, elRegister) = a
-        accCfg.append(elCfg).append(new CallNode(nextRegister(), setAddFuncRegister, List(elRegister)))
+        accCfg.append(elCfg).append(new CallNode(nextRegister(), setAddFuncRegister, List(elRegister), Map()))
       })
     }
   }
@@ -625,7 +625,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val resultRegister = nextRegister()
     this.lastExpressionRegister = resultRegister
     
-    lookupCfg.append(argsCfg).append(new CallNode(resultRegister, lookupRegister, argsRegisters.reverse))
+    lookupCfg.append(argsCfg).append(new CallNode(resultRegister, lookupRegister, argsRegisters.reverse, Map()))
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
@@ -724,7 +724,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val newListAndAppendFuncCfg = newListCfg.addNode(readAppendFuncNode).connect(newListCfg.exitNodes, readAppendFuncNode).setExitNode(readAppendFuncNode)
       return pair.foldLeft(newListAndAppendFuncCfg)((accCfg,a) => {
         val (cfg,reg) = a
-        val callAppendNode = CallNode(nextRegister(), appendFuncReg, List(reg))
+        val callAppendNode = CallNode(nextRegister(), appendFuncReg, List(reg), Map())
         accCfg.append(cfg).append(callAppendNode)
       })
     } else return newListCfg
