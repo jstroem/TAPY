@@ -189,7 +189,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return valueCfg.append(assignCfg)
   }
   
-  override def visitAssign(targets: List[expr]): ControlFlowGraph = {
+  def visitAssign(targets: List[expr]): ControlFlowGraph = {
     val tmpVariableRegister = this.lastExpressionRegister
     
     var i = 0
