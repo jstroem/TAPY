@@ -104,6 +104,3 @@ object GraphvizExporter {
     def subgraphs() : List[Graph]
   }
 }
-
-
-

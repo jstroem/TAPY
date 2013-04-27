@@ -642,11 +642,35 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       acc.append(elCfg)
     }
     
+    // Lookup the keyword arguments
+    var keywordsRegisters = Map[String, Int]()
+    println(node.getInternalKeywords().size())
+    val keywordsCfg = node.getInternalKeywords().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Keyword-arguments entry"))) {(acc, el) =>
+      val elCfg = el.getInternalValue().accept(this)
+      keywordsRegisters = keywordsRegisters + (el.getInternalArg() -> this.lastExpressionRegister)
+      
+      acc.append(elCfg)
+    }
+    
+    // Lookup the stararg arguments
+    val (starargCfg, starargRegister) =
+      if (node.getInternalStarargs() != null)
+        (node.getInternalStarargs().accept(this), Some(this.lastExpressionRegister))
+      else
+        (new ControlFlowGraph(new NoOpNode("No starargs")), None)
+    
+    // Lookup the kw arguments
+    val (kwargCfg, kwargRegister) =
+      if (node.getInternalKwargs() != null)
+        (node.getInternalKwargs().accept(this), Some(this.lastExpressionRegister))
+      else
+        (new ControlFlowGraph(new NoOpNode("No starargs")), None)
+    
     // Call the function with the arguments
     val resultRegister = nextRegister()
     this.lastExpressionRegister = resultRegister
     
-    lookupCfg.append(argsCfg).append(new CallNode(resultRegister, lookupRegister, argsRegisters.reverse, Map()))
+    lookupCfg.append(argsCfg).append(keywordsCfg).append(starargCfg).append(kwargCfg).append(new CallNode(resultRegister, lookupRegister, argsRegisters.reverse, keywordsRegisters, starargRegister, kwargRegister))
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {

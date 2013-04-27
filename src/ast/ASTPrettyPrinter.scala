@@ -388,8 +388,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   override def visitCall(node: Call): String = {
     println("visitCall")
     
-    val func = node.getInternalFunc().accept(this);
-
+    val func = node.getInternalFunc().accept(this)
+    
     val args = implodeList(node.getInternalArgs(), ", ")
     val keywords = implodeStringList(node.getInternalKeywords().toList.map((node) => node.getInternalArg() + "=" + node.getInternalValue().accept(this)), ", ", true)
     val kwargs = if (node.getInternalKwargs() != null) "**" + node.getInternalKwargs().accept(this) else ""
