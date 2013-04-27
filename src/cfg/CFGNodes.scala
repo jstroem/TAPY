@@ -143,7 +143,7 @@ case class RaiseNode(valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(i
 }
 
 // Except an exception; except [(]types[)] [as result]: 
-case class ExceptNode(types: List[String], resultReg: Option[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ExceptNode(types: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"TODO\n(ExceptNode)"
 }
 
