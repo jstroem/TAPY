@@ -130,10 +130,15 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
 }
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)
-case class CallNode(resultReg: Int, functionReg: Int, argument_regs: List[Int], keywords: Map[String, Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class CallNode(resultReg: Int, functionReg: Int, argRegs: List[Int], keywordRegs: Map[String, Int] = Map(), starArgReg: Option[Int] = None, kwArgReg: Option[Int] = None, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
-    val arg_string = argument_regs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
-    s"${reg(resultReg)} = ${reg(functionReg)}($arg_string)\n(CallNode)"
+    val args = ASTPrettyPrinter.implodeStringList(argRegs.map((argReg) => reg(argReg)), ", ")
+    val kwargs = ASTPrettyPrinter.implodeStringList(keywordRegs.toList.map((entry) => entry._1 + "=" + reg(entry._2)), ", ", true)
+    val starargs = starArgReg match { case Some(arg) => "*" + reg(arg) case None => "" }
+    val keywords = kwArgReg match { case Some(arg) => "**" + reg(arg) case None => "" }
+    
+    val mixed_args = ASTPrettyPrinter.implodeStringList(scala.List(args, kwargs, starargs, keywords), ", ", true)
+    s"${reg(resultReg)} = ${reg(functionReg)}($mixed_args)\n(CallNode)"
   }
 }
 
