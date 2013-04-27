@@ -644,7 +644,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     
     // Lookup the keyword arguments
     var keywordsRegisters = Map[String, Int]()
-    println(node.getInternalKeywords().size())
     val keywordsCfg = node.getInternalKeywords().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Keyword-arguments entry"))) {(acc, el) =>
       val elCfg = el.getInternalValue().accept(this)
       keywordsRegisters = keywordsRegisters + (el.getInternalArg() -> this.lastExpressionRegister)
