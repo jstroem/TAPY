@@ -183,25 +183,24 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
    *   ...
    *   x_1 = tmp
    */
-  // TODO add asserts
   override def visitAssign(node: Assign): ControlFlowGraph = {
-    val targets = node.getInternalTargets()
-    
-    // Create a temporary variable to store the expression
-    val tmpVariableName = nextTempVariable()
-    val tmpVariableCfg = node.getInternalValue().accept(this)
+    val valueCfg = node.getInternalValue().accept(this)
+    val assignCfg = visitAssign(node.getInternalTargets().toList)
+    return valueCfg.append(assignCfg)
+  }
+  
+  def visitAssign(targets: List[expr]): ControlFlowGraph = {
     val tmpVariableRegister = this.lastExpressionRegister
     
-    // Important to use foldRight, such that x_k is taken first
     var i = 0
-    return targets.toList.foldRight(tmpVariableCfg) {(target, acc) =>
+    return targets.foldRight(new ControlFlowGraph(new NoOpNode("Assign entry"))) {(target, acc) =>
       // 1) Generate the CFG for a single target (which may be a tuple or list)
       val targetCfg = target match {
         case t: Name => new ControlFlowGraph(new WriteVariableNode(t.getInternalId(), tmpVariableRegister)) 
         case t: Subscript => visitSubscript(t, tmpVariableRegister)
         case t: Attribute => visitAttribute(t, tmpVariableRegister) 
-        case t: Tuple => visitAssignAux(node, tmpVariableRegister, t.getInternalElts())
-        case t: ast.List => visitAssignAux(node, tmpVariableRegister, t.getInternalElts())
+        case t: Tuple => visitAssignAux(tmpVariableRegister, t.getInternalElts())
+        case t: ast.List => visitAssignAux(tmpVariableRegister, t.getInternalElts())
         case t => throw new NotImplementedException()
       }
       i = i + 1
@@ -211,7 +210,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     }
   }
   
-  def visitAssignAux(node: Assign, tmpVariableRegister: Int, elts: java.util.List[expr]): ControlFlowGraph = {
+  def visitAssignAux(tmpVariableRegister: Int, elts: java.util.List[expr]): ControlFlowGraph = {
     var i = 0
     return elts.toList.foldLeft(new ControlFlowGraph(new NoOpNode("Assign tuple entry"))) {(acc, el) =>
       val indexRegister = nextRegister()
@@ -227,8 +226,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         case t: Name => lookupCfg.append(new WriteVariableNode(t.getInternalId(), lookupRegister))
         case t: Subscript => lookupCfg.append(visitSubscript(t, lookupRegister))
         case t: Attribute => lookupCfg.append(visitAttribute(t, lookupRegister))
-        case t: Tuple => lookupCfg.append(visitAssignAux(node, lookupRegister, t.getInternalElts()))
-        case t: ast.List => lookupCfg.append(visitAssignAux(node, lookupRegister, t.getInternalElts()))
+        case t: Tuple => lookupCfg.append(visitAssignAux(lookupRegister, t.getInternalElts()))
+        case t: ast.List => lookupCfg.append(visitAssignAux(lookupRegister, t.getInternalElts()))
         case t => throw new NotImplementedException()
       }
       i = i + 1
@@ -593,7 +592,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return null
   }
   
-  // TODO
   override def visitCompare(node: Compare): ControlFlowGraph = {
     println("visitCompare")
     
@@ -627,18 +625,28 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     this.lastExpressionRegister = resultRegister
     return result.setExitNode(exitNode)
   }
-
-  // TODO: Fix arguments
+  
   override def visitCall(node: Call): ControlFlowGraph = {
     println("visitCall")
     
+    // Lookup the function
     val lookupCfg = node.getInternalFunc().accept(this)
     val lookupRegister = this.lastExpressionRegister
     
+    // Lookup the arguments
+    var argsRegisters = List[Int]()
+    val argsCfg = node.getInternalArgs().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Function-arguments entry"))) {(acc, el) =>
+      val elCfg = el.accept(this)
+      argsRegisters = this.lastExpressionRegister :: argsRegisters
+      
+      acc.append(elCfg)
+    }
+    
+    // Call the function with the arguments
     val resultRegister = nextRegister()
     this.lastExpressionRegister = resultRegister
     
-    lookupCfg.append(new CallNode(resultRegister, lookupRegister, List()))
+    lookupCfg.append(argsCfg).append(new CallNode(resultRegister, lookupRegister, argsRegisters.reverse))
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
