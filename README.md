@@ -39,27 +39,15 @@ TODO
 =====
 This is missing to the registers
 
-	function
-	class
-	delete
-	assign
-	augassign
-	for
-	while
 	with
-	try-except
-	try-final
+	try-except (christoffer)
+	try-final (christoffer)
 	assert
 	lambda
-	listcomp
-	setcomp
-	distcomp
 	generatorexp
 	yield
-	compare
-	call (arguments)
 	repr
-	ellipsis
-	slice
-	extSlice
+	ellipsis (lindstroem)
+	slice (lindstroem)
+	extSlice (lindstroem)
 	exceptHandler
