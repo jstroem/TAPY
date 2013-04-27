@@ -84,6 +84,9 @@ case class NewTupleNode(resultReg: Int, valueRegs: List[Int], id: UUID = UUID.ra
 case class NewSetNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"${reg(resultReg)} = {}\n(NewSetNode)"
 }
+case class NewEllipsisNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = Ellipsis\n(NewEllipsisNode)"
+}
 
 // Read variable; result = variable
 // Read property from base (object/class); result =  base.property
