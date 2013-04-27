@@ -1,4 +1,4 @@
 try:
-	pass
+	print "x"
 finally:
-	pass
+	print "y"

@@ -373,7 +373,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
     println("visitTryFinally")
-    return null
+    
+    val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-body entry"), node.getInternalBody())
+    val finalNormalCfg = generateCFGOfStatementList(new NoOpNode("Finally-normal entry"), node.getInternalFinalbody())
+    val finalExceptCfg = generateCFGOfStatementList(new NoOpNode("Finally-except entry"), node.getInternalFinalbody())
+    
+    return bodyCfg.connectExcept(finalExceptCfg).append(finalNormalCfg)
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
