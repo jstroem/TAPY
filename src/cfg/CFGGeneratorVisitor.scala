@@ -872,7 +872,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
     println("visitEllipsis")
-    return null
+    lastExpressionRegister = nextRegister()
+    return new ControlFlowGraph(new NewEllipsisNode(lastExpressionRegister))
   }
 
   override def visitSlice(node: Slice): ControlFlowGraph = {
