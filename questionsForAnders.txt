@@ -3,3 +3,6 @@ Registers
 Control Flow I expressions
 
 Interprocedural
+
+Scopes? Skal vi f.eks. lave del?
+Hvordan får vi fat i f.eks. seneste exception? Sys er et modul, som kan overskrives?
