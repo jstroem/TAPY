@@ -144,7 +144,8 @@ case class RaiseNode(valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(i
 
 // Except an exception; except [(]types[)] [as result]: 
 case class ExceptNode(types: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(ExceptNode)"
+  val type_string = types.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
+  override def toString = s"Except: $type_string"
 }
 
 // Binary operation; result = arg1 op arg2
@@ -162,11 +163,6 @@ case class UnOpNode(op: unaryopType, arg1Reg: Int, resultReg: Int, id: UUID = UU
 case class PrintNode(dest: Option[Int], valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   val arg_string = valueRegs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
   override def toString = s"print $arg_string\n(Print)"
-}
-
-// For and while nodes
-case class ForInNode(id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\n(ForInNode)"
 }
 
 // Misc

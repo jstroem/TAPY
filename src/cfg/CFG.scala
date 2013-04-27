@@ -215,9 +215,13 @@ case class ControlFlowGraph(entryNodes: Set[Node],
         var (from, toList) = pair
         toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from), getNodeId(to)) :: list)}
 
+    var graphExceptEdges = this.exceptionEdges.foldLeft(graphEdges) {(list, pair) => 
+        var (from, toList) = pair
+        toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from), getNodeId(to), None, Some(GraphvizExporter.Dashed())) :: list)}
+
     return new GraphvizExporter.Graph {
       def nodes = graphNodes
-      def edges() = graphEdges
+      def edges() = graphExceptEdges
       def subgraphs() = List()
       def name() = "ControlFlowGraph"
     }
