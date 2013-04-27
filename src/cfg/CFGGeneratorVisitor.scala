@@ -644,7 +644,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitDictComp")
     val resultReg = nextRegister()
     val appendFuncReg = nextRegister()
-    val newDictCfg = (new ControlFlowGraph(new NewDictNode(resultReg))).append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
+    val newDictCfg = (new ControlFlowGraph(new NewDictionaryNode(resultReg))).append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
 
     val keyCfg = node.getInternalKey().accept(this)
     val keyReg = lastExpressionRegister
