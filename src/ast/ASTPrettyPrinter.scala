@@ -369,7 +369,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
 
     node.getInternalGenerators().toList.foreach((node) => visitComprehension(node))
-    return s"$elt$generators"
+    return s"($elt$generators)"
   }
   
   override def visitYield(node: Yield): String = {
