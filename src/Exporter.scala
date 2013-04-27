@@ -43,8 +43,7 @@ object GraphvizExporter {
   def drawEdges( edges: List[Edge], export:  java.io.PrintStream = System.out) = {
     edges.foreach({(edge) =>
                     val label = edge.label.getOrElse("")
-                    val style = edge.style.getOrElse(Solid())
-                    export.println(tab + "\"%s\" -> \"%s\" [shape=%s label=\"%s\"];".format(edge.from,edge.to, style, escape(label)))
+                    export.println(tab + "\"%s\" -> \"%s\" [style=\"%s\" label=\"%s\"];".format(edge.from,edge.to, edge.style.getOrElse(Solid()), escape(label)))
                   })
   }
 

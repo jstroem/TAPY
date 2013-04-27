@@ -295,7 +295,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
     iterCfg = iterCfg.append(new ReadPropertyNode(containerReg, "__iter__", createIterFunctionReg))
                      .append(new CallNode(iterReg, createIterFunctionReg, List(), Map()))
-                     .append(new ReadPropertyNode(iterReg, "__next__", nextObjFunctionReg))
+                     .append(new ReadPropertyNode(iterReg, "next", nextObjFunctionReg))
                      .append(loopStartNode)
                      .addNode(forExitNode)
                      .append(assignCfg)
@@ -307,7 +307,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
 
     //Add the forbody onto the cfg
-    return iterCfg.insert(forBodyCfg, Set[Node](), loopStartNode)
+    return iterCfg.insert(forBodyCfg, iterCfg.exitNodes, loopStartNode)
+                  .setExitNode(forExitNode)
   }
 
   override def visitWhile(node: While): ControlFlowGraph = {
