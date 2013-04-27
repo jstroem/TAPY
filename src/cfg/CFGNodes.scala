@@ -134,8 +134,8 @@ case class CallNode(resultReg: Int, functionReg: Int, argRegs: List[Int], keywor
   override def toString() = {
     val args = ASTPrettyPrinter.implodeStringList(argRegs.map((argReg) => reg(argReg)), ", ")
     val kwargs = ASTPrettyPrinter.implodeStringList(keywordRegs.toList.map((entry) => entry._1 + "=" + reg(entry._2)), ", ", true)
-    val starargs = starArgReg match { case Some(arg) => reg(arg) case None => "" }
-    val keywords = kwArgReg match { case Some(arg) => reg(arg) case None => "" }
+    val starargs = starArgReg match { case Some(arg) => "*" + reg(arg) case None => "" }
+    val keywords = kwArgReg match { case Some(arg) => "**" + reg(arg) case None => "" }
     
     val mixed_args = ASTPrettyPrinter.implodeStringList(scala.List(args, kwargs, starargs, keywords), ", ", true)
     s"${reg(resultReg)} = ${reg(functionReg)}($mixed_args)\n(CallNode)"
