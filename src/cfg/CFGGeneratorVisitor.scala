@@ -279,6 +279,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val nextObjFunctionReg = nextRegister()
     val nextObjReg = nextRegister()
 
+    lastExpressionRegister = nextObjReg
+    val assignCfg = visitAssign(node.getInternalTarget())
+
     val loopStartNode = new CallNode(nextObjReg, nextObjFunctionReg, List())
     val exceptNode = new ExceptNode(List("StopIteration"))
     val forExitNode = new NoOpNode("For exit")
@@ -295,19 +298,16 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
                      .append(new ReadPropertyNode(iterReg, "__next__", nextObjFunctionReg))
                      .append(loopStartNode)
                      .addNode(forExitNode)
-    //TODO: missing assignment
+                     .append(assignCfg)
 
     //Make exception state: If there is a StopIteration exception, the exceptNode is reached and afterwards going into the orElseCfg
     iterCfg = iterCfg.addNode(exceptNode)
                      .connectExcept(loopStartNode, exceptNode)
-                     .insert(forOrElseCfg)
-                     .connect(exceptNode, forOrElseCfg.entryNodes)
-                     .connect(forOrElseCfg.exitNodes, forExitNode)
+                     .insert(forOrElseCfg, exceptNode, forExitNode)
 
 
     //Add the forbody onto the cfg
-    iterCfg = iterCfg.insert(forBodyCfg)
-                     .connect(forBodyCfg.exitNodes, loopStartNode)
+    iterCfg = iterCfg.insert(forBodyCfg, Set(), loopStartNode)
   }
 
   override def visitWhile(node: While): ControlFlowGraph = {
