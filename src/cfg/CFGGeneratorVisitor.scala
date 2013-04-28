@@ -368,6 +368,11 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
     println("visitTryExcept")
+    val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-Except entry"), node.getInternalBody())
+    val handlers = node.getInternalHandlers().toList.map((h) => h.accept(this))
+    val orElseCFG = generateCFGOfStatementList(new NoOpNode("Try-Except orElse"), node.getInternalOrelse())
+    val exit = new NoOpNode("Try-except exit")
+
     return null
   }
 
