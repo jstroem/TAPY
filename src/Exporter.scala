@@ -68,7 +68,6 @@ object GraphvizExporter {
   def escape(s: String): String = {
     s.map(_ match { 
             case '\n' => "\\n"
-            case '\'' => "&apos;"
             case '"' => "&quot;"
             case '<' => "&lt;"
             case '>' => "&gt;"
@@ -76,8 +75,8 @@ object GraphvizExporter {
             case '}' => "\\}"
             case ']' => "\\]"
             case '[' => "\\["
-            case other => other toString
-        }) mkString;
+            case other => other.toString
+        }).mkString;
   }
 
   abstract class Shape() {

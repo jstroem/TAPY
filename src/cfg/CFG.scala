@@ -215,7 +215,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
       acc.removeNoOpNode(node).exportToFile(s"gay$i", false, false)}
   }
   
-  def exportToFile(fileName: String, doCollapse : Boolean = false, doMinify: Boolean = true): ControlFlowGraph = {
+  def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
     
