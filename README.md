@@ -47,7 +47,6 @@ This is missing to the registers
 	generatorexp
 	yield
 	repr
-	ellipsis (lindstroem)
 	slice (lindstroem)
 	extSlice (lindstroem)
 	exceptHandler

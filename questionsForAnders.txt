@@ -1,8 +1,5 @@
-Try-Except
-Registers
-Control Flow I expressions
-
-Interprocedural
-
-Scopes? Skal vi f.eks. lave del?
+Scopes? Skal vi f.eks. lave `del`?
 Hvordan får vi fat i f.eks. seneste exception? Sys er et modul, som kan overskrives?
+Hvis elementer bliver overskrevet kan vi potientielt stå med et andet object. (eksempel, new array eller catch StopIteration)
+
+
