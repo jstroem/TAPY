@@ -398,6 +398,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
              .addExitNodes(elCfg.exitNodes)
       
       lastHandlerEntries = elCfg.entryNodes
+      result
     }
     
     val handlerFinallyCfg =
