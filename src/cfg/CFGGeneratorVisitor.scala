@@ -390,7 +390,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val result =
         if (lastHandlerEntries == null)
           acc.insert(elCfg)
-             .connectExcept(acc.exitNodes, elCfg.entryNodes) // Connect "Try-except-handler-entry" to elCfg
+             .connect(acc.exitNodes, elCfg.entryNodes) // Connect "Try-except-handler-entry" to elCfg
              .setExitNodes(elCfg.exitNodes) // setExitNodes (not add) s.t. "Try-except-handler-entry" does not become an exit node
         else
           acc.insert(elCfg)
@@ -398,6 +398,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
              .addExitNodes(elCfg.exitNodes)
       
       lastHandlerEntries = elCfg.entryNodes
+      result
     }
     
     val handlerFinallyCfg =

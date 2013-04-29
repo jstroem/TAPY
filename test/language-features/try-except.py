@@ -1,10 +1,10 @@
 try:
 	pass
 except Foo:
-	pass
+	print "b"
 except Foo as Bar:
-	pass
+	print "c"
 except:
-	pass
+	print "d"
 else:
-	pass
+	print "e"
