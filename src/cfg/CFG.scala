@@ -7,7 +7,7 @@ import java.util.IdentityHashMap
 
 case class ControlFlowGraph(entryNodes: Set[Node],
                             exitNodes: Set[Node],
-                            exceptionExitNodes: Set[Node],
+                            exceptExitNodes: Set[Node],
                             nodes: Set[Node],
                             edges: Map[Node, Set[Node]],
                             exceptionEdges: Map[Node, Set[Node]]) {
@@ -44,47 +44,55 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   }
 
   def addNodes(newNodes: Set[Node]): ControlFlowGraph = {
-    new ControlFlowGraph(entryNodes, exitNodes, exceptionExitNodes, nodes ++ newNodes, edges, exceptionEdges)
+    new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes ++ newNodes, edges, exceptionEdges)
   }
   
   def setEntryNode(node: Node): ControlFlowGraph = {
-    setEntryNodes(Set(node))
+    return setEntryNodes(Set(node))
   }
  
   def setEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
-    new ControlFlowGraph(newEntryNodes, exitNodes, exceptionExitNodes, nodes, edges, exceptionEdges)
+    return new ControlFlowGraph(newEntryNodes, exitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
 
+  def addExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes: Set[Node], exceptExitNodes, nodes, edges, exceptionEdges)
+  }
+  
   def setExitNode(node: Node): ControlFlowGraph = {
-    setExitNodes(Set(node))
+    return setExitNodes(Set(node))
   }
     
   def setExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
-    new ControlFlowGraph(entryNodes, newExitNodes, exceptionExitNodes, nodes, edges, exceptionEdges)
+    return new ControlFlowGraph(entryNodes, newExitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
 
-  def setExceptionExitNode(node: Node): ControlFlowGraph = {
-    setExceptionExitNodes(Set(node))
+  def addExceptExitNodes(newExceptExitNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes ++ newExceptExitNodes, nodes, edges, exceptionEdges)
+  }
+  
+  def setExceptExitNode(node: Node): ControlFlowGraph = {
+    return setExceptExitNodes(Set(node))
   }
 
-  def setExceptionExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
-    new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
+  def setExceptExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
   }
 
   def removeNode(node: Node): ControlFlowGraph = {
-    if (entryNodes.contains(node) || exitNodes.contains(node) || exceptionExitNodes.contains(node))
+    if (entryNodes.contains(node) || exitNodes.contains(node) || exceptExitNodes.contains(node))
       // Not always working in this case, so don't remove node.
       // Problem: The exit-node may have outgoing edges (e.g. in case of loops).
       return this 
     
     val filteredEntryNodes = entryNodes // if (entryNodes.contains(node)) entryNodes - node ++ getSuccessors(node) else entryNodes
     val filteredExitNodes = exitNodes // if (exitNodes.contains(node)) exitNodes - node ++ getPredecessors(node) else exitNodes
-    val filteredExceptionExitNodes = exceptionExitNodes // if (exceptionExitNodes.contains(node)) exceptionExitNodes - node ++ getExceptionPredecessors(node) else exceptionExitNodes
+    val filteredExceptExitNodes = exceptExitNodes // if (exceptExitNodes.contains(node)) exceptExitNodes - node ++ getExceptionPredecessors(node) else exceptExitNodes
     val filteredNodes = nodes - node 
     val filteredEdges = edges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
     val filteredExceptionEdges = exceptionEdges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
 
-    new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredExceptionExitNodes, filteredNodes, filteredEdges, filteredExceptionEdges)
+    return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredExceptExitNodes, filteredNodes, filteredEdges, filteredExceptionEdges)
       .connect(getPredecessors(node), getSuccessors(node))
       .connectExcept(getPredecessors(node), getExceptionSuccessors(node))
       .connectExcept(getExceptionPredecessors(node), getExceptionSuccessors(node))
@@ -96,31 +104,38 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    */
 
   private def addEdges(predecessors: Set[Node], successors: Set[Node], edges: Map[Node, Set[Node]]): Map[Node, Set[Node]] = {
-    predecessors.foldLeft(edges) {(edgeMap, pred) =>
+    return predecessors.foldLeft(edges) {(edgeMap, pred) =>
       val currSuccs = edgeMap.getOrElse(pred, Set())
-      edgeMap + (pred -> (currSuccs ++ successors))}
+      edgeMap + (pred -> (currSuccs ++ successors))
+    }
   }
 
   def connect(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
     val newRegularEdges = addEdges(preds, succs, edges)
-    new ControlFlowGraph(entryNodes, exitNodes, exceptionExitNodes, nodes, newRegularEdges, exceptionEdges)
+    return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, newRegularEdges, exceptionEdges)
   }
 
-  def connect(pred: Node, succs: Set[Node]): ControlFlowGraph = { connect(Set(pred), succs) }
-  def connect(preds: Set[Node], succ: Node): ControlFlowGraph = { connect(preds, Set(succ)) }
-  def connect(pred: Node, succ: Node): ControlFlowGraph = { connect(Set(pred), Set(succ)) }
+  def connect(pred: Node, succs: Set[Node]): ControlFlowGraph = { return connect(Set(pred), succs) }
+  def connect(preds: Set[Node], succ: Node): ControlFlowGraph = { return connect(preds, Set(succ)) }
+  def connect(pred: Node, succ: Node): ControlFlowGraph = { return connect(Set(pred), Set(succ)) }
 
 
-  def connectExcept(pred: Node, succ: Node): ControlFlowGraph = { connectExcept(Set(pred), Set(succ)) }
-  def connectExcept(pred: Node, succs: Set[Node]): ControlFlowGraph = { connectExcept(Set(pred), succs) }
-  def connectExcept(preds: Set[Node], succ: Node): ControlFlowGraph = { connectExcept(preds, Set(succ)) }
-  def connectExcept(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
-    val newExceptionEdges = addEdges(preds, succs, exceptionEdges)
-    new ControlFlowGraph(entryNodes, exitNodes, exceptionExitNodes, nodes, edges, newExceptionEdges)
+  def connectExcept(pred: Node, succ: Node): ControlFlowGraph = { return connectExcept(Set(pred), Set(succ)) }
+  def connectExcept(pred: Node, succs: Set[Node]): ControlFlowGraph = { return connectExcept(Set(pred), succs) }
+  def connectExcept(preds: Set[Node], succ: Node): ControlFlowGraph = { return connectExcept(preds, Set(succ)) }
+  def connectExcept(preds: Set[Node], succs: Set[Node], overwrite: Boolean = false): ControlFlowGraph = {
+    // Only allow one exception edge for each node (in case trying to add more than one, it is ignored)
+    val newExceptionEdges = preds.foldLeft(exceptionEdges) {(edgeMap, pred) =>
+      edgeMap.get(pred) match {
+        case Some(currSuccs) => if (currSuccs.size >= 1 && !overwrite) edgeMap else edgeMap + (pred -> succs)
+        case None => edgeMap + (pred -> succs)
+      }
+    }
+    return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, edges, newExceptionEdges)
   }
   
   def connectExcept(o: ControlFlowGraph): ControlFlowGraph = {
-    insert(o).connectExcept(nodes, o.entryNodes)
+    return insert(o).connectExcept(nodes, o.entryNodes)
   }
   
   private def mapMerge[S, T] (a: Map[S, Set[T]], b: Map[S, Set[T]]) = {
@@ -133,7 +148,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     val newExceptionEdges = mapMerge(exceptionEdges, o.exceptionEdges)
     return new ControlFlowGraph(entryNodes ++ o.entryNodes, 
                          exitNodes ++ o.exitNodes,
-                         exceptionExitNodes ++ o.exceptionExitNodes,
+                         exceptExitNodes ++ o.exceptExitNodes,
                          nodes ++ o.nodes,
                          newRegularEdges,
                          newExceptionEdges)
@@ -156,8 +171,8 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   }
   
   /*
-  def append(oNormal: ControlFlowGraph, oExcept: ControlFlowGraph): ControlFlowGraph = {
-    append(oNormal).insertExcept(oExcept, exitNodes, Set[Node]()).setExceptionExitNodes(oExcept.exitNodes)
+  def appendExcept(o: ControlFlowGraph): ControlFlowGraph = {
+    insert(o).connectExcept(exitNodes, o.entryNodes)
   }
   */
   
@@ -207,7 +222,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
           return "null"
       val entryNodeStr = if (entryNodes.contains(node)) "\nEntry node" else ""
       val exitNodeStr = if (exitNodes.contains(node)) "\nExit node" else ""
-      val exitExceptNodeStr = if (exceptionExitNodes.contains(node)) "\nExcept exit node" else ""
+      val exitExceptNodeStr = if (exceptExitNodes.contains(node)) "\nExcept exit node" else ""
       return node.toString() + entryNodeStr + exitNodeStr + exitExceptNodeStr
     }
 

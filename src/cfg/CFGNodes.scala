@@ -151,9 +151,10 @@ case class RaiseNode(valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(i
 }
 
 // Except an exception; except [(]types[)] [as result]: 
-case class ExceptNode(types: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
-  val type_string = types.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
-  override def toString = s"Except: $type_string"
+case class ExceptNode(types: List[String], names: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
+  val typesStr = types.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
+  val namesStr = names.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
+  override def toString = s"except: $typesStr as $namesStr"
 }
 
 // Binary operation; result = arg1 op arg2
