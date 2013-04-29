@@ -1,12 +1,15 @@
 try:
-	pass
-except Foo:
-	pass
-except Foo as Bar:
-	pass
+	10/0
+except Foo, e: # equivalent to Foo as e
+	print "a"
+except Foo as e:
+	print "b"
+except ZeroDivisionError as (e1,e2):
+	print "c"
 except:
-	pass
-else:
-	pass
-finally:
-	pass
+	print "d"
+else: # Useful if the try clause does not raise an exception
+	print "e"
+print "f"
+#finally:
+#	print "f"

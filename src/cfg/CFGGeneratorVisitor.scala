@@ -283,7 +283,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val assignCfg = visitAssign(List(node.getInternalTarget()))
 
     val loopStartNode = new CallNode(nextObjReg, nextObjFunctionReg, List(), Map())
-    val exceptNode = new ExceptNode(List("StopIteration"))
+    val exceptNode = new ExceptNode(List("StopIteration"), List())
     val forExitNode = new NoOpNode("For exit")
 
     val forOrElseCfg = generateCFGOfStatementList(new NoOpNode("For-or-else entry"), node.getInternalOrelse())
@@ -368,12 +368,37 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
     println("visitTryExcept")
+    
     val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-Except entry"), node.getInternalBody())
-    val handlers = node.getInternalHandlers().toList.map((h) => h.accept(this))
-    val orElseCFG = generateCFGOfStatementList(new NoOpNode("Try-Except orElse"), node.getInternalOrelse())
-    val exit = new NoOpNode("Try-except exit")
-
-    return null
+    
+    var lastHandlerEntries: Set[Node] = null // Should only be a single ExceptNode
+    val handlerCfg = node.getInternalHandlers().foldLeft(new ControlFlowGraph(new NoOpNode("Try-except-handler entry"))) {(acc, el) =>
+      val elCfg = el.accept(this)
+      
+      val result =
+        if (lastHandlerEntries == null)
+          acc.insert(elCfg)
+             .connectExcept(acc.exitNodes, elCfg.entryNodes) // Connect "Try-except-handler-entry" to elCfg
+             .setExitNodes(elCfg.exitNodes) // setExitNodes (not add) s.t. "Try-except-handler-entry" does not become an exit node
+        else
+          acc.insert(elCfg)
+             .connectExcept(lastHandlerEntries, elCfg.entryNodes)
+             .addExitNodes(elCfg.exitNodes)
+      
+      lastHandlerEntries = elCfg.entryNodes
+      result
+    }
+    
+    handlerCfg.exportToFile("handler")
+    
+    val elseCfg = generateCFGOfStatementList(new NoOpNode("Try-except-else entry"), node.getInternalOrelse())
+    val exitNode = new NoOpNode("Try-except exit")
+    
+    
+    return bodyCfg.append(elseCfg)
+                  .append(exitNode)
+                  .insert(handlerCfg, Set[Node](), exitNode)
+                  .connectExcept(bodyCfg.nodes, handlerCfg.entryNodes)
   }
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
@@ -591,7 +616,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val assignCfg = visitAssign(List(comp.getInternalTarget()))
 
     val loopStartNode = new CallNode(nextObjReg, nextObjFunctionReg, List(), Map())
-    val exceptNode = new ExceptNode(List("StopIteration"))
+    val exceptNode = new ExceptNode(List("StopIteration"), List())
     val forExitNode = new NoOpNode("ForComp exit")
 
 
@@ -874,6 +899,16 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     
     return valuesCfg.append(new NewTupleNode(tupleRegister, registers.reverse))
   }
+  
+  def namesToList(elts: List[expr], acc: List[String] = List()): List[String] = {
+    elts.foldRight(acc) {(exp, acc) =>
+      exp match {
+        case name: Name => name.getInternalId() :: acc
+        case list: ast.List => namesToList(list.getInternalElts().toList, acc)
+        case tuple: Tuple => namesToList(tuple.getInternalElts().toList, acc)
+      }
+    }
+  }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
     println("visitEllipsis")
@@ -898,6 +933,12 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
     println("visitExceptHandler")
-    return null
+    
+    val excType: List[String] = if (node.getInternalType() != null) namesToList(List(node.getInternalType())) else List()
+    val excName: List[String] = if (node.getInternalName() != null) namesToList(List(node.getInternalName())) else List()
+    
+    val bodyCfg = generateCFGOfStatementList(new ExceptNode(excType, excName), node.getInternalBody())
+    
+    return bodyCfg
   }
 }
