@@ -53,6 +53,18 @@ object GraphvizExporter {
       }
   }
 
+  def getOutgoingEdges(node: Node, edges: List[Edge]) : List[Edge] = edges.foldLeft(List() : List[Edge])((acc,edge) => edge match {
+    case Edge(node.id, _, _, _) => edge :: acc
+    case _ => acc
+  })
+
+  def getIngoingEdges(node: Node, edges: List[Edge]) : List[Edge] = edges.foldLeft(List() : List[Edge])((acc,edge) => edge match {
+    case Edge(_, node.id, _, _) => edge :: acc
+    case _ => acc
+  })
+
+  def getNodeById(nodeId : String, nodes: List[Node]) : Option[Node] = nodes.find((node) => node.id == nodeId)
+
   def escape(s: String): String = {
     s.map(_ match { 
             case '\n' => "\\n"

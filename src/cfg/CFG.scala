@@ -189,19 +189,19 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return nodesToRemove.foldLeft(this) {(acc, node) => acc.removeNode(node)}
   }
   
-  def exportToFile(fileName: String, doMinify: Boolean = true): ControlFlowGraph = {
-    GraphvizExporter.export(generateGraphvizGraph(), new PrintStream(fileName + ".cfg.dot"))
+  def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
+    GraphvizExporter.export(generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
     
     if (doMinify) {
-      GraphvizExporter.export(minify().generateGraphvizGraph(), new PrintStream(fileName + ".cfg.min.dot"))
+      GraphvizExporter.export(minify().generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.min.dot"))
       Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.min.gif " + fileName + ".cfg.min.dot")
     }
   
     return this
   }
   
-  def generateGraphvizGraph() : GraphvizExporter.Graph = {
+  def generateGraphvizGraph(collapse : Boolean) : GraphvizExporter.Graph = {
     def nodeToString(node: Node): String = {
       if (node == null)
           return "null"
@@ -226,13 +226,54 @@ case class ControlFlowGraph(entryNodes: Set[Node],
         var (from, toList) = pair
         toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from), getNodeId(to)) :: list)}
 
-    var graphExceptEdges = this.exceptionEdges.foldLeft(graphEdges) {(list, pair) => 
+    var graphExceptEdges = this.exceptionEdges.foldLeft(List() : List[GraphvizExporter.Edge]) {(list, pair) => 
         var (from, toList) = pair
         toList.foldLeft(list)((list, to) => GraphvizExporter.Edge(getNodeId(from), getNodeId(to), None, Some(GraphvizExporter.Dashed())) :: list)}
 
+    def collapseNodes(n : GraphvizExporter.Node, m: GraphvizExporter.Node, nodes: List[GraphvizExporter.Node], edges: List[GraphvizExporter.Edge], exceptEdges: List[GraphvizExporter.Edge]) : (List[GraphvizExporter.Node], List[GraphvizExporter.Edge], List[GraphvizExporter.Edge], Boolean) = {
+      val outgoingEdges = GraphvizExporter.getOutgoingEdges(n, edges)
+      if (outgoingEdges.size == 1 && outgoingEdges.head.to == m.id) {
+        val ingoingEdges = GraphvizExporter.getIngoingEdges(m, edges)
+        val ingoingExceptEdges = GraphvizExporter.getIngoingEdges(m, exceptEdges)
+        if (ingoingEdges.size == 1 && ingoingEdges.head.from == n.id && ingoingExceptEdges.size == 0) {
+          val outgoingExceptEdgesFromN = GraphvizExporter.getOutgoingEdges(n, exceptEdges)
+          val outgoingExceptEdgesFromM = GraphvizExporter.getOutgoingEdges(m, exceptEdges)
+          if (outgoingExceptEdgesFromN == outgoingExceptEdgesFromM) {
+            val newNodes = (new GraphvizExporter.Node(n.label +"\n" + m.label, m.id)) :: nodes.filter((node) => node.id != n.id && node.id != m.id)
+            val newEdges = edges.foldLeft(List() : List[GraphvizExporter.Edge])((acc,edge) => edge match {
+              case GraphvizExporter.Edge(n.id, m.id, _, _) => acc
+              case GraphvizExporter.Edge(e, n.id, _, _) => (new GraphvizExporter.Edge(e, m.id, edge.label, edge.style)) :: acc
+              case _ => edge :: acc
+            })
+            val newExceptEdges = exceptEdges.foldLeft(List() : List[GraphvizExporter.Edge])((acc,edge) => edge match {
+              case GraphvizExporter.Edge(n.id, m.id, _, _) => acc
+              case GraphvizExporter.Edge(_, n.id, _, _) => (new GraphvizExporter.Edge(edge.from, m.id, edge.label, edge.style)) :: acc
+              case _ => edge :: acc
+            })
+            return (newNodes, newEdges, newExceptEdges, true)
+          }
+        }
+      }
+      return (nodes, edges, exceptEdges, false)
+    } 
+
+    def blockify(nodes: List[GraphvizExporter.Node], edges: List[GraphvizExporter.Edge], exceptEdges: List[GraphvizExporter.Edge]) : (List[GraphvizExporter.Node], List[GraphvizExporter.Edge], List[GraphvizExporter.Edge]) = {
+      for (n <- nodes) {
+        for (m <- nodes) {
+          val (blockedNodes, blockedEdges, blockedExceptEdges,collapsed) = collapseNodes(n, m, nodes, edges, exceptEdges)
+          if (collapsed) {
+            return blockify(blockedNodes, blockedEdges, blockedExceptEdges)
+          }
+        }
+      }
+      return (nodes, edges, exceptEdges)
+    }
+
+    val (blockedNodes, blockedEdges, blockedExceptEdges) = if (collapse) blockify(graphNodes, graphEdges, graphExceptEdges) else (graphNodes, graphEdges, graphExceptEdges)
+
     return new GraphvizExporter.Graph {
-      def nodes = graphNodes
-      def edges() = graphExceptEdges
+      def nodes = blockedNodes
+      def edges() = blockedEdges ::: blockedExceptEdges
       def subgraphs() = List()
       def name() = "ControlFlowGraph"
     }
