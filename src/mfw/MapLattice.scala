@@ -4,9 +4,10 @@ import tapy.mfw._
 
 
 // Elements of the set that are not present as keys in the Map are thought to be mapped to bottom element of lattice
-class MapLattice[S, T](set: Set[S], lattice: Lattice[T]) extends Lattice[Map[S, T]] {
+class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
 
-  def top: Map[S, T] = set.foldLeft (Map(): Map[S, T]) ((m, e) => m + (e -> lattice.top))
+  //set.foldLeft (Map(): Map[S, T]) ((m, e) => m + (e -> lattice.top))
+  def top: Map[S, T] = throw new UnsupportedOperationException("No top available")
   def bottom: Map[S, T] = (Map(): Map[S, T])
 
   def compare(a: Map[S, T], b: Map[S, T]) = {
