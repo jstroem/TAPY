@@ -79,24 +79,30 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
   }
 
-  def removeNode(node: Node): ControlFlowGraph = {
-    if (entryNodes.contains(node) || exitNodes.contains(node) || exceptExitNodes.contains(node))
-      // Not always working in this case, so don't remove node.
-      // Problem: The exit-node may have outgoing edges (e.g. in case of loops).
-      return this 
-    
-    val filteredEntryNodes = entryNodes // if (entryNodes.contains(node)) entryNodes - node ++ getSuccessors(node) else entryNodes
-    val filteredExitNodes = exitNodes // if (exitNodes.contains(node)) exitNodes - node ++ getPredecessors(node) else exitNodes
-    val filteredExceptExitNodes = exceptExitNodes // if (exceptExitNodes.contains(node)) exceptExitNodes - node ++ getExceptionPredecessors(node) else exceptExitNodes
-    val filteredNodes = nodes - node 
-    val filteredEdges = edges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
-    val filteredExceptionEdges = exceptionEdges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
+  def removeNoOpNode(node: Node): ControlFlowGraph = node match {
+    case n: NoOpNode => {
+      if (entryNodes.contains(node) || exitNodes.contains(node) || exceptExitNodes.contains(node))
+        // Not always working in this case, so don't remove node.
+        // Problem: The exit-node may have outgoing edges (e.g. in case of loops).
+        return this
+      
+      if (getExceptionSuccessors(node).exists({(n) => getPredecessors(n).isEmpty && getExceptionPredecessors(n).size == 1})) {
+        return this
+      }
 
-    return new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredExceptExitNodes, filteredNodes, filteredEdges, filteredExceptionEdges)
-      .connect(getPredecessors(node), getSuccessors(node))
-      .connectExcept(getPredecessors(node), getExceptionSuccessors(node))
-      .connectExcept(getExceptionPredecessors(node), getExceptionSuccessors(node))
-      .connectExcept(getExceptionPredecessors(node), getSuccessors(node))
+      val filteredEntryNodes = entryNodes // if (entryNodes.contains(node)) entryNodes - node ++ getSuccessors(node) else entryNodes
+      val filteredExitNodes = exitNodes // if (exitNodes.contains(node)) exitNodes - node ++ getPredecessors(node) else exitNodes
+      val filteredExceptExitNodes = exceptExitNodes // if (exceptExitNodes.contains(node)) exceptExitNodes - node ++ getExceptionPredecessors(node) else exceptExitNodes
+      val filteredNodes = nodes - node
+      val filteredEdges = edges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
+      val filteredExceptionEdges = exceptionEdges.filterKeys{(n) => node != n}.mapValues{(ns) => ns - node}
+
+      new ControlFlowGraph(filteredEntryNodes, filteredExitNodes, filteredExceptExitNodes, filteredNodes, filteredEdges, filteredExceptionEdges)
+        .connect(getPredecessors(node), getSuccessors(node))
+        .connectExcept(getExceptionPredecessors(node), getSuccessors(node))
+    }
+
+    case _ => this
   }
   
   /*
@@ -201,10 +207,15 @@ case class ControlFlowGraph(entryNodes: Set[Node],
         case node => acc
       }
     }
-    return nodesToRemove.foldLeft(this) {(acc, node) => acc.removeNode(node)}
+    var i = 0
+    this.exportToFile("gay0", false, false)
+    return nodesToRemove.foldLeft(this) {(acc, node) => 
+      i = i + 1
+      println(s"$i $node")
+      acc.removeNoOpNode(node).exportToFile(s"gay$i", false, false)}
   }
   
-  def exportToFile(fileName: String, doCollapse : Boolean = false, doMinify: Boolean = true): ControlFlowGraph = {
+  def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
     
