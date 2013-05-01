@@ -597,7 +597,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitDict")
     
     val emptyDictRegister = nextRegister()
-    val emptyDictCfg = new ControlFlowGraph(new NewDictionaryNode(emptyDictRegister))
+    val newDictFunc = nextRegister()
+    val emptyDictCfg = new ControlFlowGraph(new ReadVariableNode("dict",newDictFunc,true)).append(new CallNode(emptyDictRegister, newDictFunc, List()))
     
     val dictCfg = node.getInternalKeys().toList.zip(node.getInternalValues().toList).foldLeft(emptyDictCfg) {(acc,entry) =>
       val keyCfg = entry._1.accept(this)
@@ -619,7 +620,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitSet")
     
     val emptySetRegister = nextRegister()
-    val newSetCfg = new ControlFlowGraph(new NewSetNode(emptySetRegister))
+    val newSetFunc = nextRegister()
+    val newSetCfg = new ControlFlowGraph(new ReadVariableNode("set",newSetFunc,true)).append(new CallNode(emptySetRegister, newSetFunc, List()))
 
     if (node.getInternalElts().size() == 0) {
       // Just return the empty set
@@ -688,7 +690,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitListComp")
     val resultReg = nextRegister()
     val appendFuncReg = nextRegister()
-    val newListCfg = (new ControlFlowGraph(new NewListNode(resultReg))).append(new ReadPropertyNode(resultReg, "append", appendFuncReg))
+    val newListFunc = nextRegister()
+    val newListCfg = new ControlFlowGraph(new ReadVariableNode("list",newListFunc,true)).append(new CallNode(resultReg, newListFunc, List()))
+                                                                                        .append(new ReadPropertyNode(resultReg, "append", appendFuncReg))
 
     val exprCfg = node.getInternalElt().accept(this).append(new CallNode(nextRegister(), appendFuncReg, List(lastExpressionRegister), Map()))
 
@@ -703,7 +707,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitSetComp")
     val resultReg = nextRegister()
     val appendFuncReg = nextRegister()
-    val newSetCfg = (new ControlFlowGraph(new NewSetNode(resultReg))).append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
+    val newSetFunc = nextRegister()
+    val newSetCfg = new ControlFlowGraph(new ReadVariableNode("set",newSetFunc,true)).append(new CallNode(resultReg, newSetFunc, List()))
+                                                                                     .append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
 
     val exprCfg = node.getInternalElt().accept(this).append(new CallNode(nextRegister(), appendFuncReg, List(lastExpressionRegister), Map()))
 
@@ -718,7 +724,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitDictComp")
     val resultReg = nextRegister()
     val appendFuncReg = nextRegister()
-    val newDictCfg = (new ControlFlowGraph(new NewDictionaryNode(resultReg))).append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
+    val newDictFunc = nextRegister()
+    val newDictCfg = new ControlFlowGraph(new ReadVariableNode("dict",newDictFunc,true)).append(new CallNode(resultReg, newDictFunc, List()))
+                                                                                      .append(new ReadPropertyNode(resultReg, "add", appendFuncReg))
 
     val keyCfg = node.getInternalKey().accept(this)
     val keyReg = lastExpressionRegister
@@ -904,7 +912,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitList(node: ast.List): ControlFlowGraph = {
     println("visitList")
     val resultReg = nextRegister()
-    val newListCfg = new ControlFlowGraph(new NewListNode(resultReg))
+    val newListFunc = nextRegister()
+    val newListCfg = new ControlFlowGraph(new ReadVariableNode("list",newListFunc,true)).append(new CallNode(resultReg, newListFunc, List()))
+
 
     val pair = node.getInternalElts().toList.map((a) => {
       val cfg = a.accept(this)
@@ -928,20 +938,26 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   }
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
-    println("visitTuple")
+    println("visitTuple")    
+
+    val listResultReg = nextRegister()
+    val newListFunc = nextRegister()
+    val appendFuncReg = nextRegister()
+    val newListCfg = new ControlFlowGraph(new ReadVariableNode("list",newListFunc,true)).append(new CallNode(listResultReg, newListFunc, List()))
+                                                                                        .append(new ReadPropertyNode(listResultReg, "append", appendFuncReg))
     
-    var registers = List[Int]()
-    val valuesCfg = node.getInternalElts().toList.foldLeft(new ControlFlowGraph(new NoOpNode("Tuple entry"))) {(acc, el) =>
+    val valuesCfg = node.getInternalElts().toList.foldLeft(newListCfg){(acc, el) =>
       val elCfg = el.accept(this)
-      registers = this.lastExpressionRegister :: registers
-      
-      acc.append(elCfg)
+      val elReg = lastExpressionRegister
+      acc.append((elCfg.append(new CallNode(nextRegister(), appendFuncReg, List(elReg)))))
     }
     
     val tupleRegister = nextRegister()
+    val newTupleFunc = nextRegister()
     this.lastExpressionRegister = tupleRegister
+
     
-    return valuesCfg.append(new NewTupleNode(tupleRegister, registers.reverse))
+    return valuesCfg.append(new ReadVariableNode("tuple", newTupleFunc, true)).append(new CallNode(tupleRegister, newTupleFunc, List(listResultReg)))
   }
   
   def namesToList(elts: List[expr], acc: List[String] = List()): List[String] = {
@@ -957,7 +973,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
     println("visitEllipsis")
     lastExpressionRegister = nextRegister()
-    return new ControlFlowGraph(new NewEllipsisNode(lastExpressionRegister))
+    return new ControlFlowGraph(new ReadVariableNode("Ellipsis", lastExpressionRegister, true))
   }
 
   override def visitSlice(node: Slice): ControlFlowGraph = {

@@ -69,29 +69,10 @@ case class ConstantNoneNode(resultReg: Int, id: UUID = UUID.randomUUID()) extend
   override def toString = s"${reg(resultReg)} = None\t(ConstantNoneNode)"
 }
 
-case class NewListNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = []\t(NewListNode)"
-}
-case class NewDictionaryNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = {}\t(NewDictionaryNode)"
-}
-case class NewTupleNode(resultReg: Int, valueRegs: List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString() = {
-    val arg_string = valueRegs.foldLeft("")((acc,s) => if (acc == "") reg(s) else acc + ", " + reg(s))
-    s"${reg(resultReg)} = ($arg_string)\t(NewTupleNode)"
-  }
-}
-case class NewSetNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = {}\t(NewSetNode)"
-}
-case class NewEllipsisNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = Ellipsis\t(NewEllipsisNode)"
-}
-
 // Read variable; result = variable
 // Read property from base (object/class); result =  base.property
 // Read property from dictionary: result = base[property]
-case class ReadVariableNode(variable: String, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ReadVariableNode(variable: String, resultReg: Int, builtin : Boolean = false, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"${reg(resultReg)} = $variable\t(ReadVariableNode)"
 }
 case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
