@@ -262,9 +262,9 @@ case class ControlFlowGraph(entryNodes: Set[Node],
         val ingoingEdges = GraphvizExporter.getIngoingEdges(m, edges)
         val ingoingExceptEdges = GraphvizExporter.getIngoingEdges(m, exceptEdges)
         if (ingoingEdges.size == 1 && ingoingEdges.head.from == n.id && ingoingExceptEdges.size == 0) {
-          val outgoingExceptEdgesFromN = GraphvizExporter.getOutgoingEdges(n, exceptEdges)
-          val outgoingExceptEdgesFromM = GraphvizExporter.getOutgoingEdges(m, exceptEdges)
-          if (outgoingExceptEdgesFromN == outgoingExceptEdgesFromM) {
+          val exceptTargetsFromN = GraphvizExporter.getOutgoingEdges(n, exceptEdges).map((e) => e.to)
+          val exceptTargetsFromM = GraphvizExporter.getOutgoingEdges(m, exceptEdges).map((e) => e.to)
+          if (exceptTargetsFromN == exceptTargetsFromM) {
             val newNodes = (new GraphvizExporter.Node(n.label +"\n" + m.label, m.id)) :: nodes.filter((node) => node.id != n.id && node.id != m.id)
             val newEdges = edges.foldLeft(List() : List[GraphvizExporter.Edge])((acc,edge) => edge match {
               case GraphvizExporter.Edge(n.id, m.id, _, _) => acc
@@ -274,6 +274,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
             val newExceptEdges = exceptEdges.foldLeft(List() : List[GraphvizExporter.Edge])((acc,edge) => edge match {
               case GraphvizExporter.Edge(n.id, m.id, _, _) => acc
               case GraphvizExporter.Edge(_, n.id, _, _) => (new GraphvizExporter.Edge(edge.from, m.id, edge.label, edge.style)) :: acc
+              case GraphvizExporter.Edge(n.id, _, _, _) => acc
               case _ => edge :: acc
             })
             return (newNodes, newEdges, newExceptEdges, true)
