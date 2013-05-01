@@ -457,7 +457,32 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
     println("visitAssert")
-    return null
+    val debugVarReg = nextRegister()
+    val exitNode = new NoOpNode("assert merge node")
+    val ifDebugNode = new IfNode(debugVarReg)
+    val testCfg = node.getInternalTest().accept(this)
+    val testReg = lastExpressionRegister
+    val ifTestNode = new IfNode(testReg)
+
+    val assertionErrorFuncReg = nextRegister() 
+    val assertionErrorReg = nextRegister()
+    val assertCfg = if (node.getInternalMsg() != null) {
+      val msgCfg = node.getInternalMsg().accept(this)
+      val msgReg = lastExpressionRegister
+      msgCfg.append(new ReadVariableNode("AssertionError",assertionErrorFuncReg,true))
+            .append(new CallNode(assertionErrorReg, assertionErrorFuncReg, List(msgReg)))
+
+    } else {
+      new ControlFlowGraph(new ReadVariableNode("AssertionError",assertionErrorFuncReg,true)).append(new CallNode(assertionErrorReg, assertionErrorFuncReg, List()))
+    }
+    new ControlFlowGraph(new ReadVariableNode("__debug__",debugVarReg,true)).append(ifDebugNode)
+                                                                            .append(testCfg)
+                                                                            .append(ifTestNode)
+                                                                            .append(assertCfg)
+                                                                            .append(new RaiseNode(assertionErrorReg))
+                                                                            .append(exitNode)
+                                                                            .connect(ifDebugNode,exitNode)
+                                                                            .connect(ifTestNode,exitNode)
   }
 
   override def visitImport(node: Import): ControlFlowGraph = {
@@ -835,7 +860,14 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
     println("visitRepr")
-    return null
+    val exprCfg = node.getInternalValue().accept(this)
+    val exprReg = lastExpressionRegister
+    val resultReg = nextRegister()
+    val reprFuncReg = nextRegister()
+
+    lastExpressionRegister = resultReg
+    return exprCfg.append(new ReadVariableNode("repr", reprFuncReg, true))
+                  .append(new CallNode(resultReg, reprFuncReg, List(exprReg)))
   }
 
   override def visitNum(node: Num): ControlFlowGraph = {
