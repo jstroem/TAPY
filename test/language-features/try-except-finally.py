@@ -1,7 +1,7 @@
 try:
-	pass
+	1
 	try:
-		pass
+		2
 	except Foo:
 		print "a"
 	except Bar:

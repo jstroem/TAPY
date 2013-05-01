@@ -427,6 +427,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
     println("visitTryFinally")
     
+    // TODO:
+    // - Nodes in finally blocks must go to nearest surrounding finally/except block
+    
     val finallyNormalCfg = generateCFGOfStatementList(new NoOpNode("Finally-normal entry"), node.getInternalFinalbody())
     val finallyHandledCfg = generateCFGOfStatementList(new NoOpNode("Finally-except-handled entry"), node.getInternalFinalbody())
     val finallyUnhandledCfg = generateCFGOfStatementList(new NoOpNode("Finally-except-unhandled entry"), node.getInternalFinalbody())
@@ -440,12 +443,16 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     this.finallyUnhandledCfg = finallyUnhandledCfg
     
     val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-finally entry"), node.getInternalBody())
+    val result = node.getInternalBody().get(0) match {
+      case _: TryExcept => println("try-except!"); bodyCfg.insert(finallyNormalCfg).insert(finallyHandledCfg).insert(finallyUnhandledCfg)
+      case _ => bodyCfg.append(finallyNormalCfg).insert(finallyHandledCfg).insert(finallyUnhandledCfg)
+    }
     
     this.finallyNormalCfg = oldFinallyNormalCfg
     this.finallyHandledCfg = oldFinallyHandledCfg
     this.finallyUnhandledCfg = oldFinallyUnhandledCfg
     
-    return bodyCfg.insert(finallyNormalCfg).insert(finallyHandledCfg).insert(finallyUnhandledCfg)
+    return result
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
