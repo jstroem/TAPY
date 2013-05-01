@@ -209,6 +209,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     }
     return nodesToRemove.foldLeft(this) {(acc, node) => 
       acc.removeNoOpNode(node)
+    }
   }
   
   def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
