@@ -207,12 +207,8 @@ case class ControlFlowGraph(entryNodes: Set[Node],
         case node => acc
       }
     }
-    var i = 0
-    this.exportToFile("gay0", false, false)
     return nodesToRemove.foldLeft(this) {(acc, node) => 
-      i = i + 1
-      println(s"$i $node")
-      acc.removeNoOpNode(node).exportToFile(s"gay$i", false, false)}
+      acc.removeNoOpNode(node)
   }
   
   def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
