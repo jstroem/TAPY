@@ -978,16 +978,59 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitSlice(node: Slice): ControlFlowGraph = {
     println("visitSlice")
-    return null
+    val resultReg = nextRegister()
+    val newSliceFunc = nextRegister()
+    var argsList : List[Int] = List()
+    var lowerCfg = new ControlFlowGraph(new NoOpNode("No lower"))
+    var upperCfg = new ControlFlowGraph(new NoOpNode("No upper"))
+    var stepCfg = new ControlFlowGraph(new NoOpNode("No step"))
+    if (node.getInternalLower() != null) {
+      lowerCfg = node.getInternalLower().accept(this)
+      argsList = lastExpressionRegister :: argsList
+    }
+    if (node.getInternalUpper() != null) {
+      upperCfg = node.getInternalUpper().accept(this)
+      argsList = lastExpressionRegister :: argsList
+    }
+    if (node.getInternalStep() != null) {
+      stepCfg = node.getInternalStep().accept(this)
+      argsList = lastExpressionRegister :: argsList 
+    }
+
+    lastExpressionRegister = resultReg
+    return lowerCfg.append(upperCfg)
+                   .append(stepCfg)
+                   .append(new ReadVariableNode("slice",newSliceFunc,true))
+                   .append(new CallNode(resultReg, newSliceFunc, argsList.reverse))
   }
 
   override def visitExtSlice(node: ExtSlice): ControlFlowGraph = {
     println("visitExtSlice")
-    return null
+
+    val listResultReg = nextRegister()
+    val newListFunc = nextRegister()
+    val appendFuncReg = nextRegister()
+    val newListCfg = new ControlFlowGraph(new ReadVariableNode("list",newListFunc,true)).append(new CallNode(listResultReg, newListFunc, List()))
+                                                                                        .append(new ReadPropertyNode(listResultReg, "append", appendFuncReg))
+    
+    val slicesCfg = node.getInternalDims().toList.foldLeft(newListCfg){(acc, el) =>
+      val sliceCfg = el.accept(this)
+      val sliceReg = lastExpressionRegister
+      acc.append(sliceCfg)
+         .append(new CallNode(nextRegister(), appendFuncReg, List(sliceReg)))
+    }
+    
+    val tupleRegister = nextRegister()
+    val newTupleFunc = nextRegister()
+    this.lastExpressionRegister = tupleRegister
+    
+    return slicesCfg.append(new ReadVariableNode("tuple", newTupleFunc, true))
+                    .append(new CallNode(tupleRegister, newTupleFunc, List(listResultReg)))
   }
 
   override def visitIndex(node: Index): ControlFlowGraph = {
     println("visitIndex")
+
     return node.getInternalValue().accept(this)
   }
 
