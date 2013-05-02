@@ -28,10 +28,9 @@ class StringLattice extends Lattice[StringLattice.Elt] {
   }
   
   def leastUpperBound(a: StringLattice.Elt, b: StringLattice.Elt): StringLattice.Elt = {
-    if (a == StringLattice.Abstract() || b == StringLattice.Abstract())
-      return StringLattice.Abstract()
-    
     return (a, b) match {
+      case (StringLattice.Abstract(), _) => StringLattice.Abstract()
+      case (_, StringLattice.Abstract()) => StringLattice.Abstract()
       case (StringLattice.Concrete(s1), StringLattice.Concrete(s2)) => if (s1 == s2) a else StringLattice.Abstract()
       case (StringLattice.Concrete(_), StringLattice.Bottom()) => a
       case (StringLattice.Bottom(), StringLattice.Concrete(_)) => b
@@ -40,14 +39,12 @@ class StringLattice extends Lattice[StringLattice.Elt] {
   }
   
   def greatestLowerBound(a: StringLattice.Elt, b: StringLattice.Elt): StringLattice.Elt = {
-    if (a == StringLattice.Bottom() || b == StringLattice.Bottom())
-      return StringLattice.Bottom()
-    
     return (a, b) match {
+      case (StringLattice.Abstract(), _) => b
+      case (_, StringLattice.Abstract()) => a
       case (StringLattice.Concrete(s1), StringLattice.Concrete(s2)) => if (s1 == s2) a else StringLattice.Bottom()
-      case (StringLattice.Concrete(_), StringLattice.Bottom()) => StringLattice.Bottom()
-      case (StringLattice.Bottom(), StringLattice.Concrete(_)) => StringLattice.Bottom()
-      case (StringLattice.Bottom(), StringLattice.Bottom()) => StringLattice.Bottom()
+      case (StringLattice.Bottom(), _) => StringLattice.Bottom()
+      case (_, StringLattice.Bottom()) => StringLattice.Bottom()
     }
   }
 }
