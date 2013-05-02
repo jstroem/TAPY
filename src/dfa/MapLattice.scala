@@ -1,7 +1,4 @@
-package tapy.sign
-
-import tapy.mfw._
-
+package tapy.dfa
 
 // Elements of the set that are not present as keys in the Map are thought to be mapped to bottom element of lattice
 class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {

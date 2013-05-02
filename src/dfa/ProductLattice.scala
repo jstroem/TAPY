@@ -1,9 +1,6 @@
-package tapy.mfw
-
-import tapy.cfg._
+package tapy.dfa
 
 class ProductLattice[A, B](latticeA: Lattice[A], latticeB: Lattice[B]) extends Lattice[(A, B)] {
-
   def top: (A, B) = (latticeA.top, latticeB.top)
   def bottom: (A, B) = (latticeA.bottom, latticeB.bottom)
 
@@ -25,4 +22,3 @@ class ProductLattice[A, B](latticeA: Lattice[A], latticeB: Lattice[B]) extends L
     (fst, snd)
   }
 }
-

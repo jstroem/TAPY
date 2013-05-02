@@ -1,9 +1,6 @@
-package tapy.sign
-
-import tapy.mfw._
+package tapy.dfa
 
 class LiftLattice[T](lattice: Lattice[T]) extends Lattice[Option[T]] {
-
   def top: Option[T] = Some(lattice.top)
   def bottom: Option[T] = None
 

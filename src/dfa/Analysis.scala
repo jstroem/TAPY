@@ -1,4 +1,4 @@
-package tapy.mfw
+package tapy.dfa
 
 import tapy.cfg._
 import tapy.mfw.MonotoneFrameworkTypes._

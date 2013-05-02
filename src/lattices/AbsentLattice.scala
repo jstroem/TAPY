@@ -1,6 +1,6 @@
 package tapy.lattices
 
-import tapy.mfw._
+import tapy.dfa._
 
 object AbsentLattice {
   sealed trait AbsentElt

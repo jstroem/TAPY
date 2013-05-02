@@ -1,7 +1,7 @@
-package tapy.mfw
+package tapy.dfa
 
 import tapy.cfg._
-import tapy.mfw.MonotoneFrameworkTypes._
+import tapy.dfa.MonotoneFrameworkTypes._
 
 class WorklistAlgorithm[T] (analysis: Analysis[T],
                             lattice: Lattice[T],

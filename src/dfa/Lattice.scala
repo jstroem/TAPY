@@ -1,6 +1,4 @@
-package tapy.mfw
-
-import tapy.cfg._
+package tapy.dfa
 
 trait Lattice[T] {
   def top : T
