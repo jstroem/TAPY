@@ -18,6 +18,7 @@ object NoneLattice extends Lattice[NoneElt] {
     case (None(), _) => true
     case (Bottom(), Bottom()) => true
     case (Bottom(), None()) => false
+    case _ => throw new IllegalArgumentException()
   }
   
   def leastUpperBound(a: Elt, b: Elt): Elt = {

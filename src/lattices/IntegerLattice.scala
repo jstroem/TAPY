@@ -22,7 +22,7 @@ object IntegerLattice extends Lattice[IntegerElt] {
     case (Abstract(), _)  => true
     case (_, Bottom()) => true
     case (Concrete(i),Concrete(j)) => (i == j)
-    case _ => false
+    case _ => throw new IllegalArgumentException()
   }
 
   def leastUpperBound(a: Elt, b: Elt) = (a, b) match {

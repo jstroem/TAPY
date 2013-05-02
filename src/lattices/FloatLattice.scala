@@ -20,7 +20,7 @@ object FloatLattice  extends Lattice[FloatElt] {
     case (Abstract(), _)  => true
     case (_, Bottom()) => true
     case (Concrete(i),Concrete(j)) => (i.equals(j))
-    case _ => false
+    case _ => throw new IllegalArgumentException()
   }
 
   def leastUpperBound(a: Elt, b: Elt) = (a, b) match {

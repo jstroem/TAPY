@@ -18,6 +18,7 @@ object UndefinedLattice extends Lattice[UndefinedElt] {
     case (Undefined(), _) => true
     case (Bottom(), Bottom()) => true
     case (Bottom(), Undefined()) => false
+    case _ => throw new IllegalArgumentException()
   }
   
   def leastUpperBound(a: Elt, b: Elt): Elt = {

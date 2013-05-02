@@ -18,6 +18,7 @@ object ModifiedLattice extends Lattice[ModifiedElt] {
     case (Modified(), _) => true
     case (Bottom(), Bottom()) => true
     case (Bottom(), Modified()) => false
+    case _ => throw new IllegalArgumentException()
   }
   
   def leastUpperBound(a: Elt, b: Elt): Elt = {

@@ -18,6 +18,7 @@ object AbsentLattice extends Lattice[AbsentElt] {
     case (Absent(), _) => true
     case (Bottom(), Bottom()) => true
     case (Bottom(), Absent()) => false
+    case _ => false
   }
   
   def leastUpperBound(a: Elt, b: Elt): Elt = {
