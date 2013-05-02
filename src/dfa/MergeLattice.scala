@@ -1,7 +1,7 @@
 package tapy.dfa
 
 object MergeLattice {
-  sealed trait Elt
+  trait Elt
   
   case class Top() extends Elt
   case class Bottom() extends Elt
