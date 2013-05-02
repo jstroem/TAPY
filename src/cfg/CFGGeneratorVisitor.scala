@@ -427,9 +427,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
     println("visitTryFinally")
     
-    // TODO:
-    // - Nodes in finally blocks must go to nearest surrounding finally/except block
-    
     val finallyNormalCfg = generateCFGOfStatementList(new NoOpNode("Finally-normal entry"), node.getInternalFinalbody())
     val finallyHandledCfg = generateCFGOfStatementList(new NoOpNode("Finally-except-handled entry"), node.getInternalFinalbody())
     val finallyUnhandledCfg = generateCFGOfStatementList(new NoOpNode("Finally-except-unhandled entry"), node.getInternalFinalbody())
