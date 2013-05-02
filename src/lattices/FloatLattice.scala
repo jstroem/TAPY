@@ -4,7 +4,8 @@ import java.lang.Double
 import tapy.dfa._
 
 object FloatLattice {
-  sealed trait Elt
+  sealed trait Elt extends MergeLattice.Elt
+  
   case class Concrete(l:Double) extends Elt
   case class Bottom() extends Elt
   case class Abstract() extends Elt
