@@ -21,7 +21,7 @@ class UndefinedLattice extends Lattice[UndefinedLattice.UndefinedElt] {
   }
   
   def leastUpperBound(a: UndefinedLattice.UndefinedElt, b: UndefinedLattice.UndefinedElt): UndefinedLattice.UndefinedElt = {
-    return if (a == UndefinedLattice.None() || b == UndefinedLattice.None()) UndefinedLattice.Undefined() else UndefinedLattice.Bottom()
+    return if (a == UndefinedLattice.Undefined() || b == UndefinedLattice.Undefined()) UndefinedLattice.Undefined() else UndefinedLattice.Bottom()
   }
   
   def greatestLowerBound(a: UndefinedLattice.UndefinedElt, b: UndefinedLattice.UndefinedElt): UndefinedLattice.UndefinedElt = {
