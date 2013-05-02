@@ -4,11 +4,12 @@ import java.lang.Double
 import tapy.dfa._
 
 object FloatLattice {
-  sealed trait Elt extends MergeLattice.Elt
+  // abstract class Elt extends MergeLattice.Elt
+  type Elt = MergeLattice.Elt
   
-  case class Concrete(l:Double) extends Elt
-  case class Bottom() extends Elt
-  case class Abstract() extends Elt
+  case class Concrete(l:Double) extends MergeLattice.Elt
+  case class Bottom() extends MergeLattice.Elt
+  case class Abstract() extends MergeLattice.Elt
 } 
 
 class FloatLattice extends Lattice[FloatLattice.Elt] {
