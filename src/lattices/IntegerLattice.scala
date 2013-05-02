@@ -5,37 +5,38 @@ import tapy.dfa._
 /*  Assuming that the python program is running on a 32 bit computer.
     This limits integers in python to -2**31-1 <= x <= 2**32-1. */
 object IntegerLattice {
-  sealed trait Integer
-  case class I(i:Int) extends Integer
-  case class Bottom() extends Integer
-  case class Int() extends Integer
+  sealed trait Elt
+  
+  case class Concrete(i: Int) extends Elt
+  case class Bottom() extends Elt
+  case class Abstract() extends Elt
 } 
 
-class IntegerLattice extends Lattice[IntegerLattice.Integer] {
-  def top: IntegerLattice.Integer = IntegerLattice.Int()
-  def bottom: IntegerLattice.Integer = IntegerLattice.Bottom()
+class IntegerLattice extends Lattice[IntegerLattice.Elt] {
+  def top: IntegerLattice.Elt = IntegerLattice.Abstract()
+  def bottom: IntegerLattice.Elt = IntegerLattice.Bottom()
   
   // a >= b
-  def compare(a: IntegerLattice.Integer, b: IntegerLattice.Integer) = (a, b) match {
-    case (IntegerLattice.Int(), _)  => true
+  def compare(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
+    case (IntegerLattice.Abstract(), _)  => true
     case (_, IntegerLattice.Bottom()) => true
     case _ => false
   }
 
-  def leastUpperBound(a: IntegerLattice.Integer, b: IntegerLattice.Integer) = (a, b) match {
-    case (IntegerLattice.Int(), _) =>                           IntegerLattice.Int()
-    case (_, IntegerLattice.Int()) =>                           IntegerLattice.Int()
+  def leastUpperBound(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
+    case (IntegerLattice.Abstract(), _) =>                           IntegerLattice.Abstract()
+    case (_, IntegerLattice.Abstract()) =>                           IntegerLattice.Abstract()
 
     case (IntegerLattice.Bottom(), IntegerLattice.Bottom()) =>  IntegerLattice.Bottom()
 
-    case (_, _) =>  IntegerLattice.Int()
+    case (_, _) =>  IntegerLattice.Abstract()
   }
 
-  def greatestLowerBound(a: IntegerLattice.Integer, b: IntegerLattice.Integer) = (a, b) match {
+  def greatestLowerBound(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
     case (IntegerLattice.Bottom(), _) =>                        IntegerLattice.Bottom()
     case (_, IntegerLattice.Bottom()) =>                        IntegerLattice.Bottom()
 
-    case (IntegerLattice.Int(), IntegerLattice.Int()) =>  IntegerLattice.Int()
+    case (IntegerLattice.Abstract(), IntegerLattice.Abstract()) =>  IntegerLattice.Abstract()
 
     case (_, _) =>  IntegerLattice.Bottom()
   }

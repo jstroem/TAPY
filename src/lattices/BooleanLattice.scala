@@ -3,19 +3,20 @@ package tapy.lattices
 import tapy.dfa._
 
 object BooleanLattice {
-  sealed trait Boolean
-  case class True() extends Boolean
-  case class False() extends Boolean
-  case class Bottom() extends Boolean
-  case class Bool() extends Boolean
+  sealed trait Elt
+  
+  case class True() extends Elt
+  case class False() extends Elt
+  case class Bottom() extends Elt
+  case class Bool() extends Elt
 }
 
-class BooleanLattice extends Lattice[BooleanLattice.Boolean] {
-  def top: BooleanLattice.Boolean = BooleanLattice.Bool()
-  def bottom: BooleanLattice.Boolean = BooleanLattice.Bottom()
+class BooleanLattice extends Lattice[BooleanLattice.Elt] {
+  def top: BooleanLattice.Elt = BooleanLattice.Bool()
+  def bottom: BooleanLattice.Elt = BooleanLattice.Bottom()
   
   // a >= b
-  def compare(a: BooleanLattice.Boolean, b: BooleanLattice.Boolean) = (a, b) match {
+  def compare(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
     case (BooleanLattice.Bool(), _)  => true
     case (_, BooleanLattice.Bottom()) => true
     case (BooleanLattice.True(), BooleanLattice.True()) => true
@@ -23,7 +24,7 @@ class BooleanLattice extends Lattice[BooleanLattice.Boolean] {
     case _ => false
   }
 
-  def leastUpperBound(a: BooleanLattice.Boolean, b: BooleanLattice.Boolean) = (a, b) match {
+  def leastUpperBound(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
     case (BooleanLattice.Bool(), _) =>                        BooleanLattice.Bool()
     case (_, BooleanLattice.Bool()) =>                        BooleanLattice.Bool()
 
@@ -42,7 +43,7 @@ class BooleanLattice extends Lattice[BooleanLattice.Boolean] {
     case (_, _) =>  BooleanLattice.Bool()
   }
 
-  def greatestLowerBound(a: BooleanLattice.Boolean, b: BooleanLattice.Boolean) = (a, b) match {
+  def greatestLowerBound(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
     case (BooleanLattice.Bottom(), _) =>                        BooleanLattice.Bottom()
     case (_, BooleanLattice.Bottom()) =>                        BooleanLattice.Bottom()
 
