@@ -8,7 +8,7 @@ object BooleanLattice {
   case class False() extends Boolean
   case class Bottom() extends Boolean
   case class Bool() extends Boolean
-} 
+}
 
 class BooleanLattice extends Lattice[BooleanLattice.Boolean] {
   def top: BooleanLattice.Boolean = BooleanLattice.Bool()
