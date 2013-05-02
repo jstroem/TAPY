@@ -1,14 +1,16 @@
 package tapy.dfa
 
-object EmptyLattice {
-  case class Empty()
-}
+case class EmptyElt
 
-class EmptyLattice() extends Lattice[EmptyLattice.Empty] {
-  def top: EmptyLattice.Empty = EmptyLattice.Empty()
-  def bottom: EmptyLattice.Empty = EmptyLattice.Empty()
+object EmptyLattice extends Lattice[EmptyElt] {
+  type Elt = EmptyElt
   
-  def compare(a: EmptyLattice.Empty, b: EmptyLattice.Empty) = true
-  def leastUpperBound(a: EmptyLattice.Empty, b: EmptyLattice.Empty) = a
-  def greatestLowerBound(a: EmptyLattice.Empty, b: EmptyLattice.Empty) = a
+  def Empty = EmptyElt
+  
+  def top: Elt = Empty()
+  def bottom: Elt = Empty()
+  
+  def compare(a: Elt, b: Elt) = true
+  def leastUpperBound(a: Elt, b: Elt) = a
+  def greatestLowerBound(a: Elt, b: Elt) = a
 }

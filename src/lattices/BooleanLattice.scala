@@ -2,63 +2,63 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object BooleanLattice {
-  sealed trait Elt
+sealed trait BooleanElt
+
+object BooleanLattice extends Lattice[BooleanElt] {
+  type Elt = BooleanElt
   
   case class True() extends Elt
   case class False() extends Elt
   case class Bottom() extends Elt
   case class Bool() extends Elt
-}
-
-class BooleanLattice extends Lattice[BooleanLattice.Elt] {
-  def top: BooleanLattice.Elt = BooleanLattice.Bool()
-  def bottom: BooleanLattice.Elt = BooleanLattice.Bottom()
+  
+  def top: Elt = Bool()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
-    case (BooleanLattice.Bool(), _)  => true
-    case (_, BooleanLattice.Bottom()) => true
-    case (BooleanLattice.True(), BooleanLattice.True()) => true
-    case (BooleanLattice.False(), BooleanLattice.False()) => true
+  def compare(a: Elt, b: Elt) = (a, b) match {
+    case (Bool(), _)  => true
+    case (_, Bottom()) => true
+    case (True(), True()) => true
+    case (False(), False()) => true
     case _ => false
   }
 
-  def leastUpperBound(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
-    case (BooleanLattice.Bool(), _) =>                        BooleanLattice.Bool()
-    case (_, BooleanLattice.Bool()) =>                        BooleanLattice.Bool()
+  def leastUpperBound(a: Elt, b: Elt) = (a, b) match {
+    case (Bool(), _) => Bool()
+    case (_, Bool()) => Bool()
 
-    case (BooleanLattice.True(), BooleanLattice.True()) =>    BooleanLattice.True()
-    case (BooleanLattice.False(), BooleanLattice.False()) =>  BooleanLattice.False()
+    case (True(), True()) => True()
+    case (False(), False()) => False()
 
 
-    case (BooleanLattice.False(), BooleanLattice.Bottom()) => BooleanLattice.False()
-    case (BooleanLattice.True(), BooleanLattice.Bottom()) =>  BooleanLattice.True()
+    case (False(), Bottom()) => False()
+    case (True(), Bottom()) => True()
 
-    case (BooleanLattice.Bottom(), BooleanLattice.False()) => BooleanLattice.False()
-    case (BooleanLattice.Bottom(), BooleanLattice.True()) =>  BooleanLattice.True()
+    case (Bottom(), False()) => False()
+    case (Bottom(), True()) => True()
 
-    case (BooleanLattice.Bottom(), BooleanLattice.Bottom()) =>  BooleanLattice.Bottom()
+    case (Bottom(), Bottom()) => Bottom()
 
-    case (_, _) =>  BooleanLattice.Bool()
+    case (_, _) =>  Bool()
   }
 
-  def greatestLowerBound(a: BooleanLattice.Elt, b: BooleanLattice.Elt) = (a, b) match {
-    case (BooleanLattice.Bottom(), _) =>                        BooleanLattice.Bottom()
-    case (_, BooleanLattice.Bottom()) =>                        BooleanLattice.Bottom()
+  def greatestLowerBound(a: Elt, b: Elt) = (a, b) match {
+    case (Bottom(), _) => Bottom()
+    case (_, Bottom()) => Bottom()
 
-    case (BooleanLattice.True(), BooleanLattice.True()) =>    BooleanLattice.True()
-    case (BooleanLattice.False(), BooleanLattice.False()) =>  BooleanLattice.False()
+    case (True(), True()) => True()
+    case (False(), False()) => False()
 
 
-    case (BooleanLattice.False(), BooleanLattice.Bool()) => BooleanLattice.False()
-    case (BooleanLattice.True(), BooleanLattice.Bool()) =>  BooleanLattice.True()
+    case (False(), Bool()) => False()
+    case (True(), Bool()) => True()
 
-    case (BooleanLattice.Bool(), BooleanLattice.False()) => BooleanLattice.False()
-    case (BooleanLattice.Bool(), BooleanLattice.True()) =>  BooleanLattice.True()
+    case (Bool(), False()) => False()
+    case (Bool(), True()) => True()
 
-    case (BooleanLattice.Bool(), BooleanLattice.Bool()) =>  BooleanLattice.Bool()
+    case (Bool(), Bool()) => Bool()
 
-    case (_, _) =>  BooleanLattice.Bottom()
+    case (_, _) =>  Bottom()
   }
 }

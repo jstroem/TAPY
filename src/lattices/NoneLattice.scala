@@ -2,29 +2,29 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object NoneLattice {
-  sealed trait Elt
+sealed trait NoneElt
+
+object NoneLattice extends Lattice[NoneElt] {
+  type Elt = NoneElt
 
   case class Bottom() extends Elt
   case class None() extends Elt
-}
-
-class NoneLattice extends Lattice[NoneLattice.Elt] {
-  def top: NoneLattice.Elt = NoneLattice.None()
-  def bottom: NoneLattice.Elt = NoneLattice.Bottom()
+  
+  def top: Elt = None()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: NoneLattice.Elt, b: NoneLattice.Elt): Boolean = return (a, b) match {
-    case (NoneLattice.None(), _) => true
-    case (NoneLattice.Bottom(), NoneLattice.Bottom()) => true
-    case (NoneLattice.Bottom(), NoneLattice.None()) => false
+  def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
+    case (None(), _) => true
+    case (Bottom(), Bottom()) => true
+    case (Bottom(), None()) => false
   }
   
-  def leastUpperBound(a: NoneLattice.Elt, b: NoneLattice.Elt): NoneLattice.Elt = {
-    return if (a == NoneLattice.None() || b == NoneLattice.None()) NoneLattice.None() else NoneLattice.Bottom()
+  def leastUpperBound(a: Elt, b: Elt): Elt = {
+    return if (a == None() || b == None()) None() else Bottom()
   }
   
-  def greatestLowerBound(a: NoneLattice.Elt, b: NoneLattice.Elt): NoneLattice.Elt = {
-    return if (a == NoneLattice.Bottom() || b == NoneLattice.Bottom()) NoneLattice.Bottom() else NoneLattice.None()
+  def greatestLowerBound(a: Elt, b: Elt): Elt = {
+    return if (a == Bottom() || b == Bottom()) Bottom() else None()
   }
 }

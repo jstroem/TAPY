@@ -4,52 +4,53 @@ import tapy.dfa._
 
 /*  Assuming that the python program is running on a 32 bit computer.
     This limits integers in python to -2**31-1 <= x <= 2**32-1. */
-object IntegerLattice {
-  sealed trait Elt extends MergeLattice.Elt
+
+sealed trait IntegerElt extends MergeLattice.Elt
+
+object IntegerLattice extends Lattice[IntegerElt] {
+  type Elt = IntegerElt
   
   case class Concrete(i: Int) extends Elt
   case class Bottom() extends Elt
   case class Abstract() extends Elt
-} 
-
-class IntegerLattice extends Lattice[IntegerLattice.Elt] {
-  def top: IntegerLattice.Elt = IntegerLattice.Abstract()
-  def bottom: IntegerLattice.Elt = IntegerLattice.Bottom()
+  
+  def top: Elt = Abstract()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
-    case (IntegerLattice.Abstract(), _)  => true
-    case (_, IntegerLattice.Bottom()) => true
-    case (IntegerLattice.Concrete(i),IntegerLattice.Concrete(j)) => (i == j)
+  def compare(a: Elt, b: Elt) = (a, b) match {
+    case (Abstract(), _)  => true
+    case (_, Bottom()) => true
+    case (Concrete(i),Concrete(j)) => (i == j)
     case _ => false
   }
 
-  def leastUpperBound(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
-    case (IntegerLattice.Abstract(), _) =>                           IntegerLattice.Abstract()
-    case (_, IntegerLattice.Abstract()) =>                           IntegerLattice.Abstract()
+  def leastUpperBound(a: Elt, b: Elt) = (a, b) match {
+    case (Abstract(), _) => Abstract()
+    case (_, Abstract()) => Abstract()
 
-    case (IntegerLattice.Bottom(), IntegerLattice.Bottom()) =>  IntegerLattice.Bottom()
+    case (Bottom(), Bottom()) =>  Bottom()
 
-    case (IntegerLattice.Concrete(i),IntegerLattice.Bottom()) => IntegerLattice.Concrete(i)
-    case (IntegerLattice.Bottom(),IntegerLattice.Concrete(i)) => IntegerLattice.Concrete(i)
+    case (Concrete(i),Bottom()) => Concrete(i)
+    case (Bottom(),Concrete(i)) => Concrete(i)
 
-    case (IntegerLattice.Concrete(i),IntegerLattice.Concrete(j)) => if (i.equals(j)) IntegerLattice.Concrete(j) else IntegerLattice.Abstract()
+    case (Concrete(i),Concrete(j)) => if (i.equals(j)) Concrete(j) else Abstract()
 
-    case (_, _) =>  IntegerLattice.Abstract()
+    case (_, _) =>  Abstract()
   }
 
-  def greatestLowerBound(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
-    case (IntegerLattice.Bottom(), _) =>                        IntegerLattice.Bottom()
-    case (_, IntegerLattice.Bottom()) =>                        IntegerLattice.Bottom()
+  def greatestLowerBound(a: Elt, b: Elt) = (a, b) match {
+    case (Bottom(), _) => Bottom()
+    case (_, Bottom()) => Bottom()
 
-    case (IntegerLattice.Abstract(), IntegerLattice.Abstract()) =>  IntegerLattice.Abstract()
+    case (Abstract(), Abstract()) =>  Abstract()
 
 
-    case (IntegerLattice.Concrete(i),IntegerLattice.Abstract()) => IntegerLattice.Concrete(i)
-    case (IntegerLattice.Abstract(),IntegerLattice.Concrete(i)) => IntegerLattice.Concrete(i)
+    case (Concrete(i),Abstract()) => Concrete(i)
+    case (Abstract(),Concrete(i)) => Concrete(i)
 
-    case (IntegerLattice.Concrete(i),IntegerLattice.Concrete(j)) => if (i.equals(j)) IntegerLattice.Concrete(j) else IntegerLattice.Bottom()
+    case (Concrete(i),Concrete(j)) => if (i.equals(j)) Concrete(j) else Bottom()
 
-    case (_, _) =>  IntegerLattice.Bottom()
+    case (_, _) =>  Bottom()
   }
 }

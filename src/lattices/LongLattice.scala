@@ -3,51 +3,52 @@ package tapy.lattices
 import java.math.BigInteger
 import tapy.dfa._
 
-object LongLattice {
-  sealed trait Elt
+sealed trait LongElt
+
+object LongLattice extends Lattice[LongElt] {
+  type Elt = LongElt
+  
   case class Concrete(l:BigInteger) extends Elt
   case class Bottom() extends Elt
   case class Abstract() extends Elt
-} 
-
-class LongLattice extends Lattice[LongLattice.Elt] {
-  def top: LongLattice.Elt = LongLattice.Abstract()
-  def bottom: LongLattice.Elt = LongLattice.Bottom()
+  
+  def top: Elt = Abstract()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: LongLattice.Elt, b: LongLattice.Elt) = (a, b) match {
-    case (LongLattice.Abstract(), _)  => true
-    case (_, LongLattice.Bottom()) => true
-    case (LongLattice.Concrete(i),LongLattice.Concrete(j)) => (i.equals(j))
+  def compare(a: Elt, b: Elt) = (a, b) match {
+    case (Abstract(), _)  => true
+    case (_, Bottom()) => true
+    case (Concrete(i),Concrete(j)) => (i.equals(j))
     case _ => false
   }
 
-  def leastUpperBound(a: LongLattice.Elt, b: LongLattice.Elt) = (a, b) match {
-    case (LongLattice.Abstract(), _) =>                           LongLattice.Abstract()
-    case (_, LongLattice.Abstract()) =>                           LongLattice.Abstract()
+  def leastUpperBound(a: Elt, b: Elt) = (a, b) match {
+    case (Abstract(), _) =>                           Abstract()
+    case (_, Abstract()) =>                           Abstract()
 
-    case (LongLattice.Bottom(), LongLattice.Bottom()) =>  LongLattice.Bottom()
+    case (Bottom(), Bottom()) =>  Bottom()
 
-    case (LongLattice.Concrete(i),LongLattice.Bottom()) => LongLattice.Concrete(i)
-    case (LongLattice.Bottom(),LongLattice.Concrete(i)) => LongLattice.Concrete(i)
+    case (Concrete(i),Bottom()) => Concrete(i)
+    case (Bottom(),Concrete(i)) => Concrete(i)
 
-    case (LongLattice.Concrete(i),LongLattice.Concrete(j)) => if (i.equals(j)) LongLattice.Concrete(j) else LongLattice.Abstract()
+    case (Concrete(i),Concrete(j)) => if (i.equals(j)) Concrete(j) else Abstract()
 
-    case (_, _) =>  LongLattice.Abstract()
+    case (_, _) =>  Abstract()
   }
 
-  def greatestLowerBound(a: LongLattice.Elt, b: LongLattice.Elt) = (a, b) match {
-    case (LongLattice.Bottom(), _) =>                        LongLattice.Bottom()
-    case (_, LongLattice.Bottom()) =>                        LongLattice.Bottom()
+  def greatestLowerBound(a: Elt, b: Elt) = (a, b) match {
+    case (Bottom(), _) =>                        Bottom()
+    case (_, Bottom()) =>                        Bottom()
 
-    case (LongLattice.Abstract(), LongLattice.Abstract()) =>  LongLattice.Abstract()
+    case (Abstract(), Abstract()) =>  Abstract()
 
 
-    case (LongLattice.Concrete(i),LongLattice.Abstract()) => LongLattice.Concrete(i)
-    case (LongLattice.Abstract(),LongLattice.Concrete(i)) => LongLattice.Concrete(i)
+    case (Concrete(i),Abstract()) => Concrete(i)
+    case (Abstract(),Concrete(i)) => Concrete(i)
 
-    case (LongLattice.Concrete(i),LongLattice.Concrete(j)) => if (i.equals(j)) LongLattice.Concrete(j) else LongLattice.Bottom()
+    case (Concrete(i),Concrete(j)) => if (i.equals(j)) Concrete(j) else Bottom()
 
-    case (_, _) =>  LongLattice.Bottom()
+    case (_, _) =>  Bottom()
   }
 }

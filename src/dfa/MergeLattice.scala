@@ -14,7 +14,7 @@ object MergeLattice {
 class MergeLattice[A <: MergeLattice.Elt, B <: MergeLattice.Elt](latticeA: Lattice[A], latticeB: Lattice[B]) extends Lattice[MergeLattice.Elt] {
   def top: MergeLattice.Elt = MergeLattice.Top()
   def bottom: MergeLattice.Elt = MergeLattice.Bottom()
-
+  
   def compare(a: MergeLattice.Elt, b: MergeLattice.Elt): Boolean = {
     if (a == MergeLattice.Top() || b == MergeLattice.Bottom())
       return true

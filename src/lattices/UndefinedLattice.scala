@@ -2,29 +2,29 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object UndefinedLattice {
-  sealed trait Elt
+sealed trait UndefinedElt
+
+object UndefinedLattice extends Lattice[UndefinedElt] {
+  type Elt = UndefinedElt
 
   case class Bottom() extends Elt
   case class Undefined() extends Elt
-}
-
-class UndefinedLattice extends Lattice[UndefinedLattice.Elt] {
-  def top: UndefinedLattice.Elt = UndefinedLattice.Undefined()
-  def bottom: UndefinedLattice.Elt = UndefinedLattice.Bottom()
+  
+  def top: Elt = Undefined()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: UndefinedLattice.Elt, b: UndefinedLattice.Elt): Boolean = return (a, b) match {
-    case (UndefinedLattice.Undefined(), _) => true
-    case (UndefinedLattice.Bottom(), UndefinedLattice.Bottom()) => true
-    case (UndefinedLattice.Bottom(), UndefinedLattice.Undefined()) => false
+  def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
+    case (Undefined(), _) => true
+    case (Bottom(), Bottom()) => true
+    case (Bottom(), Undefined()) => false
   }
   
-  def leastUpperBound(a: UndefinedLattice.Elt, b: UndefinedLattice.Elt): UndefinedLattice.Elt = {
-    return if (a == UndefinedLattice.Undefined() || b == UndefinedLattice.Undefined()) UndefinedLattice.Undefined() else UndefinedLattice.Bottom()
+  def leastUpperBound(a: Elt, b: Elt): Elt = {
+    return if (a == Undefined() || b == Undefined()) Undefined() else Bottom()
   }
   
-  def greatestLowerBound(a: UndefinedLattice.Elt, b: UndefinedLattice.Elt): UndefinedLattice.Elt = {
-    return if (a == UndefinedLattice.Bottom() || b == UndefinedLattice.Bottom()) UndefinedLattice.Bottom() else UndefinedLattice.Undefined()
+  def greatestLowerBound(a: Elt, b: Elt): Elt = {
+    return if (a == Bottom() || b == Bottom()) Bottom() else Undefined()
   }
 }

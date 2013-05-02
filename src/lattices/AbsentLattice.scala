@@ -2,29 +2,29 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object AbsentLattice {
-  sealed trait Elt
+sealed trait AbsentElt
+
+object AbsentLattice extends Lattice[AbsentElt] {
+  type Elt = AbsentElt
 
   case class Bottom() extends Elt
   case class Absent() extends Elt
-}
 
-class AbsentLattice extends Lattice[AbsentLattice.Elt] {
-  def top: AbsentLattice.Elt = AbsentLattice.Absent()
-  def bottom: AbsentLattice.Elt = AbsentLattice.Bottom()
+  def top: Elt = Absent()
+  def bottom: Elt = Bottom()
   
   // a >= b
-  def compare(a: AbsentLattice.Elt, b: AbsentLattice.Elt): Boolean = return (a, b) match {
-    case (AbsentLattice.Absent(), _) => true
-    case (AbsentLattice.Bottom(), AbsentLattice.Bottom()) => true
-    case (AbsentLattice.Bottom(), AbsentLattice.Absent()) => false
+  def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
+    case (Absent(), _) => true
+    case (Bottom(), Bottom()) => true
+    case (Bottom(), Absent()) => false
   }
   
-  def leastUpperBound(a: AbsentLattice.Elt, b: AbsentLattice.Elt): AbsentLattice.Elt = {
-    return if (a == AbsentLattice.Absent() || b == AbsentLattice.Absent()) AbsentLattice.Absent() else AbsentLattice.Bottom()
+  def leastUpperBound(a: Elt, b: Elt): Elt = {
+    return if (a == Absent() || b == Absent()) Absent() else Bottom()
   }
   
-  def greatestLowerBound(a: AbsentLattice.Elt, b: AbsentLattice.Elt): AbsentLattice.Elt = {
-    return if (a == AbsentLattice.Bottom() || b == AbsentLattice.Bottom()) AbsentLattice.Bottom() else AbsentLattice.Absent()
+  def greatestLowerBound(a: Elt, b: Elt): Elt = {
+    return if (a == Bottom() || b == Bottom()) Bottom() else Absent()
   }
 }
