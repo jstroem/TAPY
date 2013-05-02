@@ -35,7 +35,7 @@ class LongLattice extends Lattice[LongLattice.Elt] {
     case (_, _) =>  LongLattice.Abstract()
   }
 
-  def greatestLowerBound(a: LongLattice.Long, b: LongLattice.Long) = (a, b) match {
+  def greatestLowerBound(a: LongLattice.Elt, b: LongLattice.Elt) = (a, b) match {
     case (LongLattice.Bottom(), _) =>                        LongLattice.Bottom()
     case (_, LongLattice.Bottom()) =>                        LongLattice.Bottom()
 
