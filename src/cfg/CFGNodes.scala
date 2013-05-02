@@ -63,7 +63,7 @@ case class ConstantComplexNode(resultReg: Int, complex: PyComplex, id: UUID = UU
   override def toString = s"${reg(resultReg)} = $complex\t(ConstantComplexNode)"
 }
 case class ConstantStringNode(resultReg: Int, string : String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = $string\t(ConstantStringNode)"
+  override def toString = s"${reg(resultReg)} = '$string'\t(ConstantStringNode)"
 }
 case class ConstantNoneNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"${reg(resultReg)} = None\t(ConstantNoneNode)"
@@ -73,7 +73,10 @@ case class ConstantNoneNode(resultReg: Int, id: UUID = UUID.randomUUID()) extend
 // Read property from base (object/class); result =  base.property
 // Read property from dictionary: result = base[property]
 case class ReadVariableNode(variable: String, resultReg: Int, builtin : Boolean = false, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"${reg(resultReg)} = $variable\t(ReadVariableNode)"
+  override def toString = {
+    if (builtin) s"${reg(resultReg)} = $variable (builtin) \t(ReadVariableNode)"
+    else s"${reg(resultReg)} = $variable\t(ReadVariableNode)"
+  }
 }
 case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.$property\t(ReadPropertyNode)"

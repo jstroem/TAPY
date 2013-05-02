@@ -40,13 +40,6 @@ TODO
 This is missing to the registers
 
 	with
-	try-except (christoffer)
-	try-final (christoffer)
-	assert
 	lambda
 	generatorexp
 	yield
-	repr
-	slice (lindstroem)
-	extSlice (lindstroem)
-	exceptHandler
