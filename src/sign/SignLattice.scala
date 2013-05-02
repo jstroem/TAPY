@@ -1,6 +1,6 @@
 package tapy.sign
 
-import tapy.mfw._
+import tapy.dfa._
 
 abstract class Sign
 case class QuestionMark() extends Sign

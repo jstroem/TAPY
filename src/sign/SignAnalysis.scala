@@ -1,8 +1,8 @@
 package tapy.sign
 
-import tapy.mfw._
+import tapy.dfa._
 import tapy.cfg._
-import tapy.mfw.MonotoneFrameworkTypes._
+import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.constants.BinOp._
 
 abstract class SignAnalysis (graph: ControlFlowGraph) extends Analysis[Sign] {
