@@ -21,10 +21,10 @@ class ModifiedLattice extends Lattice[ModifiedLattice.ModifiedElt] {
   }
   
   def leastUpperBound(a: ModifiedLattice.ModifiedElt, b: ModifiedLattice.ModifiedElt): ModifiedLattice.ModifiedElt = {
-    return if (a == NoneLattice.None() || b == NoneLattice.None()) ModifiedLattice.Modified() else ModifiedLattice.Bottom()
+    return if (a == ModifiedLattice.Modified() || b == ModifiedLattice.Modified()) ModifiedLattice.Modified() else ModifiedLattice.Bottom()
   }
   
   def greatestLowerBound(a: ModifiedLattice.ModifiedElt, b: ModifiedLattice.ModifiedElt): ModifiedLattice.ModifiedElt = {
-    return if (a == NoneLattice.Bottom() || b == NoneLattice.Bottom()) ModifiedLattice.Bottom() else ModifiedLattice.Modified()
+    return if (a == ModifiedLattice.Bottom() || b == ModifiedLattice.Bottom()) ModifiedLattice.Bottom() else ModifiedLattice.Modified()
   }
 }
