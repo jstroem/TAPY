@@ -1,7 +1,7 @@
 package tapy.dfa
 
 object MergeLattice {
-  sealed trait Elt
+  trait Elt
   
   case class Top() extends Elt
   case class Bottom() extends Elt
@@ -41,7 +41,7 @@ class MergeLattice[A <: MergeLattice.Elt, B <: MergeLattice.Elt](latticeA: Latti
     }
   }
 
-  def greatestLowerBound(a: (A, B), b: (A, B)): MergeLattice.Elt = {
+  def greatestLowerBound(a: MergeLattice.Elt, b: MergeLattice.Elt): MergeLattice.Elt = {
     if (a == MergeLattice.Bottom() || b == MergeLattice.Bottom())
       return MergeLattice.Bottom()
     

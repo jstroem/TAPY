@@ -5,7 +5,7 @@ import tapy.dfa._
 /*  Assuming that the python program is running on a 32 bit computer.
     This limits integers in python to -2**31-1 <= x <= 2**32-1. */
 object IntegerLattice {
-  sealed trait Elt
+  sealed trait Elt extends MergeLattice.Elt
   
   case class Concrete(i: Int) extends Elt
   case class Bottom() extends Elt
