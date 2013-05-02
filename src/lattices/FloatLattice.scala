@@ -3,7 +3,7 @@ package tapy.lattices
 import java.lang.Double
 import tapy.dfa._
 
-sealed trait FloatElt extends MergeLattice.Elt
+sealed trait FloatElt extends SumLattice.Elt
 
 object FloatLattice  extends Lattice[FloatElt] {
   type Elt = FloatElt
