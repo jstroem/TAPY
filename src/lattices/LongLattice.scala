@@ -19,6 +19,7 @@ class LongLattice extends Lattice[LongLattice.Elt] {
     case (LongLattice.Abstract(), _)  => true
     case (_, LongLattice.Bottom()) => true
     case (LongLattice.Concrete(i),LongLattice.Concrete(j)) => (i.equals(j))
+    case _ => false
   }
 
   def leastUpperBound(a: LongLattice.Elt, b: LongLattice.Elt) = (a, b) match {

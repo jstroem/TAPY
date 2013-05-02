@@ -21,6 +21,7 @@ class IntegerLattice extends Lattice[IntegerLattice.Elt] {
     case (IntegerLattice.Abstract(), _)  => true
     case (_, IntegerLattice.Bottom()) => true
     case (IntegerLattice.Concrete(i),IntegerLattice.Concrete(j)) => (i == j)
+    case _ => false
   }
 
   def leastUpperBound(a: IntegerLattice.Elt, b: IntegerLattice.Elt) = (a, b) match {
