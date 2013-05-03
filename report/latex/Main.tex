@@ -1,0 +1,130 @@
+\documentclass[a4paper,english, oneside, 12pt]{memoir} %kan laves til twoside
+\chapterstyle{southall}
+\usepackage[T1]{fontenc}
+\usepackage[applemac]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\numberwithin{equation}{section} 
+\usepackage{booktabs,dcolumn,cellspace}
+\usepackage{graphicx} %[pdftex]
+\usepackage{placeins} %float barrier
+\usepackage[margin=3cm]{geometry} 
+\setsecnumdepth{subsubsection}
+\setcounter{tocdepth}{2}
+\linespread{1.0}
+\usepackage{array,booktabs}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{lscape}
+\usepackage{array}
+\usepackage{pbox}
+\usepackage{lastpage}
+%\usepackage{rotfloat}
+\usepackage{multirow}
+\usepackage{color}
+\usepackage{relsize} 
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{rotating}
+\usepackage{framed}
+\usepackage{longtable}
+\setlength{\parindent}{0pt}
+\nonzeroparskip
+\usepackage{lipsum}
+\usepackage{listings}
+\usepackage{algpseudocode}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\hypersetup{linktocpage}
+\hypersetup{colorlinks,citecolor=red,filecolor=blue,linkcolor=red,urlcolor=blue}
+\captionsetup[subfigure]{margin=10pt, parskip=0pt,hangindent=0pt, indention=0pt, singlelinecheck=true} 
+\captionsetup[figure]{format=hang,justification=raggedright} %ndrer p caption pakken
+\captionsetup{format=hang,justification=raggedright} %ndrer p caption pakken
+\captionsetup[figure]{font={footnotesize,sf},labelfont=bf, singlelinecheck=1, width=0.85\textwidth}
+\captionsetup[figure]{labelfont={bf,small},textfont={small}}
+\captionsetup[subfloat]{labelfont={bf,small},textfont={small},
+subrefformat=parens}
+\usepackage{lineno}
+\usepackage{minted}
+\providecommand{\inlinecode}[1]{\texttt{#1}}
+
+
+
+
+
+
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,
+	rulecolor=,
+	language=matlab,
+        basicstyle=\scriptsize,
+        upquote=true,
+        aboveskip={1.5\baselineskip},
+        columns=fixed,
+        showstringspaces=false,
+        extendedchars=true,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        frame=single,
+        showtabs=false,
+        showspaces=false,
+        showstringspaces=false,
+        identifierstyle=\ttfamily,
+        keywordstyle=\color[rgb]{0,0,1},
+        commentstyle=\color[rgb]{0.133,0.545,0.133},
+        stringstyle=\color[rgb]{0.627,0.126,0.941},
+}
+
+\makepagestyle{plain}
+\makeevenfoot{plain}{}{\thepage\ of \pageref*{LastPage}}{}
+\makeoddfoot{plain}{}{\thepage\ of \pageref*{LastPage}}{}
+
+
+\renewcommand\chapterheadstart{\vspace*{1 pt}}
+\pagestyle{plain}
+
+
+\begin{document}
+
+\frontmatter
+\begin{titlingpage}
+
+\centering \parindent=0pt
+\newcommand{\HRule}{\rule{\textwidth}{1mm}}
+\vspace*{\stretch{1}} \HRule\\[1cm]
+\Huge\bfseries TAPY\\[0.7cm]
+\large Type Analysis for Python \\[1cm]
+\HRule\\[2cm] \large Jesper Lindstr\o m Nielsen - $jesper.jln@gmail.com$ \\
+\large Christoffer Quist Adamsen - $christofferqa@gmail.com$ \\
+\large Troels Leth Jensen - $troelslethjensen@gmail.com$ \\
+
+\vspace*{2 cm}  \normalsize 
+
+\begin{flushleft}
+Aarhus University\\
+May 3, 2013 \end{flushleft}
+
+
+
+
+\end{titlingpage}
+
+%\tableofcontents
+
+\mainmatter
+\include{Abstract}
+\include{Introduction}
+\include{Features}
+
+\include{Bib}
+
+\backmatter
+
+\appendix
+
+
+
+\end{document}

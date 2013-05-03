@@ -1,0 +1,50 @@
+\chapter{Dynamic features in Python}
+As mentioned Python is a dynamically typed language, and therefore has a lot in common with e.g. JavaScript. In this section we present some of its interesting dynamic features, together with a bunch of common runtime errors. \\
+\\
+Classes are declared using the \inlinecode{class} keyword, supports multiple inheritance and can be modified further after creation. The code in  \ref{code:personExample1} declares an
+empty \inlinecode{Student} class that inherits from \inlinecode{Person}, which in turn inherits from \inlinecode{object}. In line 14 a function \inlinecode{addGrade} is added to the \inlinecode{Student} class and in line 16 the attribute grades is set to an empty dictionary on the $s1$ object. Therefore we can call the \inlinecode{addGrade} function on the \inlinecode{s1} object without getting a runtime error. However, since we forgot to set the grades attribute on the $s2$ object, we get the following runtime error from line 19: \inlinecode{AttributeError: 'Student' object has no attribute 'grades'}. \\
+\\
+Notice that the receiver object is given implicitly as a first argument to the addGrade function. In case we had forgot to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 18: \inlinecode{TypeError: addGrade() takes exactly 2 arguments (3 given)}. \\
+\\
+Another interesting aspect with regards to parameter passing is that Python supports unpacking of argument lists. For instance we could have provided the arguments to the addGrade function in line 18 by means of a dictionary instead: \inlinecode{s1.addGrade(**\{ 'course': 'math', grade: 10\})}.
+
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+	class Person(object):
+	  def __init__(self, name):
+	    self.name = name
+	class Student(Person):
+	  pass
+	s1 = Student('Foo')
+	s2 = Student('Bar')
+	def addGrade(self, course, grade):
+	  self.grades[course] = grade
+	Student.addGrade = addGrade
+	s1.grades = {}
+	s1.addGrade('math', 10)
+	s2.addGrade('math', 7)
+	\end{minted}
+	\caption{Magic method example in Python}\label{code:personExample1}
+\end{listing}
+
+Unlike as in JavaScript, we wouldn't be able to change line 16 into \inlinecode{s1['grades'] = \{\}}. This would result in the following error: \inlinecode{TypeError: 'Student' object does not support item assignment}, while trying to access \inlinecode{s1['grades'] would result in the following error: TypeError: 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the built-in functions \inlinecode{getattr(obj,attr)} and \inlinecode{setattr(obj,attr,val)}. \\
+\\
+But Python also allows the programmer to customize the behavior when indexing into an object by supplying special functions \inlinecode{\_\_setitem\_\_} and \inlinecode{\_\_getitem\_\_}, giving the programmer much more control. As an example consider the new Student class in \ref{code:personExample2}. With this implementation we could set the grades attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}}, and e.g. get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} or \inlinecode{s1['math']}.
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+	class Student(Person):
+	  def __getitem__(self, name):
+	    return self.grades[name]
+	  def __setitem__(self, name, val):
+	    setattr(self, name, val)
+	  def __getattr__(self, name):
+	    if name in self.grades:
+	      return self.grades[name]
+	    else:
+	      return "<no such grade>"
+	\end{minted}
+	\caption{Magic method example in python}
+	\label{code:personExample2}
+\end{listing}
