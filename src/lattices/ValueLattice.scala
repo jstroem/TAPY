@@ -2,7 +2,8 @@ package tapy.lattices
 
 import tapy.dfa._
 
-class ValueLattice(allocationSites: Set[Int])
+// T: The type of allocation sites
+class ValueLattice[T]()
 extends ProductLattice(
     UndefinedLattice,
     new ProductLattice(
@@ -19,4 +20,4 @@ extends ProductLattice(
                             ComplexLattice,
                             new ProductLattice(
                                 StringLattice,
-                                new PowerSubSetLattice(allocationSites)))))))))
+                                new PowerSubSetLattice[T]()))))))))

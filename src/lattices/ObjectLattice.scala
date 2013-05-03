@@ -2,12 +2,12 @@ package tapy.lattices
 
 import tapy.dfa._
 
-class ObjectLattice(allocationSites: Set[Int], scopeChain: Set[Int])
+class ObjectLattice[T]
 extends ProductLattice(
     new MapLattice(
         new ProductLattice(
-            new ValueLattice(allocationSites),
+            new ValueLattice(),
             new ProductLattice(
                 AbsentLattice,
                 ModifiedLattice))),
-    new PowerSubSetLattice(scopeChain))
+    new PowerSubSetLattice[T]())

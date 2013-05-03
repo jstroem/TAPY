@@ -2,11 +2,12 @@ package tapy.lattices
 
 import tapy.dfa._
 
-class StateLattice(allocationSites: Set[Int], scopeChain: Set[Int], tempVars: Set[String])
+// T: The type of allocation sites
+class StateLattice[T]
 extends ProductLattice(
-    new MapLattice(new ObjectLattice(allocationSites, scopeChain)),
+    new MapLattice(new ObjectLattice[T]()),
     new ProductLattice(
-        new StackLattice(allocationSites, scopeChain, tempVars),
+        new StackLattice[T](),
         new ProductLattice(
-            new PowerSubSetLattice(allocationSites),
-            new PowerSubSetLattice(allocationSites))))
+            new PowerSubSetLattice[T](),
+            new PowerSubSetLattice[T]())))
