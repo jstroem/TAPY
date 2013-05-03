@@ -24,6 +24,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   // Try-except-finally
   
+  var exceptCfg: ControlFlowGraph = null
+  
   var finallyNormalCfg: ControlFlowGraph = null
   var finallyHandledCfg: ControlFlowGraph = null
   var finallyUnhandledCfg: ControlFlowGraph = null
@@ -896,14 +898,15 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val lookupRegister = this.lastExpressionRegister
     
     val readRegister = nextRegister()
-    val attributeNode =
+    val attributeCfg =
       if (assignFromRegister >= 0)
-        new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister)
+        new ControlFlowGraph(new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister))
       else
-        new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister)
+        CFGMagicMethodsNormalization.insertGetAttribute(
+          new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister))
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
-    return lookupCfg.append(attributeNode)
+    return lookupCfg.append(attributeCfg)
   }
 
   override def visitSubscript(node: Subscript): ControlFlowGraph = {
@@ -1068,8 +1071,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     
     val excType: List[String] = if (node.getInternalType() != null) namesToList(List(node.getInternalType())) else List()
     val excName: List[String] = if (node.getInternalName() != null) namesToList(List(node.getInternalName())) else List()
+    val excNode = new ExceptNode(excType, excName)
     
-    val bodyCfg = generateCFGOfStatementList(new ExceptNode(excType, excName), node.getInternalBody())
+    val bodyCfg = generateCFGOfStatementList(excNode, node.getInternalBody())
     
     if (this.finallyUnhandledCfg == null)
       return bodyCfg

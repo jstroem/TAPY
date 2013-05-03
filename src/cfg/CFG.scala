@@ -39,10 +39,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Manipulation - Add nodes
    */
 
-  def addNode(node: Node): ControlFlowGraph = {
-    addNodes(Set(node))
-  }
-
+  def addNode(node: Node): ControlFlowGraph = addNodes(Set(node))
   def addNodes(newNodes: Set[Node]): ControlFlowGraph = {
     new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes ++ newNodes, edges, exceptionEdges)
   }
@@ -51,6 +48,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Manipulation - Add/set entry/exit nodes
    */
 
+  def addExitNode(newExitNode: Node): ControlFlowGraph = addExitNodes(Set(newExitNode))
   def addExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes: Set[Node], exceptExitNodes, nodes, edges, exceptionEdges)
   }
@@ -59,26 +57,17 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes ++ newExceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setEntryNode(node: Node): ControlFlowGraph = {
-    return setEntryNodes(Set(node))
-  }
- 
+  def setEntryNode(node: Node): ControlFlowGraph = setEntryNodes(Set(node))
   def setEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(newEntryNodes, exitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setExitNode(node: Node): ControlFlowGraph = {
-    return setExitNodes(Set(node))
-  }
-    
+  def setExitNode(node: Node): ControlFlowGraph = setExitNodes(Set(node)) 
   def setExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, newExitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setExceptExitNode(node: Node): ControlFlowGraph = {
-    return setExceptExitNodes(Set(node))
-  }
-
+  def setExceptExitNode(node: Node): ControlFlowGraph = setExceptExitNodes(Set(node))
   def setExceptExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
   }
