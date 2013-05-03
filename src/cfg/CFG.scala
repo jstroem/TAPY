@@ -87,6 +87,14 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Manipulation
    */
 
+  def removeNodeAndEdges(node: Node): ControlFlowGraph = {
+    new ControlFlowGraph(entryNodes - node, exitNodes - node, exceptExitNodes - node, nodes - node, edges, exceptionEdges)
+      .removeEdges(getPredecessors(node), node)
+      .removeEdges(node, getSuccessors(node))
+      .removeExceptEdges(getExceptionPredecessors(node), node)
+      .removeExceptEdges(node, getExceptionSuccessors(node))
+  }
+  
   def removeNoOpNode(node: Node): ControlFlowGraph = node match {
     case n: NoOpNode => {
       if (entryNodes.contains(node) || exitNodes.contains(node) || exceptExitNodes.contains(node))
@@ -124,12 +132,26 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     }
   }
   
-  def removeEdges(preds: Set[Node], succ: Node): ControlFlowGraph = {
+  def removeEdges(pred: Node, succ: Node): ControlFlowGraph = removeEdges(Set(pred), Set(succ))
+  def removeEdges(pred: Node, succs: Set[Node]): ControlFlowGraph = removeEdges(Set(pred), succs)
+  def removeEdges(preds: Set[Node], succ: Node): ControlFlowGraph = removeEdges(preds, Set(succ))
+  def removeEdges(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
     val filteredEdges = preds.foldLeft(edges) {(acc, pred) =>
       val currSuccs = acc.getOrElse(pred, Set())
-      acc + (pred -> (currSuccs - succ))
+      acc + (pred -> (currSuccs -- succs))
     }
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, filteredEdges, exceptionEdges)
+  }
+  
+  def removeExceptEdges(pred: Node, succ: Node): ControlFlowGraph = removeEdges(Set(pred), Set(succ))
+  def removeExceptEdges(pred: Node, succs: Set[Node]): ControlFlowGraph = removeEdges(Set(pred), succs)
+  def removeExceptEdges(preds: Set[Node], succ: Node): ControlFlowGraph = removeEdges(preds, Set(succ))
+  def removeExceptEdges(preds: Set[Node], succs: Set[Node]): ControlFlowGraph = {
+    val filteredExceptionEdges = preds.foldLeft(exceptionEdges) {(acc, pred) =>
+      val currSuccs = acc.getOrElse(pred, Set())
+      acc + (pred -> (currSuccs -- succs))
+    }
+    return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, edges, filteredExceptionEdges)
   }
 
   def connect(pred: Node, succ: Node): ControlFlowGraph = { return connect(Set(pred), Set(succ)) }

@@ -14,13 +14,10 @@ import java.io._
 object CFGMagicMethodsNormalization {
   def normalize(cfg: ControlFlowGraph): ControlFlowGraph = {
     cfg.nodes.foldLeft(cfg) {(acc, node) =>
-      return node match {
-        case node: ReadVariableNode =>
-          val normalized = insertGetAttribute(node)
-          val predecessors = acc.getPredecessors(node)
-          
-          acc.removeEdges(predecessors, node)
-             .insert(normalized, predecessors, Set[Node]())
+      node match {
+        case node: ReadPropertyNode =>
+          acc.removeNodeAndEdges(node)
+             .insert(insertGetAttribute(node), acc.getPredecessors(node), acc.getSuccessors(node))
              
         case _ =>
           acc
@@ -28,8 +25,18 @@ object CFGMagicMethodsNormalization {
     }
   }
   
-  def insertGetAttribute(node: ReadVariableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
+  def insertGetAttribute(node: ReadPropertyNode): ControlFlowGraph = {
+    val hasAttrNode = new HasAttributeNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
+    val ifNode = new IfNode(hasAttrNode.resultReg)
+    val thenNode1 = new ReadPropertyNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
+    val thenNode2 = new ConstantStringNode(CFGGeneratorVisitor.nextRegister(), node.property)
+    val thenNode3 = new CallNode(node.resultReg, thenNode1.resultReg, List(node.baseReg, thenNode2.resultReg))
+    val elseNode = node
+    
+    return new ControlFlowGraph(hasAttrNode)
+      .append(ifNode)
+      .append(Set(new ControlFlowGraph(thenNode1).append(thenNode2).append(thenNode3),
+                  new ControlFlowGraph(elseNode)))
   }
   
   def insertGetAttr(node: ReadVariableNode): ControlFlowGraph = {
