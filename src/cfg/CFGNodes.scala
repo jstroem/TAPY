@@ -85,6 +85,10 @@ case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, id:
   override def toString = s"${reg(resultReg)} = ${reg(baseReg)}[${reg(propertyReg)}]\t(ReadIndexableNode)"
 }
 
+case class HasAttributeNode(baseReg: Int, property: String, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"${reg(resultReg)} = hasattr(${reg(baseReg)}.$property)\t(HasAttributeNode)"
+}
+
 // Del
 case class DelVariableNode(variable: String, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"del $variable\t(DelVariableNode)"

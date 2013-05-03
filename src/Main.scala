@@ -11,8 +11,6 @@ import java.io._
 import tapy.export._
 
 object Main {
-  var cfg: ControlFlowGraph = null
-
   def main(args: Array[String]): Unit = {
     args.foreach((f) => {
       var file = new File(f)
@@ -39,7 +37,7 @@ object Main {
   
       println("\n----------\n")
       println("Generating CFG of \"" + file + "\"\n")
-      cfg = ast.accept(CFGGeneratorVisitor)
+      val cfg = CFGMagicMethodsNormalization.normalize(ast.accept(CFGGeneratorVisitor))
       
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
