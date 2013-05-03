@@ -3,9 +3,9 @@ package tapy.lattices
 import tapy.dfa._
 
 // T: The type of allocation sites
-class StackLattice[T]
+class StackLattice[L]
 extends ProductLattice(
-    new MapLattice(new ValueLattice[T]()),
+    new MapLattice(new ValueLattice[L]()),
     new ProductLattice(
-        new PowerSubSetLattice[(List[T], T, T)](), // Execution context
-        new PowerSubSetLattice[T]()))
+        new PowerSubSetLattice[(List[L], L, L)](), // Execution context
+        new PowerSubSetLattice[L]()))

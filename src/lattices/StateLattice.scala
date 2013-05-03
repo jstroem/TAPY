@@ -3,11 +3,11 @@ package tapy.lattices
 import tapy.dfa._
 
 // T: The type of allocation sites
-class StateLattice[T]
+class StateLattice[L]
 extends ProductLattice(
-    new MapLattice(new ObjectLattice[T]()),
+    new MapLattice(new ObjectLattice[L]()),
     new ProductLattice(
-        new StackLattice[T](),
+        new StackLattice[L](),
         new ProductLattice(
-            new PowerSubSetLattice[T](),
-            new PowerSubSetLattice[T]())))
+            new PowerSubSetLattice[L](),
+            new PowerSubSetLattice[L]())))
