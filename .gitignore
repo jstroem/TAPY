@@ -26,5 +26,8 @@ bin/
 .project
 TAPY/
 
+#Docx temps
+~$*.docx
+
 # Scala-IDE specific
 .scala_dependencies
