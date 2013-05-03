@@ -117,6 +117,8 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitFunctionDef(node: FunctionDef): String = {
+    val decoratorList = node.getInternalDecorator_list().toList.map((e) => "@" + e.accept(this) + "\n")
+    val decorator = implodeStringList(decoratorList, "")
     val name = node.getInternalName()
     val args = visitArguments(node.getInternalArgs())
     
@@ -124,7 +126,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
     val body = implodeList(node.getInternalBody(), "\n")
     decIndent()
     
-    return indent(s"def $name($args):\n$body\n")
+    return indent(decorator + s"def $name($args):\n$body\n")
   }
   
   override def visitClassDef(node: ClassDef): String = {
