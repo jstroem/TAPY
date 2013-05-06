@@ -47,12 +47,8 @@ subrefformat=parens}
 \usepackage{lineno}
 \usepackage{minted}
 \providecommand{\inlinecode}[1]{\texttt{#1}}
-
-
-
-
-
-
+\providecommand{\todo}[1]{\addcontentsline{tdo}{todo}{\protect{#1}}\marginpar{\textcolor{red}{#1}}}
+\newcommand{\tab}[1]{\hspace{.2\textwidth}\rlap{#1}}
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
 \lstset{
@@ -118,12 +114,19 @@ May 3, 2013 \end{flushleft}
 \include{Abstract}
 \include{Introduction}
 \include{Features}
+\include{CFGConstruction}
+\include{Lattice}
+\include{Analysis}
+\include{Results}
+\include{Furtherwork}
 
 \include{Bib}
 
 \backmatter
 
 \appendix
+
+\include{Nodereferences}
 
 
 
