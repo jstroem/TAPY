@@ -1,0 +1,10 @@
+try:
+  "a"
+  try:
+    "b"
+  except:
+    "c"
+  except:
+    "d"
+finally:
+  "e"

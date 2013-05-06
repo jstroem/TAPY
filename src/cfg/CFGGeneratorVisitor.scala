@@ -403,27 +403,19 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       result
     }
     
-    val handlerFinallyCfg =
-      if (this.finallyHandledCfg == null)
-        handlerCfg
-      else
-        handlerCfg.append(this.finallyHandledCfg)
-    
     val elseCfg = generateCFGOfStatementList(new NoOpNode("Try-except-else entry"), node.getInternalOrelse())
-    val exitNode = new NoOpNode("Try-except exit")
     
-    
-    if (this.finallyNormalCfg == null)
+    // finallyNormalCfg is null if and only if finallyHandledCfg is null
+    if (this.finallyNormalCfg == null && this.finallyHandledCfg == null)
       return bodyCfg.append(elseCfg)
-                    .append(exitNode)
-                    .insert(handlerFinallyCfg, Set[Node](), exitNode)
+                    .insert(handlerCfg)
                     .connectExcept(bodyCfg.nodes, handlerCfg.entryNodes)
+                    .setExitNodes(elseCfg.exitNodes ++ handlerCfg.exitNodes)
     else
       return bodyCfg.append(elseCfg)
-                    .append(this.finallyNormalCfg)
-                    .append(exitNode)
-                    .insert(handlerFinallyCfg, Set[Node](), exitNode)
+                    .insert(handlerCfg.append(this.finallyHandledCfg))
                     .connectExcept(bodyCfg.nodes, handlerCfg.entryNodes)
+                    .setExitNodes(elseCfg.exitNodes)
   }
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
@@ -442,16 +434,25 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     this.finallyUnhandledCfg = finallyUnhandledCfg
     
     val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-finally entry"), node.getInternalBody())
+    
     val result = node.getInternalBody().get(0) match {
-      case _: TryExcept => println("try-except!"); bodyCfg.insert(finallyNormalCfg).insert(finallyHandledCfg).insert(finallyUnhandledCfg)
-      case _ => bodyCfg.append(finallyNormalCfg).insert(finallyHandledCfg).insert(finallyUnhandledCfg)
+      case _: TryExcept =>
+        bodyCfg.append(finallyNormalCfg)
+               .insert(finallyHandledCfg)
+               .insert(finallyUnhandledCfg)
+               .connectExcept(bodyCfg.nodes -- finallyNormalCfg.nodes -- finallyHandledCfg.nodes -- finallyUnhandledCfg.nodes, finallyUnhandledCfg.entryNodes)
+      case _ =>
+        bodyCfg.append(finallyNormalCfg)
+               .insert(finallyHandledCfg)
+               .insert(finallyUnhandledCfg)
+               .connectExcept(bodyCfg.nodes -- finallyNormalCfg.nodes -- finallyHandledCfg.nodes -- finallyUnhandledCfg.nodes, finallyUnhandledCfg.entryNodes)
     }
     
     this.finallyNormalCfg = oldFinallyNormalCfg
     this.finallyHandledCfg = oldFinallyHandledCfg
     this.finallyUnhandledCfg = oldFinallyUnhandledCfg
     
-    return result
+    return result.setExitNodes(finallyNormalCfg.exitNodes ++ finallyHandledCfg.exitNodes)
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
@@ -1073,11 +1074,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val excName: List[String] = if (node.getInternalName() != null) namesToList(List(node.getInternalName())) else List()
     val excNode = new ExceptNode(excType, excName)
     
-    val bodyCfg = generateCFGOfStatementList(excNode, node.getInternalBody())
-    
-    if (this.finallyUnhandledCfg == null)
-      return bodyCfg
-    else
-      return bodyCfg.connectExcept(bodyCfg.nodes, this.finallyUnhandledCfg.entryNodes)
+    return generateCFGOfStatementList(excNode, node.getInternalBody())
   }
 }

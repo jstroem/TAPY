@@ -1,0 +1,9 @@
+try:
+	try:
+		"a"
+	except:
+		"b"
+	except:
+		"c"
+except:
+	"d"

@@ -157,9 +157,14 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   def connectExcept(preds: Set[Node], succs: Set[Node], overwrite: Boolean = false): ControlFlowGraph = {
     // Only allow one exception edge for each node (in case trying to add more than one, it is ignored)
     val newExceptionEdges = preds.foldLeft(exceptionEdges) {(edgeMap, pred) =>
-      edgeMap.get(pred) match {
-        case Some(currSuccs) => if (currSuccs.size >= 1 && !overwrite) edgeMap else edgeMap + (pred -> succs)
-        case None => edgeMap + (pred -> succs)
+      pred match {
+        case pred: NoOpNode =>
+          edgeMap
+        case pred =>
+          edgeMap.get(pred) match {
+            case Some(currSuccs) => if (currSuccs.size >= 1 && !overwrite) edgeMap else edgeMap + (pred -> succs)
+            case None => edgeMap + (pred -> succs)
+          }
       }
     }
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, edges, newExceptionEdges)
