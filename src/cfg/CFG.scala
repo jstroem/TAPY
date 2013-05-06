@@ -39,10 +39,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Manipulation - Add nodes
    */
 
-  def addNode(node: Node): ControlFlowGraph = {
-    addNodes(Set(node))
-  }
-
+  def addNode(node: Node): ControlFlowGraph = addNodes(Set(node))
   def addNodes(newNodes: Set[Node]): ControlFlowGraph = {
     new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes ++ newNodes, edges, exceptionEdges)
   }
@@ -51,6 +48,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    * Manipulation - Add/set entry/exit nodes
    */
 
+  def addExitNode(newExitNode: Node): ControlFlowGraph = addExitNodes(Set(newExitNode))
   def addExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes: Set[Node], exceptExitNodes, nodes, edges, exceptionEdges)
   }
@@ -59,26 +57,17 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes ++ newExceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setEntryNode(node: Node): ControlFlowGraph = {
-    return setEntryNodes(Set(node))
-  }
- 
+  def setEntryNode(node: Node): ControlFlowGraph = setEntryNodes(Set(node))
   def setEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(newEntryNodes, exitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setExitNode(node: Node): ControlFlowGraph = {
-    return setExitNodes(Set(node))
-  }
-    
+  def setExitNode(node: Node): ControlFlowGraph = setExitNodes(Set(node)) 
   def setExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, newExitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
   
-  def setExceptExitNode(node: Node): ControlFlowGraph = {
-    return setExceptExitNodes(Set(node))
-  }
-
+  def setExceptExitNode(node: Node): ControlFlowGraph = setExceptExitNodes(Set(node))
   def setExceptExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
   }
@@ -168,9 +157,14 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   def connectExcept(preds: Set[Node], succs: Set[Node], overwrite: Boolean = false): ControlFlowGraph = {
     // Only allow one exception edge for each node (in case trying to add more than one, it is ignored)
     val newExceptionEdges = preds.foldLeft(exceptionEdges) {(edgeMap, pred) =>
-      edgeMap.get(pred) match {
-        case Some(currSuccs) => if (currSuccs.size >= 1 && !overwrite) edgeMap else edgeMap + (pred -> succs)
-        case None => edgeMap + (pred -> succs)
+      pred match {
+        case pred: NoOpNode =>
+          edgeMap
+        case pred =>
+          edgeMap.get(pred) match {
+            case Some(currSuccs) => if (currSuccs.size >= 1 && !overwrite) edgeMap else edgeMap + (pred -> succs)
+            case None => edgeMap + (pred -> succs)
+          }
       }
     }
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes, nodes, edges, newExceptionEdges)

@@ -12,35 +12,36 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.io._
 
 object CFGMagicMethodsNormalization {
-  def normalize(cfg: ControlFlowGraph): ControlFlowGraph = {
-    cfg.nodes.foldLeft(cfg) {(acc, node) =>
-      node match {
-        case node: ReadPropertyNode =>
-          acc.removeNodeAndEdges(node)
-             .insert(insertGetAttribute(node), acc.getPredecessors(node), acc.getSuccessors(node))
-             
-        case _ =>
-          acc
-      }
-    }
-  }
-  
   def insertGetAttribute(node: ReadPropertyNode): ControlFlowGraph = {
-    val hasAttrNode = new HasAttributeNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
-    val ifNode = new IfNode(hasAttrNode.resultReg)
-    val thenNode1 = new ReadPropertyNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
-    val thenNode2 = new ConstantStringNode(CFGGeneratorVisitor.nextRegister(), node.property)
-    val thenNode3 = new CallNode(node.resultReg, thenNode1.resultReg, List(node.baseReg, thenNode2.resultReg))
-    val elseNode = node
+    val tryHasAttrNode = new HasAttributeNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
+    val tryIfNode = new IfNode(tryHasAttrNode.resultReg)
+    val tryThenNode1 = new ReadPropertyNode(node.baseReg, "__getattribute__", CFGGeneratorVisitor.nextRegister())
+    val tryThenNode2 = new ConstantStringNode(CFGGeneratorVisitor.nextRegister(), node.property)
+    val tryThenNode3 = new CallNode(node.resultReg, tryThenNode1.resultReg, List(tryThenNode2.resultReg))
+    val tryElseNode = node
     
-    return new ControlFlowGraph(hasAttrNode)
-      .append(ifNode)
-      .append(Set(new ControlFlowGraph(thenNode1).append(thenNode2).append(thenNode3),
-                  new ControlFlowGraph(elseNode)))
-  }
-  
-  def insertGetAttr(node: ReadVariableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
+    val exceptNode = new ExceptNode(List("AttributeError"), List("e"))
+    val exceptHasAttrNode = new HasAttributeNode(node.baseReg, "__getattr__", CFGGeneratorVisitor.nextRegister())
+    val exceptIfNode = new IfNode(exceptHasAttrNode.resultReg)
+    val exceptThenNode1 = new ReadPropertyNode(node.baseReg, "__getattr__", CFGGeneratorVisitor.nextRegister())
+    val exceptThenNode2 = new ConstantStringNode(CFGGeneratorVisitor.nextRegister(), node.property)
+    val exceptThenNode3 = new CallNode(node.resultReg, exceptThenNode1.resultReg, List(exceptThenNode2.resultReg))
+    val exceptElseNode = new RaiseNode(-1) // TODO
+    
+    val result = new ControlFlowGraph(tryHasAttrNode)
+      .append(tryIfNode)
+      .append(Set(new ControlFlowGraph(tryThenNode1).append(tryThenNode2)
+                                                    .append(tryThenNode3),
+                  new ControlFlowGraph(tryElseNode)))
+      .insert(new ControlFlowGraph(exceptNode).append(exceptHasAttrNode)
+                                              .append(exceptIfNode)
+                                              .append(Set(new ControlFlowGraph(exceptThenNode1).append(exceptThenNode2)
+                                                                                               .append(exceptThenNode3),
+                                                          new ControlFlowGraph(exceptElseNode))))
+      .addExitNode(exceptThenNode3)
+      .connectExcept(Set[Node](tryThenNode1, tryThenNode2, tryThenNode3, tryElseNode), exceptNode)
+    
+    return result
   }
   
   def insertSetAttr(node: WriteVariableNode): ControlFlowGraph = {

@@ -37,7 +37,7 @@ object Main {
   
       println("\n----------\n")
       println("Generating CFG of \"" + file + "\"\n")
-      val cfg = CFGMagicMethodsNormalization.normalize(ast.accept(CFGGeneratorVisitor))
+      val cfg = ast.accept(CFGGeneratorVisitor)
       
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
