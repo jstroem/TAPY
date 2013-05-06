@@ -1,6 +1,8 @@
 package tapy.dfa
 
 class ProductLattice[A, B](latticeA: Lattice[A], latticeB: Lattice[B]) extends Lattice[(A, B)] {
+  type Elt = (A, B)
+  
   def top: (A, B) = (latticeA.top, latticeB.top)
   def bottom: (A, B) = (latticeA.bottom, latticeB.bottom)
 

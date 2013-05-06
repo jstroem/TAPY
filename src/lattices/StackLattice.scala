@@ -6,6 +6,4 @@ import tapy.dfa._
 class StackLattice[L]
 extends ProductLattice(
     new MapLattice(new ValueLattice[L]()),
-    new ProductLattice(
-        new PowerSubSetLattice[(List[L], L, L)](), // Execution context
-        new PowerSubSetLattice[L]()))
+    new PowerSubSetLattice[(List[L], L, L)]()) // Execution context

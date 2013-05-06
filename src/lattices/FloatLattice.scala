@@ -5,7 +5,7 @@ import tapy.dfa._
 
 sealed trait FloatElt extends SumLattice.Elt
 
-object FloatLattice  extends Lattice[FloatElt] {
+class FloatLattice extends Lattice[FloatElt] {
   type Elt = FloatElt
   
   case class Concrete(l:Double) extends Elt

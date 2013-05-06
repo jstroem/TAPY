@@ -5,7 +5,7 @@ import tapy.dfa._
 
 sealed trait LongElt
 
-object LongLattice extends Lattice[LongElt] {
+class LongLattice extends Lattice[LongElt] {
   type Elt = LongElt
   
   case class Concrete(l:BigInteger) extends Elt

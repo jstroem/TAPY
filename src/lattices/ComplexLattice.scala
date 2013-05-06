@@ -2,5 +2,4 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object ComplexLattice extends ProductLattice[FloatLattice.Elt, FloatLattice.Elt](FloatLattice, FloatLattice) { 
-}
+class ComplexLattice extends ProductLattice[FloatElt, FloatElt](new FloatLattice(), new FloatLattice())

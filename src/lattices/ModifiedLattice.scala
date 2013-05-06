@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait ModifiedElt
 
-object ModifiedLattice extends Lattice[ModifiedElt] {
+class ModifiedLattice extends Lattice[ModifiedElt] {
   type Elt = ModifiedElt
 
   case class Bottom() extends Elt

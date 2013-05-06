@@ -11,8 +11,8 @@ abstract class SignAnalysis (graph: ControlFlowGraph) extends Analysis[Sign] {
     return null
   }
 
-  def nodeDependencies (cfgNode: Node): List[Node] = {
-    graph.getPredecessors(cfgNode).toList
+  def nodeDependencies (cfgNode: Node): Set[Node] = {
+    graph.getPredecessors(cfgNode)
   }
 
 

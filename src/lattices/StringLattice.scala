@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait StringElt
 
-object StringLattice extends Lattice[StringElt] {
+class StringLattice extends Lattice[StringElt] {
   type Elt = StringElt
   
   case class Bottom() extends Elt

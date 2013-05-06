@@ -5,19 +5,19 @@ import tapy.dfa._
 // T: The type of allocation sites
 class ValueLattice[L]
 extends ProductLattice(
-    UndefinedLattice,
+    new UndefinedLattice(),
     new ProductLattice(
-        NoneLattice,
+        new NoneLattice(),
         new ProductLattice(
-            BooleanLattice,
+            new BooleanLattice(),
             new ProductLattice(
-                IntegerLattice,
+                new IntegerLattice(),
                 new ProductLattice(
-                    FloatLattice,
+                    new FloatLattice(),
                     new ProductLattice(
-                        LongLattice,
+                        new LongLattice(),
                         new ProductLattice(
-                            ComplexLattice,
+                            new ComplexLattice(),
                             new ProductLattice(
-                                StringLattice,
+                                new StringLattice(),
                                 new PowerSubSetLattice[L]()))))))))

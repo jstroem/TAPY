@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait UndefinedElt
 
-object UndefinedLattice extends Lattice[UndefinedElt] {
+class UndefinedLattice extends Lattice[UndefinedElt] {
   type Elt = UndefinedElt
 
   case class Bottom() extends Elt

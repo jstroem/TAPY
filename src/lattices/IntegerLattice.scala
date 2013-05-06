@@ -7,7 +7,7 @@ import tapy.dfa._
 
 sealed trait IntegerElt extends SumLattice.Elt
 
-object IntegerLattice extends Lattice[IntegerElt] {
+class IntegerLattice extends Lattice[IntegerElt] {
   type Elt = IntegerElt
   
   case class Concrete(i: Int) extends Elt

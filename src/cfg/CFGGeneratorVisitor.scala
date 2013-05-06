@@ -660,7 +660,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         val elRegister = this.lastExpressionRegister
         (elCfg, elRegister)
       })
-  
+      
       this.lastExpressionRegister = emptySetRegister
   
       val setAddFuncRegister = nextRegister()

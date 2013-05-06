@@ -8,6 +8,6 @@ extends ProductLattice(
         new ProductLattice(
             new ValueLattice(),
             new ProductLattice(
-                AbsentLattice,
-                ModifiedLattice))),
+                new AbsentLattice(),
+                new ModifiedLattice()))),
     new PowerSubSetLattice[L]())

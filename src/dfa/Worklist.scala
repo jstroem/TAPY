@@ -8,7 +8,6 @@ class WorklistAlgorithm[T] (analysis: Analysis[T],
                             graph: ControlFlowGraph) {
 
   def run(): Solution[T] = {
-
     val worklist = graph.nodes.toList
     val solution = graph.nodes.foldLeft (Map(): Solution[T]) ((m, node) => m + (node -> (lattice.bottom)))
     val contraints = graph.nodes.foldLeft (Map(): ConstraintMap[T]) ((m, node) => m + (node -> (analysis.generateConstraint(node))))

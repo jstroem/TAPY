@@ -5,5 +5,5 @@ import tapy.dfa.MonotoneFrameworkTypes._
 
 trait Analysis[T] {
   def generateConstraint(cfgNode: Node): Constraint[T]
-  def nodeDependencies(cfgNode: Node): List[Node]
+  def nodeDependencies(cfgNode: Node): Set[Node]
 }

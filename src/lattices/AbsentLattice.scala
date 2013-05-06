@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait AbsentElt
 
-object AbsentLattice extends Lattice[AbsentElt] {
+class AbsentLattice extends Lattice[AbsentElt] {
   type Elt = AbsentElt
 
   case class Bottom() extends Elt

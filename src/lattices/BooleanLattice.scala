@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait BooleanElt
 
-object BooleanLattice extends Lattice[BooleanElt] {
+class BooleanLattice extends Lattice[BooleanElt] {
   type Elt = BooleanElt
   
   case class True() extends Elt
