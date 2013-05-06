@@ -4,16 +4,15 @@ import tapy.dfa._
 
 sealed trait UndefinedElt
 
-class UndefinedLattice extends Lattice[UndefinedElt] {
+object UndefinedLattice extends Lattice[UndefinedElt] {
   type Elt = UndefinedElt
-
+  
   case class Bottom() extends Elt
   case class Undefined() extends Elt
   
   def top: Elt = Undefined()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (Undefined(), _) => true
     case (Bottom(), Bottom()) => true

@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait StringElt
 
-class StringLattice extends Lattice[StringElt] {
+object StringLattice extends Lattice[StringElt] {
   type Elt = StringElt
   
   case class Bottom() extends Elt
@@ -14,7 +14,6 @@ class StringLattice extends Lattice[StringElt] {
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (Abstract(), _) => true
     case (Concrete(_), Abstract()) => false

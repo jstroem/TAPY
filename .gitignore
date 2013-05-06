@@ -19,6 +19,7 @@ project/plugins/project/
 
 
 # eclipse specific
+eclipse-bin/
 bin/
 .settings/
 .classpath

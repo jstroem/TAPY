@@ -5,9 +5,9 @@ import tapy.dfa._
 /*  Assuming that the python program is running on a 32 bit computer.
     This limits integers in python to -2**31-1 <= x <= 2**32-1. */
 
-sealed trait IntegerElt extends SumLattice.Elt
+sealed trait IntegerElt
 
-class IntegerLattice extends Lattice[IntegerElt] {
+object IntegerLattice extends Lattice[IntegerElt] {
   type Elt = IntegerElt
   
   case class Concrete(i: Int) extends Elt
@@ -17,7 +17,6 @@ class IntegerLattice extends Lattice[IntegerElt] {
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
     case (_, Bottom()) => true

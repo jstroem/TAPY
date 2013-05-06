@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait BooleanElt
 
-class BooleanLattice extends Lattice[BooleanElt] {
+object BooleanLattice extends Lattice[BooleanElt] {
   type Elt = BooleanElt
   
   case class True() extends Elt
@@ -15,7 +15,6 @@ class BooleanLattice extends Lattice[BooleanElt] {
   def top: Elt = Bool()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Bool(), _)  => true
     case (_, Bottom()) => true

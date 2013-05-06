@@ -3,9 +3,9 @@ package tapy.lattices
 import java.lang.Double
 import tapy.dfa._
 
-sealed trait FloatElt extends SumLattice.Elt
+sealed trait FloatElt
 
-class FloatLattice extends Lattice[FloatElt] {
+object FloatLattice extends Lattice[FloatElt] {
   type Elt = FloatElt
   
   case class Concrete(l:Double) extends Elt
@@ -15,7 +15,6 @@ class FloatLattice extends Lattice[FloatElt] {
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
     case (_, Bottom()) => true

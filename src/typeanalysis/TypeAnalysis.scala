@@ -7,19 +7,22 @@ import tapy.lattices._
 
 object TypeAnalysis {
   val lattice = new AnalysisLattice[Int, String, Node]()
-  val product = new ProductLattice[tapy.lattices.NoneLattice, NoneLattice]()
 }
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[TypeAnalysis.lattice.Elt] {
-  def generateConstraint(node: Node): Constraint[UndefinedElt] = {
+  type Elt = TypeAnalysis.lattice.Elt
+  
+  def bottom = TypeAnalysis.lattice.bottom
+  
+  def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
-        case node: ConstantStringNode => ((solution: Solution[UndefinedElt]) => handleConstantString(node))
-        case node => ((solution) => solution.getOrElse(node, new UndefinedLattice().bottom))
+        case node: ConstantStringNode => ((solution) => handleConstantString(node, solution.getOrElse(node, bottom)))
+        case node => ((solution) => solution.getOrElse(node, TypeAnalysis.lattice.bottom))
       }
   }
   
-  def handleConstantString(node: ConstantStringNode): UndefinedElt = {
-    return null
+  def handleConstantString(node: ConstantStringNode, currentSolution: Elt): Elt = {
+    return currentSolution
   }
   
   def nodeDependencies(cfgNode: Node): Set[Node] = {

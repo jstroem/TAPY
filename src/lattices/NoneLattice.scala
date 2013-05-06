@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait NoneElt
 
-class NoneLattice extends Lattice[NoneElt] {
+object NoneLattice extends Lattice[NoneElt] {
   type Elt = NoneElt
 
   case class Bottom() extends Elt
@@ -13,7 +13,6 @@ class NoneLattice extends Lattice[NoneElt] {
   def top: Elt = None()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (None(), _) => true
     case (Bottom(), Bottom()) => true

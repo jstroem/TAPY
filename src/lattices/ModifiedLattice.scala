@@ -4,7 +4,7 @@ import tapy.dfa._
 
 sealed trait ModifiedElt
 
-class ModifiedLattice extends Lattice[ModifiedElt] {
+object ModifiedLattice extends Lattice[ModifiedElt] {
   type Elt = ModifiedElt
 
   case class Bottom() extends Elt
@@ -13,7 +13,6 @@ class ModifiedLattice extends Lattice[ModifiedElt] {
   def top: Elt = Modified()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (Modified(), _) => true
     case (Bottom(), Bottom()) => true

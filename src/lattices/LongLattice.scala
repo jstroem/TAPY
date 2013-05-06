@@ -5,7 +5,7 @@ import tapy.dfa._
 
 sealed trait LongElt
 
-class LongLattice extends Lattice[LongElt] {
+object LongLattice extends Lattice[LongElt] {
   type Elt = LongElt
   
   case class Concrete(l:BigInteger) extends Elt
@@ -15,7 +15,6 @@ class LongLattice extends Lattice[LongElt] {
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
   
-  // a >= b
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
     case (_, Bottom()) => true
