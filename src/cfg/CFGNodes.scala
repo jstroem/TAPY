@@ -30,6 +30,10 @@ case class ExitNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id)
   override def toString = s"ExitNode($note)"
 }
 
+case class ModuleEntryNode(note: String, moduleDef: org.python.antlr.ast.Module, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ModuleEntryNode($note)"
+}
+
 // Write variable; variable = value
 // Write property into base (object/class); base.property = value
 // Write property into dictionary: base[property] = value

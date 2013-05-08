@@ -54,7 +54,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
   def handleConstantComplex(node: ConstantComplexNode, currentSolution: Elt) : Elt = {
     var (callGraph,heap,stack,executionContext) = AnalysisLattice.unpackElement(node, currentSolution)
-    var value = ValueLattice.putElement(ValueLattice.bottom, node.complex.getReal().getValue(), nodex.complex.getImag().getValue())
+    var value = ValueLattice.putElement(ValueLattice.bottom, node.complex.getReal().getValue(), node.complex.getImag().getValue())
     stack = stack + (node.resultReg -> value)
     return AnalysisLattice.packElement(node, currentSolution, callGraph, heap, stack, executionContext)
   }

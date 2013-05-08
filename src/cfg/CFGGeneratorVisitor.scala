@@ -106,7 +106,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitModule(node: Module): ControlFlowGraph = {
     println("visitModule")
-    return generateCFGOfStatementList(new NoOpNode("Program entry"), node.getInternalBody())
+    return generateCFGOfStatementList(new ModuleEntryNode("Module entry",node), node.getInternalBody())
   }
 
   override def visitInteractive(node: Interactive): ControlFlowGraph = {
