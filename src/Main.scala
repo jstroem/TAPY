@@ -49,7 +49,7 @@ object Main {
       val worklist = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfg), AnalysisLattice, cfg)
       val solution = worklist.run()
       println("\n----------\n")
-      println("Solution result: "+ AnalysisLattice.eltToString(solution,"") +"\n")
+      println("Solution result: \n"+ AnalysisLattice.eltToString(solution,"") +"\n")
     } catch {
       case e: Exception => e.printStackTrace()
     }

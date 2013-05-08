@@ -29,8 +29,8 @@ object UndefinedLattice extends Lattice[UndefinedElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Undefined() => s"$indent Undefined"
-    case Bottom() => s"$indent Defined"
-    case _ => throw new IllegalArgumentException("Undefined lattice error")
+    case Undefined() => s"$indent[Undefined (Top)]\n"
+    case Bottom() => s"$indent[Defined (Bottom)]\n"
+    case _ => throw new IllegalArgumentException("UndefinedLattice pattern match error")
   }
 }

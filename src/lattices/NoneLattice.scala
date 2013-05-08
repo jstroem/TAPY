@@ -29,8 +29,8 @@ object NoneLattice extends Lattice[NoneElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case None() => s"$indent None"
-    case Bottom() => s"$indent Not None"
-    case _ => throw new IllegalArgumentException("none lattice error")
+    case None() => s"$indent[None (Top)]\n"
+    case Bottom() => s"$indent[Not None (Bottom)]\n"
+    case _ => throw new IllegalArgumentException("NoneLattice pattern match error")
   }
 }

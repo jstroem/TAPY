@@ -9,6 +9,7 @@ class PowerSubSetLattice[A] extends Lattice[Set[A]] {
   def compare(a: Set[A], b: Set[A]) = a.subsetOf(b)
   def leastUpperBound(a: Set[A], b: Set[A]) = a ++ b
   def greatestLowerBound(a: Set[A], b: Set[A]) = a & b
+
   def eltToString(elt: Set[A], indent: String): String = {
     val elementsString = elt.foldLeft ("") ((s: String, e: A) => {
       val eString = e.toString
@@ -17,7 +18,7 @@ class PowerSubSetLattice[A] extends Lattice[Set[A]] {
       else
         s"$s, $eString"
     })
-    s"{$elementsString}"
+    s"${indent}{$elementsString}\n"
   }
 }
 

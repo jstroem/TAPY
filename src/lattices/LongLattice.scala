@@ -43,10 +43,10 @@ object LongLattice extends Lattice[LongElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Concrete(l) => s"$indent Long $l"
-    case Bottom() => s"$indent BottomLong"
-    case Abstract() => s"$indent TopLong"
-    case _ => throw new IllegalArgumentException("Long lattice error")
+    case Concrete(l) => s"$indent[Long $l]\n"
+    case Bottom() => s"$indent[Not a Long (Bottom)]\n"
+    case Abstract() => s"$indent[Any long (Top)]\n"
+    case _ => throw new IllegalArgumentException("LongLattice pattern match error")
   }
 
 }

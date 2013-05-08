@@ -28,6 +28,8 @@ class ProductLattice[A, B](latticeA: Lattice[A], latticeB: Lattice[B]) extends L
     val (a, b) = elt
     val sa = latticeA.eltToString(a, indent)
     val sb = latticeB.eltToString(b, indent)
-    s"$sa,\n$sb"
+    sa +
+    indent + "  X\n" +
+    sb
   }
 }

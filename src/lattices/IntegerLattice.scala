@@ -45,9 +45,9 @@ object IntegerLattice extends Lattice[IntegerElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Concrete(l) => s"$indent Integer $l"
-    case Bottom() => s"$indent BottomInteger"
-    case Abstract() => s"$indent TopInteger"
-    case _ => throw new IllegalArgumentException("Integer lattice error")
+    case Concrete(l) => s"$indent[Integer $l]\n"
+    case Bottom() => s"$indent[Not an Integer (Bottom)]\n"
+    case Abstract() => s"$indent[Any Integer (Top)]\n"
+    case _ => throw new IllegalArgumentException("IntegerLattice pattern match error")
   }
 }

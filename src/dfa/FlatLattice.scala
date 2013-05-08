@@ -40,9 +40,9 @@ class FlatLattice[T] extends Lattice[FlatElt] {
   }
 
   def eltToString(elt: FlatElt, indent: String) : String = elt match {
-    case Top() => s"$indent Flat Top"
-    case Bottom() => s"$indent Flat Bottom"
-    case Singleton(a) => s"$indent Flat $a"
-    case _ => throw new IllegalArgumentException("flatLattice error")
+    case Top() => s"$indent[Flat (Top)]\n"
+    case Bottom() => s"$indent[Flat (Bottom)]\n"
+    case Singleton(a) => s"$indent[Flat: $a]\n"
+    case _ => throw new IllegalArgumentException("FlatLattice pattern match error")
   }
 }

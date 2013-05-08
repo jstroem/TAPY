@@ -42,18 +42,13 @@ class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
 
   def eltToString(elt: Map[S, T], indent: String) : String = {
     val keys: Set[S] = elt.keySet
-
-    val bound = keys.foldLeft("") ((s: String, k: S) => {
-      val stringOfKey = k.toString
-      val stringOfValue = lattice.eltToString(elt(k), s"  $indent")
-        s"$s$indent$stringOfKey =>\n$stringOfValue"
-    })
-
-    val bottomString = lattice.eltToString(lattice.bottom, s"  $indent")
-    s"$bound$indent _ =>\nbottomString"
-
+    keys.foldLeft(indent+"Map\n") ((res: String, k: S) => {
+      val key = k.toString
+      val value = lattice.eltToString(elt(k), indent + "|   |   ")
+        res + 
+        indent + "|   " + key + " =>\n" +
+        value})
   }
-
   
   def get(map: Map[S, T], key: S): T = {
     return map.getOrElse(key, lattice.bottom)

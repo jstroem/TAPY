@@ -1,6 +1,6 @@
 package tapy.dfa
 
-class LiftLattice[T](lattice: Lattice[T]) extends Lattice[Option[T]] {
+abstract class LiftLattice[T](lattice: Lattice[T]) extends Lattice[Option[T]] {
   def top: Option[T] = Some(lattice.top)
   def bottom: Option[T] = None
 
@@ -23,13 +23,5 @@ class LiftLattice[T](lattice: Lattice[T]) extends Lattice[Option[T]] {
     case (None, Some (b)) => None
     case (Some (a), None) => None
     case (Some (a), Some (b)) => Some (lattice.greatestLowerBound(a, b))
-  }
-
-  def eltToString(elt: Option[T], indent: String): String = elt match {
-    case None => s"$indent LiftBottom"
-    case Some(a) => {
-      val stringOfA = a.toString
-      s"$indent $stringOfA"
-    }
   }
 }
