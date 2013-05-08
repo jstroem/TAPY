@@ -7,56 +7,55 @@ sealed trait BooleanElt
 object BooleanLattice extends Lattice[BooleanElt] {
   type Elt = BooleanElt
   
-  case class True() extends Elt
-  case class False() extends Elt
+  case class Concrete(b: Boolean) extends Elt
   case class Bottom() extends Elt
-  case class Bool() extends Elt
+  case class Abstract() extends Elt
   
-  def top: Elt = Bool()
+  def top: Elt = Abstract()
   def bottom: Elt = Bottom()
   
   def compare(a: Elt, b: Elt) = (a, b) match {
-    case (Bool(), _)  => true
+    case (Abstract(), _)  => true
     case (_, Bottom()) => true
-    case (True(), True()) => true
-    case (False(), False()) => true
+    case (Concrete(true), Concrete(true)) => true
+    case (Concrete(false), Concrete(false)) => true
     case _ => false
   }
 
   def leastUpperBound(a: Elt, b: Elt) = (a, b) match {
-    case (Bool(), _) => Bool()
-    case (_, Bool()) => Bool()
+    case (Abstract(), _) => Abstract()
+    case (_, Abstract()) => Abstract()
 
-    case (True(), True()) => True()
-    case (False(), False()) => False()
+    case (Concrete(true), Concrete(true)) => Concrete(true)
+    case (Concrete(false), Concrete(false)) => Concrete(false)
 
 
-    case (False(), Bottom()) => False()
-    case (True(), Bottom()) => True()
+    case (Concrete(false), Bottom()) => Concrete(false)
+    case (Concrete(true), Bottom()) => Concrete(true)
 
-    case (Bottom(), False()) => False()
-    case (Bottom(), True()) => True()
+    case (Bottom(), Concrete(false)) => Concrete(false)
+    case (Bottom(), Concrete(true)) => Concrete(true)
 
     case (Bottom(), Bottom()) => Bottom()
 
-    case (_, _) =>  Bool()
+    case (_, _) =>  Abstract()
   }
 
   def greatestLowerBound(a: Elt, b: Elt) = (a, b) match {
     case (Bottom(), _) => Bottom()
     case (_, Bottom()) => Bottom()
 
-    case (True(), True()) => True()
-    case (False(), False()) => False()
+    case (Concrete(true), Concrete(true)) => Concrete(true)
+    case (Concrete(false), Concrete(false)) => Concrete(false)
 
 
-    case (False(), Bool()) => False()
-    case (True(), Bool()) => True()
+    case (Concrete(false), Abstract()) => Concrete(false)
+    case (Concrete(true), Abstract()) => Concrete(true)
 
-    case (Bool(), False()) => False()
-    case (Bool(), True()) => True()
+    case (Abstract(), Concrete(false)) => Concrete(false)
+    case (Abstract(), Concrete(true)) => Concrete(true)
 
-    case (Bool(), Bool()) => Bool()
+    case (Abstract(), Abstract()) => Abstract()
 
     case (_, _) =>  Bottom()
   }
