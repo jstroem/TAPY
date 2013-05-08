@@ -18,6 +18,11 @@ object AnalysisLattice extends ProductLattice(
     val (programState, callGraph) = analysis
     return (programState + (node -> state), callGraph)
   }
+  
+  def putElement(analysis: AnalysisLattice.Elt, node: Node, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt = {
+    val (programState, _) = analysis
+    return (programState, callGraph)
+  }
 
   def unpackElement(node: Node, el: AnalysisLattice.Elt) : (CallGraphLattice.Elt, HeapLattice.Elt, StackFrameLattice.Elt, ExecutionContextLattice.Elt) = {
     val (programState, callGraph) = el
