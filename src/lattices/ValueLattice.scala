@@ -29,6 +29,21 @@ extends ProductLattice(
       return (undefined,none,boolean,integer,float,long,complex,string,allocationSet)
     }
 
+
+    def lubElement(t: ValueLattice.Elt, el : String) : ValueLattice.Elt = lubElement(t, StringLattice.Concrete(el))
+
+    def lubElement(t: ValueLattice.Elt, el : StringLattice.Elt) : ValueLattice.Elt = {
+      val (undefined,none,boolean,integer,float,long,complex,string,allocationSet) = ValueLattice.unpackElement(t)
+      putElement(t, StringLattice.leastUpperBound(string, el))
+    }
+
+    def putElement(t: ValueLattice.Elt, el : String) : ValueLattice.Elt = putElement(t, StringLattice.Concrete(el))
+
+    def putElement(t: ValueLattice.Elt, el : StringLattice.Elt) : ValueLattice.Elt = {
+      val (undefined,none,boolean,integer,float,long,complex,string,allocationSet) = ValueLattice.unpackElement(t) 
+      ValueLattice.packElement(undefined,none,boolean,integer,float,long,complex,el,allocationSet)
+    }
+
     def packElement(undefined : UndefinedLattice.Elt = UndefinedLattice.bottom, 
                     none : NoneLattice.Elt = NoneLattice.bottom, 
                     boolean : BooleanLattice.Elt = BooleanLattice.bottom,

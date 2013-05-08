@@ -14,6 +14,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
         case node: ConstantStringNode => ((solution) =>
+
           handleConstantString(node, solution.getOrElse(node, bottom)))
         
         case node => ((solution) =>
@@ -23,8 +24,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleConstantString(node: ConstantStringNode, currentSolution: Elt): Elt = {
     var (callGraph,heap,stack,executionContext) = AnalysisLattice.unpackElement(node, currentSolution)
-    stack = stack + (node.resultReg -> ValueLattice.packElement(string = StringLattice.Concrete(node.string)))
-    AnalysisLattice.packElement(node, currentSolution, callGraph, heap, stack, executionContext)
+    var value = ValueLattice.putElement(ValueLattice.bottom, node.string)
+    stack = stack + (node.resultReg -> value)
+    return AnalysisLattice.packElement(node, currentSolution, callGraph, heap, stack, executionContext)
   }
   
   def nodeDependencies(cfgNode: Node): Set[Node] = {
