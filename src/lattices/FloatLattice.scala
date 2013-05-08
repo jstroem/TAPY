@@ -23,8 +23,8 @@ object FloatLattice extends Lattice[FloatElt] {
   }
 
   def leastUpperBound(a: Elt, b: Elt) = (a, b) match {
-    case (Abstract(), _) =>                           Abstract()
-    case (_, Abstract()) =>                           Abstract()
+    case (Abstract(), _) => Abstract()
+    case (_, Abstract()) => Abstract()
 
     case (Bottom(), Bottom()) =>  Bottom()
 
@@ -37,8 +37,8 @@ object FloatLattice extends Lattice[FloatElt] {
   }
 
   def greatestLowerBound(a: Elt, b: Elt) = (a, b) match {
-    case (Bottom(), _) =>                        Bottom()
-    case (_, Bottom()) =>                        Bottom()
+    case (Bottom(), _) => Bottom()
+    case (_, Bottom()) => Bottom()
 
     case (Abstract(), Abstract()) =>  Abstract()
 
@@ -49,5 +49,12 @@ object FloatLattice extends Lattice[FloatElt] {
     case (Concrete(i),Concrete(j)) => if (i.equals(j)) Concrete(j) else Bottom()
 
     case (_, _) =>  Bottom()
+  }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Concrete(l) => s"$indent float $l"
+    case Bottom() => s"$indent BottomFloat"
+    case Abstract() => s"$indent TopFloat"
+    case _ => throw new IllegalArgumentException("float lattice error")
   }
 }

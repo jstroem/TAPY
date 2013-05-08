@@ -13,7 +13,7 @@ case class Bottom() extends Sign
 //case class MinusZero extends Sign
 
 
-class SignLattice extends Lattice[Sign] {
+abstract class SignLattice extends Lattice[Sign] {
   def top: Sign = QuestionMark()
   def bottom: Sign = Bottom()
   

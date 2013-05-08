@@ -24,4 +24,12 @@ class LiftLattice[T](lattice: Lattice[T]) extends Lattice[Option[T]] {
     case (Some (a), None) => None
     case (Some (a), Some (b)) => Some (lattice.greatestLowerBound(a, b))
   }
+
+  def eltToString(elt: Option[T], indent: String): String = elt match {
+    case None => s"$indent LiftBottom"
+    case Some(a) => {
+      val stringOfA = a.toString
+      s"$indent $stringOfA"
+    }
+  }
 }

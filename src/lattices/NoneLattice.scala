@@ -27,4 +27,10 @@ object NoneLattice extends Lattice[NoneElt] {
   def greatestLowerBound(a: Elt, b: Elt): Elt = {
     return if (a == Bottom() || b == Bottom()) Bottom() else None()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case None() => s"$indent None"
+    case Bottom() => s"$indent Not None"
+    case _ => throw new IllegalArgumentException("none lattice error")
+  }
 }

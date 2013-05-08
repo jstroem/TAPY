@@ -7,4 +7,5 @@ trait Lattice[T] {
   def compare(a: T, b: T): Boolean
   def greatestLowerBound(a: T, b: T): T
   def leastUpperBound(a: T, b: T): T
+  def eltToString(elt: T, indent: String): String
 }

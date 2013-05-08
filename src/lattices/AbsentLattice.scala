@@ -27,4 +27,11 @@ object AbsentLattice extends Lattice[AbsentElt] {
   def greatestLowerBound(a: Elt, b: Elt): Elt = {
     return if (a == Bottom() || b == Bottom()) Bottom() else Absent()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Absent() => s"$indent Absent"
+    case Bottom() => s"$indent Not Absent"
+    case _ => throw new IllegalArgumentException("Absent Lattice error")
+  }
+
 }
