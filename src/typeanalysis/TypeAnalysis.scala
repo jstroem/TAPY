@@ -13,6 +13,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
+        case node: ModuleEntryNode => ((solution) => handleModuleEntry(node, solution))
         case node: ConstantBooleanNode => ((solution) => handleConstantBoolean(node, solution))
         case node: ConstantIntNode => ((solution) => handleConstantInt(node, solution))
         case node: ConstantFloatNode => ((solution) => handleConstantFloat(node, solution))
@@ -22,6 +23,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: ConstantNoneNode => ((solution) => handleConstantNone(node, solution))
         case node => ((solution) => solution)
       }
+  }
+
+  def join(node: Node, currentSolution : Elt) : Elt = {
+    val state = cfg.getPredecessors(node).foldLeft(StateLattice.bottom)((acc,pred) => 
+      StateLattice.leastUpperBound(acc, AnalysisLattice.getState(pred, currentSolution)))
+    AnalysisLattice.putElement(currentSolution, node, state)
+  }
+
+  def handleModuleEntry(node: ModuleEntryNode, currentSolution: Elt) : Elt = {
+    return currentSolution
   }
 
   def handleConstantBoolean(node: ConstantBooleanNode, currentSolution: Elt): Elt = {
