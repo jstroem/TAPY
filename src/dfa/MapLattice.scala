@@ -46,11 +46,11 @@ class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
     val bound = keys.foldLeft("") ((s: String, k: S) => {
       val stringOfKey = k.toString
       val stringOfValue = lattice.eltToString(elt(k), s"  $indent")
-        s"$s\n$stringOfKey\n$stringOfValue"
+        s"$s$indent$stringOfKey =>\n$stringOfValue"
     })
 
     val bottomString = lattice.eltToString(lattice.bottom, s"  $indent")
-    s"$bound\n$indent _ =>\nbottomString"
+    s"$bound$indent _ =>\nbottomString"
 
   }
 

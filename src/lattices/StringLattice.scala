@@ -45,10 +45,10 @@ object StringLattice extends Lattice[StringElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Concrete(l) => s"$indent string $l"
-    case Bottom() => s"$indent BottomString"
-    case Abstract() => s"$indent TopString"
-    case _ => throw new IllegalArgumentException("string lattice error")
+    case Concrete(l) => s"$indent [String: $l]\n"
+    case Bottom() => s"$indent [Not a String (Bottom)]\n"
+    case Abstract() => s"$indent [Any String (Top)]\n"
+    case _ => throw new IllegalArgumentException("StringLattice pattern match error")
   }
 
 }
