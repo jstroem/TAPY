@@ -27,4 +27,10 @@ object ModifiedLattice extends Lattice[ModifiedElt] {
   def greatestLowerBound(a: Elt, b: Elt): Elt = {
     return if (a == Bottom() || b == Bottom()) Bottom() else Modified()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Modified() => s"$indent Modified"
+    case Bottom() => s"$indent Not Modified"
+    case _ => throw new IllegalArgumentException("Modified Lattice error")
+  }
 }

@@ -11,7 +11,7 @@ object SumLattice {
  * SumLattice combines two lattices into one by placing them in parallel and adding a new top element.
  * The bottom element is both the bottom element of latticeA and latticeB. 
  */
-class SumLattice[A <: SumLattice.Elt, B <: SumLattice.Elt](latticeA: Lattice[A], latticeB: Lattice[B]) extends Lattice[SumLattice.Elt] {
+abstract class SumLattice[A <: SumLattice.Elt, B <: SumLattice.Elt](latticeA: Lattice[A], latticeB: Lattice[B]) extends Lattice[SumLattice.Elt] {
   def top: SumLattice.Elt = SumLattice.Top()
   def bottom: SumLattice.Elt = SumLattice.Bottom()
   

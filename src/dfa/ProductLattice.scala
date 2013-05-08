@@ -23,4 +23,11 @@ class ProductLattice[A, B](latticeA: Lattice[A], latticeB: Lattice[B]) extends L
     val snd = latticeB.greatestLowerBound(a._2, b._2)
     (fst, snd)
   }
+
+  def eltToString(elt: (A, B), indent: String) : String = {
+    val (a, b) = elt
+    val sa = latticeA.eltToString(a, indent)
+    val sb = latticeB.eltToString(b, indent)
+    s"$sa,\n$sb"
+  }
 }

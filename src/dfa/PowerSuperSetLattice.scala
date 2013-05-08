@@ -1,6 +1,6 @@
 package tapy.dfa
 
-class PowerSuperSetLattice[A](s: Set[A]) extends Lattice[Set[A]] {
+abstract class PowerSuperSetLattice[A](s: Set[A]) extends Lattice[Set[A]] {
   def top: Set[A] = Set[A]()
   def bottom: Set[A] = s
   

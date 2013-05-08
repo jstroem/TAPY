@@ -27,4 +27,10 @@ object UndefinedLattice extends Lattice[UndefinedElt] {
   def greatestLowerBound(a: Elt, b: Elt): Elt = {
     return if (a == Bottom() || b == Bottom()) Bottom() else Undefined()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Undefined() => s"$indent Undefined"
+    case Bottom() => s"$indent Defined"
+    case _ => throw new IllegalArgumentException("Undefined lattice error")
+  }
 }

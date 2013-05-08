@@ -39,6 +39,21 @@ class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
                                                     (m + (key -> lattice.greatestLowerBound(aVal, bVal)))
                                                   })
   }
+
+  def eltToString(elt: Map[S, T], indent: String) : String = {
+    val keys: Set[S] = elt.keySet
+
+    val bound = keys.foldLeft("") ((s: String, k: S) => {
+      val stringOfKey = k.toString
+      val stringOfValue = lattice.eltToString(elt(k), s"  $indent")
+        s"$s$indent$stringOfKey =>\n$stringOfValue"
+    })
+
+    val bottomString = lattice.eltToString(lattice.bottom, s"  $indent")
+    s"$bound$indent _ =>\nbottomString"
+
+  }
+
   
   def get(map: Map[S, T], key: S): T = {
     return map.getOrElse(key, lattice.bottom)

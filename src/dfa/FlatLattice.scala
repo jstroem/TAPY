@@ -17,6 +17,7 @@ class FlatLattice[T] extends Lattice[FlatElt] {
     case (Singleton(_), Top()) => false
     case (Singleton(a), Singleton(b)) => if (a == b) true else false
     case (_, Bottom()) => true
+    case (Bottom(), _) => false
     case _ => throw new IllegalArgumentException("")
   }
 
@@ -36,5 +37,12 @@ class FlatLattice[T] extends Lattice[FlatElt] {
     case (Bottom(), _) => Bottom()
     case (_, Bottom()) => Bottom()
     case _ => throw new IllegalArgumentException("")
+  }
+
+  def eltToString(elt: FlatElt, indent: String) : String = elt match {
+    case Top() => s"$indent Flat Top"
+    case Bottom() => s"$indent Flat Bottom"
+    case Singleton(a) => s"$indent Flat $a"
+    case _ => throw new IllegalArgumentException("flatLattice error")
   }
 }

@@ -59,4 +59,12 @@ object BooleanLattice extends Lattice[BooleanElt] {
 
     case (_, _) =>  Bottom()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Concrete(l) => s"$indent boolean $l"
+    case Bottom() => s"$indent BottomBoolean"
+    case Abstract() => s"$indent TopBoolean"
+    case _ => throw new IllegalArgumentException("boolean lattice error")
+  }
+
 }
