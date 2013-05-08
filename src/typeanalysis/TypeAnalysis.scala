@@ -5,6 +5,7 @@ import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
 
+
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
   type Elt = AnalysisLattice.Elt
   
@@ -21,12 +22,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleConstantString(node: ConstantStringNode, currentSolution: Elt): Elt = {
-    val (programState, callGraph) = currentSolution
-    val state = ProgramStateLattice.get(programState, node)
-    
-    
-    
-    return currentSolution
+    var (callGraph,heap,stack,executionContext) = AnalysisLattice.unpackElement(node, currentSolution)
+    stack = stack + (node.resultReg -> ValueLattice.packElement(string = StringLattice.Concrete(node.string)))
+    AnalysisLattice.packElement(node, currentSolution, callGraph, heap, stack, executionContext)
   }
   
   def nodeDependencies(cfgNode: Node): Set[Node] = {

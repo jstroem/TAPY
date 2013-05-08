@@ -2,6 +2,8 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object StackLattice extends ProductLattice(
-  new MapLattice(ValueLattice),
-  new PowerSubSetLattice[(List[String], String, String)]()) // Execution context
+object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
+
+object ExecutionContextLattice extends PowerSubSetLattice[(List[String], String, String)]
+
+object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLattice)

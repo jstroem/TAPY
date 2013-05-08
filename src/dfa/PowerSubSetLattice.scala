@@ -1,6 +1,8 @@
 package tapy.dfa
 
 class PowerSubSetLattice[A] extends Lattice[Set[A]] {
+  type Elt = Set[A]
+
   def top: Set[A] = null // s
   def bottom: Set[A] = Set[A]()
   
