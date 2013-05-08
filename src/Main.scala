@@ -9,6 +9,9 @@ import org.python.antlr.runtime._;
 import org.python.antlr.runtime.tree._;
 import java.io._
 import tapy.export._
+import tapy.dfa.Worklist
+import tapy.lattices.AnalysisLattice
+import tapy.typeanalysis.TypeAnalysis
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -42,6 +45,11 @@ object Main {
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
       cfg.exportToFile(dir + fname)
+
+      val worklist = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfg), AnalysisLattice, cfg)
+      val solution = worklist.run()
+      println("\n----------\n")
+      println("Solution result: "+ AnalysisLattice.eltToString(solution,"") +"\n")
     } catch {
       case e: Exception => e.printStackTrace()
     }

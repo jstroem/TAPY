@@ -3,7 +3,7 @@ package tapy.dfa
 import tapy.cfg._
 import tapy.dfa.MonotoneFrameworkTypes._
 
-class WorklistAlgorithm[T] (analysis: Analysis[T],
+class Worklist[T] (analysis: Analysis[T],
                             lattice: Lattice[T],
                             graph: ControlFlowGraph) {
 
