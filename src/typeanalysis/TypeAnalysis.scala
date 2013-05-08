@@ -13,12 +13,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
-        case node: ConstantStringNode => ((solution) =>
-
-          handleConstantString(node, solution.getOrElse(node, bottom)))
-        
-        case node => ((solution) =>
-          solution.getOrElse(node, AnalysisLattice.bottom))
+        case node: ConstantStringNode => ((solution) => handleConstantString(node, solution))
+        case node => ((solution) => solution)
       }
   }
   
