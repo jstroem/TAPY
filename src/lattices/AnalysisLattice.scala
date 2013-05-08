@@ -31,32 +31,22 @@ object AnalysisLattice extends ProductLattice(
     (callGraph, heap, stack, executionContext)
   }
 
+  def getCallGraph(el: AnalysisLattice.Elt) : CallGraphLattice.Elt = {
+  	val (_, callGraph) = el
+  	callGraph
+  }
+
   def getProgramState(el: AnalysisLattice.Elt) : ProgramStateLattice.Elt = {
-	val (programState, callGraph) = el
+	val (programState, _) = el
 	programState  	
   }
 
+
   def getState(node: Node, el: AnalysisLattice.Elt) : StateLattice.Elt = ProgramStateLattice.get(getProgramState(el), node)
-
-  def getStack(node: Node, el: AnalysisLattice.Elt) : StackLattice.Elt = {
-  	(_, stack) = getState(node, el)
-  	stack
-  }
-
-  def getHeap(node: Node, el: AnalysisLattice.Elt) : HeapLattice.Elt = {
-  	(heap, _) = getState(node, el)
-  	heap
-  }
-
-  def getStackFrame(node: Node, el: AnalysisLattice.Elt) : StackFrameLattice.Elt = {
-  	(stackFrame,_) = getStack(node, el)
-  	stackFrame
-  }
-
-  def getExecutionContext(node: Node, el: AnalysisLattice.Elt) : ExecutionContextLattice.Elt = {
-  	(_,executionContext) = getStack(node, el)
-  	executionContext
-  }
+  def getStack(node: Node, el: AnalysisLattice.Elt) : StackLattice.Elt = StateLattice.getStack(getState(node, el))
+  def getHeap(node: Node, el: AnalysisLattice.Elt) : HeapLattice.Elt = StateLattice.getHeap(getState(node, el))
+  def getStackFrame(node: Node, el: AnalysisLattice.Elt) : StackFrameLattice.Elt = StackLattice.getStackFrame(getStack(node,el))
+  def getExecutionContext(node: Node, el: AnalysisLattice.Elt) : ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(node,el))
 
   def packElement(node: Node, el : AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt, heap: HeapLattice.Elt, stack: StackFrameLattice.Elt, executionContext: ExecutionContextLattice.Elt) : Elt = {
     var (programState,_) = el

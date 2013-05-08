@@ -6,4 +6,15 @@ object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
 
 object ExecutionContextLattice extends PowerSubSetLattice[(List[String], String, String)]
 
-object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLattice)
+object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLattice) {
+
+	def getStackFrame(el: StackLattice.Elt) : StackFrameLattice.Elt = {
+		val (stackframe,_) = el
+		return stackframe
+	}
+
+	def getExecutionContext(el: StackLattice.Elt) : ExecutionContextLattice.Elt = {
+		val (_,executionContext) = el
+		return executionContext
+	}
+}
