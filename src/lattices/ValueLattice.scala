@@ -2,7 +2,7 @@ package tapy.lattices
 
 import tapy.dfa._
 
-class ValueLattice[L]
+object ValueLattice
 extends ProductLattice(
   UndefinedLattice,
   new ProductLattice(
@@ -19,4 +19,4 @@ extends ProductLattice(
               ComplexLattice,
               new ProductLattice(
                 StringLattice,
-                new PowerSubSetLattice[L]()))))))))
+                new PowerSubSetLattice[String]()))))))))

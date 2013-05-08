@@ -37,4 +37,8 @@ class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
                                                     (m + (key -> lattice.greatestLowerBound(aVal, bVal)))
                                                   })
   }
+  
+  def get(map: Map[S, T], key: S): T = {
+    return map.getOrElse(key, lattice.bottom)
+  }
 }

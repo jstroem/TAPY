@@ -5,23 +5,27 @@ import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
 
-object TypeAnalysis {
-  val lattice = new AnalysisLattice[Int, String, Node]()
-}
-
-class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[TypeAnalysis.lattice.Elt] {
-  type Elt = TypeAnalysis.lattice.Elt
+class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
+  type Elt = AnalysisLattice.Elt
   
-  def bottom = TypeAnalysis.lattice.bottom
+  def bottom = AnalysisLattice.bottom
   
   def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
-        case node: ConstantStringNode => ((solution) => handleConstantString(node, solution.getOrElse(node, bottom)))
-        case node => ((solution) => solution.getOrElse(node, TypeAnalysis.lattice.bottom))
+        case node: ConstantStringNode => ((solution) =>
+          handleConstantString(node, solution.getOrElse(node, bottom)))
+        
+        case node => ((solution) =>
+          solution.getOrElse(node, AnalysisLattice.bottom))
       }
   }
   
   def handleConstantString(node: ConstantStringNode, currentSolution: Elt): Elt = {
+    val (programState, callGraph) = currentSolution
+    val state = ProgramStateLattice.get(programState, node)
+    
+    
+    
     return currentSolution
   }
   

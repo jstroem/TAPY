@@ -2,11 +2,11 @@ package tapy.lattices
 
 import tapy.dfa._
 
-class ObjectLattice[L] extends ProductLattice(
+object ObjectLattice extends ProductLattice(
   new MapLattice(
     new ProductLattice(
-      new ValueLattice[L](),
+      ValueLattice,
       new ProductLattice(
           AbsentLattice,
           ModifiedLattice))),
-  new PowerSubSetLattice[L]())
+  new PowerSubSetLattice[String]())

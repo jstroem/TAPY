@@ -1,7 +1,11 @@
 package tapy.lattices
 
 import tapy.dfa._
+import tapy.cfg._
 
-class AnalysisLattice[L, C, N] extends ProductLattice(
-  new MapLattice(new StateLattice[L]()),
-  new PowerSubSetLattice[(C, N, C, N)]()) // Call graph
+object ProgramStateLattice extends MapLattice[Node, StateLattice.Elt](StateLattice)
+object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node)] // Any: Context sensitivity
+
+object AnalysisLattice extends ProductLattice(
+  ProgramStateLattice,
+  CallGraphLattice)
