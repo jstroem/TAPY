@@ -23,9 +23,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleConstantString(node: ConstantStringNode, currentSolution: Elt): Elt = {
     val (programState, callGraph) = currentSolution
     val state = ProgramStateLattice.get(programState, node)
-    
-    
-    
     return currentSolution
   }
   
