@@ -50,7 +50,7 @@ class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[Map[S, T]] {
     })
 
     val bottomString = lattice.eltToString(lattice.bottom, s"  $indent")
-    s"$bound\n$ident _ =>\nbottomString"
+    s"$bound\n$indent _ =>\nbottomString"
 
   }
 
