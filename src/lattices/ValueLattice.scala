@@ -140,7 +140,7 @@ extends ProductLattice(
           case LongLattice.Concrete(_) => true
           case _ => false
         }
-      else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) //Long check
+      else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && long == LongLattice.bottom && float == FloatLattice.bottom) //Complex check
         complex match {
           case (FloatLattice.Concrete(_), FloatLattice.Concrete(_)) => true
           case _ => false
