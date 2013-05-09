@@ -22,12 +22,38 @@ extends ProductLattice(
               new ProductLattice(
                 StringLattice, 
                 AllocationSiteLattice)))))))) {
-
-    def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, AllocationSiteLattice.Elt) = {
-      val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet)))))))) = el
-      return (undefined, none, boolean, integer, float, long, complex, string, allocationSet)
+  
+    /* Element tests */
+  
+    def elementIsNumber(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (
+          undefined == UndefinedLattice.bottom &&
+          none == NoneLattice.bottom &&
+          boolean == BooleanLattice.bottom &&
+          string == StringLattice.bottom &&
+          allocationSet == Set()
+        ) && (
+          integer != IntegerLattice.bottom ||
+          float != FloatLattice.bottom ||
+          long != LongLattice.bottom ||
+          complex != ComplexLattice.bottom)
     }
-    
+  
+    def elementIsOnlyFloat(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (
+          undefined == UndefinedLattice.bottom &&
+          none == NoneLattice.bottom &&
+          boolean == BooleanLattice.bottom &&
+          integer == IntegerLattice.bottom &&
+          float == FloatLattice.bottom &&
+          long == LongLattice.bottom &&
+          complex == ComplexLattice.bottom &&
+          string == StringLattice.bottom &&
+          allocationSet == Set())
+    }
+  
     /* Least upper bound elemt */
     
     def lubElement(v: ValueLattice.Elt, elt: UndefinedLattice.Elt): ValueLattice.Elt = {
@@ -130,13 +156,23 @@ extends ProductLattice(
       allocationSet
     }
 
+    def getBoolean(v: ValueLattice.Elt) : BooleanLattice.Elt = {
+      val (_, _, boolean, _, _, _, _, _, _) = ValueLattice.unpackElement(el)
+      boolean
+    }
+
+    def getString(v: ValueLattice.Elt) : StringLattice.Elt = {
+      val (_, _, _, _, _, _, _, string, _) = ValueLattice.unpackElement(el)
+      string
+    }
+
     def elementIsUnique(el: ValueLattice.Elt) : Boolean = {
       elementIsUniqueNumber(el) || elementIsUniqueString(el) || elementIsUniqueBoolean(el)
     }
 
     def elementIsUniqueNumber(el : ValueLattice.Elt) : Boolean = {
       val (_, _, _, integer, float, long, complex, _, _) = ValueLattice.unpackElement(v)
-      if (isNumber(el)){
+      if (elementIsNumber(el)){
         if (float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //Integer check
           integer match {
             case IntegerLattice.Concrete(_) => true
@@ -165,6 +201,81 @@ extends ProductLattice(
       }
     }
 
+    def elementIsString(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (undefined == UndefinedLattice.bottom &&
+              none == NoneLattice.bottom &&
+              boolean == BooleanLattice.bottom &&
+              string != StringLattice.bottom &&
+              allocationSet == Set() &&
+              integer == IntegerLattice.bottom &&
+              float == FloatLattice.bottom &&
+              long == LongLattice.bottom &&
+              complex == ComplexLattice.bottom)
+    }
+
+    def elementIsUniqueString(el: ValueLattice.Elt): Boolean = {
+      if (elementIsString(el)){
+        getString(el) match {
+          case StringLattice.Concrete(_) => true
+          case _ => false
+        }
+      } else {
+        false
+      }
+    }
+
+
+    def elementIsBoolean(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (undefined == UndefinedLattice.bottom &&
+              none == NoneLattice.bottom &&
+              boolean != BooleanLattice.bottom &&
+              string == StringLattice.bottom &&
+              allocationSet == Set() &&
+              integer == IntegerLattice.bottom &&
+              float == FloatLattice.bottom &&
+              long == LongLattice.bottom &&
+              complex == ComplexLattice.bottom)
+    }
+
+    def elementIsUniqueBoolean(el: ValueLattice.Elt): Boolean = {
+      if (elementIsBoolean(el)){
+        getBoolean(el) match {
+          case BooleanLattice.Concrete(_) => true
+          case _ => false
+        }
+      } else {
+        false
+      }
+    }
+
+    def elementIsNone(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (undefined == UndefinedLattice.bottom &&
+              none != NoneLattice.bottom &&
+              boolean == BooleanLattice.bottom &&
+              string == StringLattice.bottom &&
+              allocationSet == Set() &&
+              integer == IntegerLattice.bottom &&
+              float == FloatLattice.bottom &&
+              long == LongLattice.bottom &&
+              complex == ComplexLattice.bottom)
+    }
+
+    def elementIsUniqueAllocation(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (undefined == UndefinedLattice.bottom &&
+              none == NoneLattice.bottom &&
+              boolean == BooleanLattice.bottom &&
+              string == StringLattice.bottom &&
+              allocationSet.length == 1 &&
+              integer == IntegerLattice.bottom &&
+              float == FloatLattice.bottom &&
+              long == LongLattice.bottom &&
+              complex == ComplexLattice.bottom)
+    }
+
     def packElement(undefined: UndefinedLattice.Elt = UndefinedLattice.bottom, 
                     none: NoneLattice.Elt = NoneLattice.bottom, 
                     boolean: BooleanLattice.Elt = BooleanLattice.bottom, 
@@ -175,5 +286,10 @@ extends ProductLattice(
                     string: StringLattice.Elt = StringLattice.bottom, 
                     allocationSet: AllocationSiteLattice.Elt = AllocationSiteLattice.bottom): ValueLattice.Elt = {
       return (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet))))))))
+    }
+
+    def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, AllocationSiteLattice.Elt) = {
+      val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet)))))))) = el
+      return (undefined, none, boolean, integer, float, long, complex, string, allocationSet)
     }
   }

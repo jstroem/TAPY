@@ -1,5 +1,6 @@
 package tapy.typeanalysis
 
+import org.python.antlr.ast.operatorType
 import tapy.dfa._
 import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
@@ -120,10 +121,84 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Operators */
   
   def handleCompareOpNode(node: CompareOpNode, solution: Elt): Elt = {
-    solution
+    val left = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
+    val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
+
+    val value = node.op match {
+      case cmpopType.UNDEFINED => throw new InternalErrorException("cmpopType was UNDEFINED");
+      case cmpopType.Eq => {
+        if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
+          val leftAllocations = ValueLattice.getAllocationSet(left)
+          val rightAllocations = ValueLattice.getAllocationSet(right)
+          if (leftAllocations == rightAllocations) {
+            ValueLattice.putElement(ValueLattice.bottom, true);
+          } else {
+            ValueLattice.putElement(ValueLattice.bottom, false);
+          }
+        } else if (ValueLattice.elementIsUniqueBoolean(left) && ValueLattice.elementIsUniqueBoolean(right)) {
+          val leftBoolean = ValueLattice.getBoolean(left)
+          val rightBoolean = ValueLattice.getBoolean(right)
+          if (leftAllocations == rightAllocations) {
+            ValueLattice.putElement(ValueLattice.bottom, true);
+          } else {
+            ValueLattice.putElement(ValueLattice.bottom, false);
+          }
+        }
+      }
+      case cmpopType.NotEq => ValueLattice.bottom
+      case cmpopType.Lt => ValueLattice.bottom
+      case cmpopType.LtE => ValueLattice.bottom
+      case cmpopType.Gt => ValueLattice.bottom
+      case cmpopType.GtE => ValueLattice.bottom
+      case cmpopType.Is => ValueLattice.bottom
+      case cmpopType.IsNot => ValueLattice.bottom
+      case cmpopType.In => ValueLattice.bottom
+      case cmpopType.NotIn => ValueLattice.bottom
+    }
   }
   
   def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
+    // See:
+    // - http://docs.python.org/2/reference/expressions.html#binary-bitwise-operations
+    // - http://docs.python.org/2/reference/expressions.html#binary-arithmetic-operations
+    node.op match {
+      case operatorType.UNDEFINED => "UNDEFINED"
+      case operatorType.Add => "+"
+      case operatorType.Sub => "-"
+        
+      case operatorType.Mult =>
+        // The * (multiplication) operator yields the product of its arguments. The arguments must either:
+        // - both be numbers, or
+        // - one argument must be an integer (plain or long) and the other must be a sequence (UNSUPPORTED).
+        // In the former case, the numbers are converted to a common type and then multiplied
+        // together. In the latter case, sequence repetition is performed; a negative repetition
+        // factor yields an empty sequence.
+        val left = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
+        val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
+        
+        if (ValueLattice.elementIsNumber(left) && ValueLattice.elementIsNumber(right)) {
+          if (ValueLattice.elementIsFloat(left) && ValueLattice.elementIsFloat(right)) {
+            
+          }
+          
+          
+          
+          val (leftInteger, leftFloat, leftLong, leftComplex) = ValueLattice.getElementNumbers(left)
+        } else {
+          // TODO: TypeError
+        }
+        "*"
+        
+      case operatorType.Div => "/"
+      case operatorType.Mod => "%"
+      case operatorType.Pow => "**"
+      case operatorType.LShift => ">>"
+      case operatorType.RShift => "<<"
+      case operatorType.BitOr => "|"
+      case operatorType.BitXor => "^"
+      case operatorType.BitAnd => "&"
+      case operatorType.FloorDiv => "//"
+    }
     solution
   }
   
