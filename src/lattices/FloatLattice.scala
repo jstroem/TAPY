@@ -48,4 +48,12 @@ object FloatLattice extends Lattice[FloatElt] {
     case Abstract() => s"$indent[Any Float (Top)]\n"
     case _ => throw new IllegalArgumentException("FloatLattice pattern match error")
   }
+  
+  /* Element utility functions */
+  
+  def elementToComplex(el: FloatLattice.Elt): ComplexLattice.Elt = el match {
+    case Abstract() => (Abstract(), Concrete(0))
+    case Concrete(i) => (Concrete(i), Concrete(0))
+    case Bottom() => (Bottom(), Bottom())
+  }
 }

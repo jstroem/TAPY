@@ -48,5 +48,18 @@ object LongLattice extends Lattice[LongElt] {
     case Abstract() => s"$indent[Any long (Top)]\n"
     case _ => throw new IllegalArgumentException("LongLattice pattern match error")
   }
-
+  
+  /* Element utility functions */
+  
+  def elementToFloat(el: LongLattice.Elt): FloatLattice.Elt = el match {
+    case Abstract() => FloatLattice.Abstract()
+    case Concrete(i) => FloatLattice.Concrete(i.floatValue())
+    case Bottom() => FloatLattice.Bottom()
+  }
+  
+  def elementToComplex(el: LongLattice.Elt): ComplexLattice.Elt = el match {
+    case Abstract() => (FloatLattice.Abstract(), FloatLattice.Concrete(0))
+    case Concrete(i) => (FloatLattice.Concrete(i.floatValue()), FloatLattice.Concrete(0))
+    case Bottom() => (FloatLattice.Bottom(), FloatLattice.Bottom())
+  }
 }

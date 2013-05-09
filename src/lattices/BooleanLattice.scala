@@ -54,4 +54,30 @@ object BooleanLattice extends Lattice[BooleanElt] {
     case Abstract() => s"$indent[Any String (Top)]\n"
     case _ => throw new IllegalArgumentException("BooleanLattice pattern match error")
   }
+  
+  /* Element utility functions */
+  
+  def elementToInteger(el: BooleanLattice.Elt): IntegerLattice.Elt = el match {
+    case Abstract() => IntegerLattice.Abstract()
+    case Concrete(b) => IntegerLattice.Concrete(if (b) 1 else 0)
+    case Bottom() => IntegerLattice.Bottom()
+  }
+  
+  def elementToFloat(el: BooleanLattice.Elt): FloatLattice.Elt = el match {
+    case Abstract() => FloatLattice.Abstract()
+    case Concrete(b) => FloatLattice.Concrete(if (b) 1 else 0)
+    case Bottom() => FloatLattice.Bottom()
+  }
+  
+  def elementToLong(el: BooleanLattice.Elt): LongLattice.Elt = el match {
+    case Abstract() => LongLattice.Abstract()
+    case Concrete(b) => LongLattice.Concrete(java.math.BigInteger.valueOf(if (b) 1 else 0))
+    case Bottom() => LongLattice.Bottom()
+  }
+  
+  def elementToComplex(el: BooleanLattice.Elt): ComplexLattice.Elt = el match {
+    case Abstract() => (FloatLattice.Abstract(), FloatLattice.Concrete(0))
+    case Concrete(b) => (FloatLattice.Concrete(if (b) 1 else 0), FloatLattice.Concrete(0))
+    case Bottom() => (FloatLattice.Bottom(), FloatLattice.Bottom())
+  }
 }

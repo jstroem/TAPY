@@ -50,4 +50,24 @@ object IntegerLattice extends Lattice[IntegerElt] {
     case Abstract() => s"$indent[Any Integer (Top)]\n"
     case _ => throw new IllegalArgumentException("IntegerLattice pattern match error")
   }
+  
+  /* Element utility functions */
+  
+  def elementToFloat(el: IntegerLattice.Elt): FloatLattice.Elt = el match {
+    case Abstract() => FloatLattice.Abstract()
+    case Concrete(i) => FloatLattice.Concrete(i)
+    case Bottom() => FloatLattice.Bottom()
+  }
+  
+  def elementToLong(el: IntegerLattice.Elt): LongLattice.Elt = el match {
+    case Abstract() => LongLattice.Abstract()
+    case Bottom() => LongLattice.Bottom()
+    case Concrete(i) => LongLattice.Concrete(java.math.BigInteger.valueOf(i))
+  }
+  
+  def elementToComplex(el: IntegerLattice.Elt): ComplexLattice.Elt = el match {
+    case Abstract() => (FloatLattice.Abstract(), FloatLattice.Concrete(0))
+    case Concrete(i) => (FloatLattice.Concrete(i), FloatLattice.Concrete(0))
+    case Bottom() => (FloatLattice.Bottom(), FloatLattice.Bottom())
+  }
 }
