@@ -17,4 +17,9 @@ object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLat
 		val (_,executionContext) = el
 		return executionContext
 	}
+	
+	/* Setters */
+	
+	def updateStackFrame(el: StackLattice.Elt, register: Int, value: ValueLattice.Elt): StackLattice.Elt =
+	  (getStackFrame(el) + (register -> value), getExecutionContext(el))
 }
