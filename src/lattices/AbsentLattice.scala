@@ -29,8 +29,8 @@ object AbsentLattice extends Lattice[AbsentElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Absent() => s"$indent [Absent (Top)]"
-    case Bottom() => s"$indent [Not Absent (Bottom)]"
+    case Absent() => s"$indent[Absent (Top)]\n"
+    case Bottom() => s"$indent[Not Absent (Bottom)]\n"
     case _ => throw new IllegalArgumentException("AbsentLattice pattern match error")
   }
 

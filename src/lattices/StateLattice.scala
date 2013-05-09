@@ -3,7 +3,17 @@ package tapy.lattices
 import tapy.dfa._
 import tapy.cfg._
 
-object HeapLattice extends MapLattice[String, ObjectLattice.Elt](ObjectLattice)
+object HeapLattice extends MapLattice[String, ObjectLattice.Elt](ObjectLattice) {
+  /* Getters */
+  
+  def getHeapObject(el: HeapLattice.Elt, label: String): ObjectLattice.Elt =
+    el.getOrElse(label, ObjectLattice.bottom)
+  
+  /* Updaters */
+  
+  def updateHeap(el: HeapLattice.Elt, label: String, obj: ObjectLattice.Elt): HeapLattice.Elt =
+    el + (label -> obj)
+}
 
 object TAJSUnkownLattice extends ProductLattice(new PowerSubSetLattice[String](),new PowerSubSetLattice[String]()) //Todo: In TAJS they have to Powersets in their StateLattice
 
@@ -25,6 +35,11 @@ object StateLattice extends ProductLattice(HeapLattice,StackLattice) {
 	def setStack(el: StateLattice.Elt, stack: StackLattice.Elt): StateLattice.Elt =
 	  (getHeap(el), stack)
 	
+	/* Updaters */
+	  
 	def updateStackFrame(el: StateLattice.Elt, register: Int, value: ValueLattice.Elt): StateLattice.Elt =
 	  (getHeap(el), StackLattice.updateStackFrame(getStack(el), register, value))
+	
+	def updateHeap(el: StateLattice.Elt, label: String, obj: ObjectLattice.Elt): StateLattice.Elt =
+	  (HeapLattice.updateHeap(getHeap(el), label, obj), getStack(el))
 }

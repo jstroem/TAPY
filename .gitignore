@@ -2,7 +2,7 @@
 *.log
 .DS_Store
 *.ast
-
+*.res.txt
 lib/cachedir/
 
 # graphviz specific

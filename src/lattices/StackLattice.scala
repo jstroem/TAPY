@@ -2,12 +2,18 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
+object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice) {
+  /* Getters */
+  
+  def getRegisterValue(el: StackFrameLattice.Elt, register: Int): ValueLattice.Elt =
+    el.getOrElse(register, ValueLattice.bottom)
+}
 
 object ExecutionContextLattice extends PowerSubSetLattice[(List[String], String, String)]
 
 object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLattice) {
-
+  /* Getters */
+  
 	def getStackFrame(el: StackLattice.Elt) : StackFrameLattice.Elt = {
 		val (stackframe,_) = el
 		return stackframe

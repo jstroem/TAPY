@@ -29,8 +29,8 @@ object ModifiedLattice extends Lattice[ModifiedElt] {
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {
-    case Modified() => s"$indent [Modified (Top)]"
-    case Bottom() => s"$indent [Not Modified (Bottom)]"
+    case Modified() => s"$indent[Modified (Top)]\n"
+    case Bottom() => s"$indent[Not Modified (Bottom)]\n"
     case _ => throw new IllegalArgumentException("ModifiedLattice pattern match error")
   }
 }
