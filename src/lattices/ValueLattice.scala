@@ -71,10 +71,10 @@ extends ProductLattice(
     return (
         undefined == UndefinedLattice.bottom &&
         none == NoneLattice.bottom &&
-        boolean == BooleanLattice.bottom &&
         string == StringLattice.bottom &&
         allocationSet == Set()
       ) && (
+        boolean != BooleanLattice.bottom ||
         integer != IntegerLattice.bottom ||
         float != FloatLattice.bottom ||
         long != LongLattice.bottom ||
@@ -116,24 +116,29 @@ extends ProductLattice(
   }
 
   def elementIsUniqueNumber(el: ValueLattice.Elt): Boolean = {
-    val (_, _, _, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
+    val (_, _, boolean, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
     if (elementIsNumber(el)){
-      if (float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //Integer check
+      if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //boolean check
+        boolean match {
+          case BooleanLattice.Concrete(_) => true
+          case _ => false
+        }
+      if (boolean == BooleanLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //Integer check
         integer match {
           case IntegerLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (integer == IntegerLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) { //Float check
+      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) { //Float check
         float match {
           case FloatLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
         long match {
           case LongLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
         complex match {
           case (FloatLattice.Concrete(_), FloatLattice.Concrete(_)) => true
           case _ => false
