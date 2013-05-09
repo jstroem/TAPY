@@ -111,44 +111,42 @@ extends ProductLattice(
         float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
-  def elementIsUnique(el: ValueLattice.Elt): Boolean = {
-    elementIsUniqueNumber(el) || elementIsUniqueString(el) || elementIsUniqueBoolean(el)
+  def elementIsUniqueConcrete(el: ValueLattice.Elt): Boolean = {
+    elementIsUniqueConcreteNumber(el) || elementIsUniqueConcreteString(el) || elementIsUniqueAllocation(el)
   }
 
-  def elementIsUniqueNumber(el: ValueLattice.Elt): Boolean = {
+  def elementIsUniqueConcreteNumber(el: ValueLattice.Elt): Boolean = {
     val (_, _, boolean, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
-    if (elementIsNumber(el)){
-      if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //boolean check
+    if (elementIsNumber(el))
+      if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) //boolean check
         boolean match {
           case BooleanLattice.Concrete(_) => true
           case _ => false
         }
-      if (boolean == BooleanLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //Integer check
+      else if (boolean == BooleanLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) //Integer check
         integer match {
           case IntegerLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) { //Float check
+      else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) //Float check
         float match {
           case FloatLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+      else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) //Long check
         long match {
           case LongLattice.Concrete(_) => true
           case _ => false
         }
-      } else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+      else if (boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) //Long check
         complex match {
           case (FloatLattice.Concrete(_), FloatLattice.Concrete(_)) => true
           case _ => false
         }
-      } else {
+      else
         false
-      }
-    } else {
-      false 
-    }
+    else
+      false
   }
 
   def elementIsString(el: ValueLattice.Elt): Boolean = {
@@ -164,7 +162,7 @@ extends ProductLattice(
             complex == ComplexLattice.bottom)
   }
 
-  def elementIsUniqueString(el: ValueLattice.Elt): Boolean = {
+  def elementIsUniqueConcreteString(el: ValueLattice.Elt): Boolean = {
     if (elementIsString(el)){
       getString(el) match {
         case StringLattice.Concrete(_) => true
@@ -186,17 +184,6 @@ extends ProductLattice(
             float == FloatLattice.bottom &&
             long == LongLattice.bottom &&
             complex == ComplexLattice.bottom)
-  }
-
-  def elementIsUniqueBoolean(el: ValueLattice.Elt): Boolean = {
-    if (elementIsBoolean(el)){
-      getBoolean(el) match {
-        case BooleanLattice.Concrete(_) => true
-        case _ => false
-      }
-    } else {
-      false
-    }
   }
 
   def elementIsNone(el: ValueLattice.Elt): Boolean = {

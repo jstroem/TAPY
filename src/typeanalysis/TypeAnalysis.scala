@@ -1,10 +1,12 @@
 package tapy.typeanalysis
 
 import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.cmpopType
 import tapy.dfa._
 import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
   type Elt = AnalysisLattice.Elt
@@ -60,37 +62,37 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
    */
   
   def handleConstantBoolean(node: ConstantBooleanNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.bool)
+    val value = ValueLattice.setBoolean(ValueLattice.bottom, node.bool)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantInt(node: ConstantIntNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.int.getValue())
+    val value = ValueLattice.setInteger(ValueLattice.bottom, node.int.getValue())
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantFloat(node: ConstantFloatNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.float.getValue())
+    val value = ValueLattice.setFloat(ValueLattice.bottom, node.float.getValue())
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantLong(node: ConstantLongNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.long.getValue())
+    val value = ValueLattice.setLong(ValueLattice.bottom, node.long.getValue())
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantComplex(node: ConstantComplexNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.complex.getReal().getValue(), node.complex.getImag().getValue())
+    val value = ValueLattice.setComplex(ValueLattice.bottom, node.complex.getReal().getValue(), node.complex.getImag().getValue())
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantString(node: ConstantStringNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, node.string)
+    val value = ValueLattice.setString(ValueLattice.bottom, node.string)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
 
   def handleConstantNone(node: ConstantNoneNode, solution: Elt): Elt = {
-    val value = ValueLattice.putElement(ValueLattice.bottom, NoneLattice.top)
+    val value = ValueLattice.setNone(ValueLattice.bottom, NoneLattice.top)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
@@ -108,7 +110,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.valueReg)
+    val value: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.valueReg)
     
     val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
     variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
@@ -121,75 +123,75 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Operators */
   
   def handleCompareOpNode(node: CompareOpNode, solution: Elt): Elt = {
-    val left = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
-    val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
+    val left: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
+    val right: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
 
     val value = node.op match {
-      case cmpopType.UNDEFINED => throw new NotImplementedException("cmpopType was UNDEFINED");
+      case cmpopType.UNDEFINED => throw new NotImplementedException()
       case cmpopType.Eq => {
         if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
           val leftAllocations = ValueLattice.getAllocationSet(left)
           val rightAllocations = ValueLattice.getAllocationSet(right)
-          ValueLattice.putElement(ValueLattice.bottom, leftAllocations == rightAllocations)
-        } else if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          ValueLattice.setBoolean(ValueLattice.bottom, leftAllocations == rightAllocations)
+        } else if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
           val leftString = ValueLattice.getString(left)
           val rightString = ValueLattice.getString(right)
-          ValueLattice.putElement(ValueLattice.bottom, leftString == rightString)
-        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+          ValueLattice.setBoolean(ValueLattice.bottom, leftString == rightString)
+        } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
           val (leftValue,rightValue) = ValueLattice.elementsToCommonType(left,right)
-          ValueLattice.putElement(ValueLattice.bottom, leftValue == rightValue)
+          ValueLattice.setBoolean(ValueLattice.bottom, leftValue == rightValue)
         } else {
-          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
         }
       }
       case cmpopType.NotEq => {
         if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
           val leftAllocationsElt = ValueLattice.getAllocationSet(left)
           val rightAllocationsElt = ValueLattice.getAllocationSet(right)
-          ValueLattice.putElement(ValueLattice.bottom, leftAllocationsElt != rightAllocationsElt)
-        } else if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          ValueLattice.setBoolean(ValueLattice.bottom, leftAllocationsElt != rightAllocationsElt)
+        } else if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
           val leftStringElt = ValueLattice.getString(left)
           val rightStringElt = ValueLattice.getString(right)
-          ValueLattice.putElement(ValueLattice.bottom, leftStringElt != rightStringElt)
-        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+          ValueLattice.setBoolean(ValueLattice.bottom, leftStringElt != rightStringElt)
+        } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
           val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
-          ValueLattice.putElement(ValueLattice.bottom, leftValueElt != rightValueElt)
+          ValueLattice.setBoolean(ValueLattice.bottom, leftValueElt != rightValueElt)
         } else {
-          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
         }
       }
       case cmpopType.Lt | cmpopType.LtE | cmpopType.Gt | cmpopType.GtE => {
-        val operator = (op : cmpopType, e1: Object, e2:Object):Boolean => op match {
+        val operator = ((op: cmpopType, e1: Object, e2: Object) => true /* op match {
           case cmpopType.Lt => e1 < e2
           case cmpopType.LtE => e1 <= e2
           case cmpopType.Gt => e1 > e2
           case cmpopType.GtE => e1 >= e2
-          case _ => throw new NotImplementedException("cmpopType is not in case");
-        }
-        if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          case _ => throw new NotImplementedException()
+        }*/)
+        if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
           val leftStringElt = ValueLattice.getString(left)
           val rightStringElt = ValueLattice.getString(right)
           (leftStringElt,rightStringElt) match {
-            case (StringLattice.Concrete(leftString),StringLattice.Concrete(rightString)) => ValueLattice.putElement(ValueLattice.bottom, leftString < rightString)
-            case _ => ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+            case (StringLattice.Concrete(leftString),StringLattice.Concrete(rightString)) => ValueLattice.setBoolean(ValueLattice.bottom, leftString < rightString)
+            case _ => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
           }
-        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+        } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
           val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
-          if (ValueLattice.elementIsOnlyInteger(leftValue) && ValueLattice.elementIsOnlyInteger(rightValue)){
-            val leftIntegerElt = ValueLattice.getInteger(leftValue)
-            val rightIntegerElt = ValueLattice.getInteger(rightValue)
+          if (ValueLattice.elementIsOnlyInteger(leftValueElt) && ValueLattice.elementIsOnlyInteger(rightValueElt)){
+            val leftIntegerElt = ValueLattice.getInteger(leftValueElt)
+            val rightIntegerElt = ValueLattice.getInteger(rightValueElt)
             (leftIntegerElt,rightIntegerElt) match {
-              case (IntegerLattice.Concrete(leftInteger),IntegerLattice.Concrete(rightInteger)) => ValueLattice.putElement(ValueLattice.bottom, leftInteger < rightInteger)
-              case _ => ValueLattice.putElement(ValueLattice, BooleanLattice.top)
+              case (IntegerLattice.Concrete(leftInteger),IntegerLattice.Concrete(rightInteger)) => ValueLattice.setBoolean(ValueLattice.bottom, leftInteger < rightInteger)
+              case _ => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
             }
           }
-          if (leftValue != rightValue) {
-            ValueLattice.putElement(ValueLattice.bottom, true)
+          if (leftValueElt != rightValueElt) {
+            ValueLattice.setBoolean(ValueLattice.bottom, true)
           } else {
-            ValueLattice.putElement(ValueLattice.bottom, false)
+            ValueLattice.setBoolean(ValueLattice.bottom, false)
           }
         } else {
-          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
         }
       }
       case cmpopType.Is => ValueLattice.bottom
@@ -197,6 +199,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       case cmpopType.In => ValueLattice.bottom
       case cmpopType.NotIn => ValueLattice.bottom
     }
+    
+    solution
   }
   
   def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
@@ -219,15 +223,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         // In the former case, the numbers are converted to a common type and then multiplied
         // together. In the latter case, sequence repetition is performed; a negative repetition
         // factor yields an empty sequence.
+        /*
         val left = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
         val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
-        
-        if (ValueLattice.elementIsNumber(left) && ValueLattice.elementIsNumber(right)) {
-          val (left, right) = ValueLattice.elementsToCommonType(left, right)
-          value = ValueLattice.leastUpperBound(left, right)
-        } else {
-          // TODO: TypeError
-        }
+        */
         
       case operatorType.Div => "/"
       case operatorType.Mod => "%"
@@ -239,6 +238,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       case operatorType.BitAnd => "&"
       case operatorType.FloorDiv => "//"
     }
+    
     solution
   }
   
