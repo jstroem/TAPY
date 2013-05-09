@@ -22,12 +22,38 @@ extends ProductLattice(
               new ProductLattice(
                 StringLattice, 
                 AllocationSiteLattice)))))))) {
-
-    def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, AllocationSiteLattice.Elt) = {
-      val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet)))))))) = el
-      return (undefined, none, boolean, integer, float, long, complex, string, allocationSet)
+  
+    /* Element tests */
+  
+    def elementIsNumber(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (
+          undefined == UndefinedLattice.bottom &&
+          none == NoneLattice.bottom &&
+          boolean == BooleanLattice.bottom &&
+          string == StringLattice.bottom &&
+          allocationSet == Set()
+        ) && (
+          integer != IntegerLattice.bottom ||
+          float != FloatLattice.bottom ||
+          long != LongLattice.bottom ||
+          complex != ComplexLattice.bottom)
     }
-    
+  
+    def elementIsOnlyFloat(el: ValueLattice.Elt): Boolean = {
+      val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+      return (
+          undefined == UndefinedLattice.bottom &&
+          none == NoneLattice.bottom &&
+          boolean == BooleanLattice.bottom &&
+          integer == IntegerLattice.bottom &&
+          float == FloatLattice.bottom &&
+          long == LongLattice.bottom &&
+          complex == ComplexLattice.bottom &&
+          string == StringLattice.bottom &&
+          allocationSet == Set())
+    }
+  
     /* Least upper bound elemt */
     
     def lubElement(v: ValueLattice.Elt, elt: UndefinedLattice.Elt): ValueLattice.Elt = {
@@ -124,6 +150,8 @@ extends ProductLattice(
       ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSet)
     }
 
+    /* Pack and unpack */
+    
     def packElement(undefined: UndefinedLattice.Elt = UndefinedLattice.bottom, 
                     none: NoneLattice.Elt = NoneLattice.bottom, 
                     boolean: BooleanLattice.Elt = BooleanLattice.bottom, 
@@ -134,5 +162,10 @@ extends ProductLattice(
                     string: StringLattice.Elt = StringLattice.bottom, 
                     allocationSet: AllocationSiteLattice.Elt = AllocationSiteLattice.bottom): ValueLattice.Elt = {
       return (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet))))))))
+    }
+
+    def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, AllocationSiteLattice.Elt) = {
+      val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet)))))))) = el
+      return (undefined, none, boolean, integer, float, long, complex, string, allocationSet)
     }
   }
