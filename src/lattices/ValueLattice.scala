@@ -2,8 +2,15 @@ package tapy.lattices
 
 import tapy.dfa._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import org.python.antlr.ast.cmpopType
 
-object AllocationSiteLattice extends PowerSubSetLattice[String]
+object AllocationSiteLattice extends PowerSubSetLattice[String] {
+  def compare(op: cmpopType, e1: AllocationSiteLattice.Elt, e2: AllocationSiteLattice.Elt) : Option[Boolean] = op match {
+    case cmpopType.Eq => if (e1.size == 1 && e2.size == 1) Some(e1 == e2) else None
+    case cmpopType.NotEq => if (e1.size == 1 && e2.size == 1) Some(e1 != e2) else None
+    case _ => None
+  }
+}
 
 object ValueLattice
 extends ProductLattice(
@@ -23,6 +30,32 @@ extends ProductLattice(
               new ProductLattice(
                 StringLattice, 
                 AllocationSiteLattice)))))))) {
+
+  /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
+  def compare(op: cmpopType, left: Elt, right: Elt) : Elt = {
+    if (elementIsUniqueConcreteString(left) && elementIsUniqueConcreteString(right))
+      setBoolean(bottom, BooleanLattice.make(StringLattice.compare(op, getString(left), getString(right))))
+    else if (elementIsUniqueAllocation(left) && elementIsUniqueAllocation(right))
+      setBoolean(bottom, BooleanLattice.make(AllocationSiteLattice.compare(op, getAllocationSet(left), getAllocationSet(right))))
+    else if (elementIsOnlyNone(left) && elementIsOnlyNone(right))
+      setBoolean(bottom, BooleanLattice.make(NoneLattice.compare(op, getNone(left), getNone(right))))
+    else if (elementIsUniqueConcreteNumber(left) && elementIsUniqueConcreteNumber(right)) {
+      val (leftCommon,rightCommon) = elementsToCommonType(left,right)
+      if (elementIsOnlyInteger(leftCommon) && elementIsOnlyInteger(rightCommon))
+        setBoolean(bottom, BooleanLattice.make(IntegerLattice.compare(op, getInteger(leftCommon), getInteger(rightCommon))))
+      else if (elementIsOnlyBoolean(leftCommon) && elementIsOnlyBoolean(rightCommon))
+        setBoolean(bottom, BooleanLattice.make(BooleanLattice.compare(op, getBoolean(leftCommon), getBoolean(rightCommon))))
+      else if (elementIsOnlyFloat(leftCommon) && elementIsOnlyFloat(rightCommon))
+        setBoolean(bottom, BooleanLattice.make(FloatLattice.compare(op, getFloat(leftCommon), getFloat(rightCommon))))
+      else if (elementIsOnlyLong(leftCommon) && elementIsOnlyLong(rightCommon)) 
+        setBoolean(bottom, BooleanLattice.make(LongLattice.compare(op, getLong(leftCommon), getLong(rightCommon))))
+      else if (elementIsOnlyComplex(leftCommon) && elementIsOnlyComplex(rightCommon))
+        setBoolean(bottom, BooleanLattice.make(ComplexLattice.compare(op, getComplex(leftCommon), getComplex(rightCommon))))
+      else 
+        setBoolean(bottom, BooleanLattice.top)
+    } else
+      setBoolean(bottom, BooleanLattice.top)
+  }
   
   /* Element utility functions */
 
@@ -81,6 +114,12 @@ extends ProductLattice(
         float != FloatLattice.bottom ||
         long != LongLattice.bottom ||
         complex != ComplexLattice.bottom)
+  }
+
+  def elementIsOnlyNone(el: ValueLattice.Elt): Boolean = {
+    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+    return ( undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
   def elementIsOnlyBoolean(el: ValueLattice.Elt): Boolean = {
@@ -316,6 +355,10 @@ extends ProductLattice(
   }
 
   /* Getters */
+  def getNone(v: ValueLattice.Elt) : NoneLattice.Elt = {
+    val (_, none, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    none
+  }
 
   def getBoolean(v: ValueLattice.Elt): BooleanLattice.Elt = {
     val (_, _, boolean, _, _, _, _, _, _) = ValueLattice.unpackElement(v)

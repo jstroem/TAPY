@@ -1,6 +1,7 @@
 package tapy.lattices
 
 import tapy.dfa._
+import org.python.antlr.ast.cmpopType
 
 sealed trait NoneElt
 
@@ -12,6 +13,19 @@ object NoneLattice extends Lattice[NoneElt] {
   
   def top: Elt = None()
   def bottom: Elt = Bottom()
+
+  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = (e1,e2) match {
+    case (None(), None()) => op match {
+      case cmpopType.Eq => Some(true)
+      case cmpopType.NotEq => Some(false)
+      case cmpopType.Lt => Some(false)
+      case cmpopType.LtE => Some(true)
+      case cmpopType.Gt => Some(false)
+      case cmpopType.GtE => Some(true)
+      case _ => scala.None
+    }
+    case _ => scala.None
+  }
   
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (None(), _) => true

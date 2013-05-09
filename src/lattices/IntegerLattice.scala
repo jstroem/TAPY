@@ -2,6 +2,7 @@ package tapy.lattices
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.cmpopType
 import tapy.dfa._
 
 /*  Assuming that the python program is running on a 32 bit computer.
@@ -18,6 +19,19 @@ object IntegerLattice extends Lattice[IntegerElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
+
+  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = (e1,e2) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => Some(s1 == s2)
+      case cmpopType.NotEq => Some(s1 != s2)
+      case cmpopType.Lt => Some(s1 < s2)
+      case cmpopType.LtE => Some(s1 <= s2)
+      case cmpopType.Gt => Some(s1 > s2)
+      case cmpopType.GtE => Some(s1 >= s2)
+      case _ => None
+    }
+    case _ => None
+  }
   
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
