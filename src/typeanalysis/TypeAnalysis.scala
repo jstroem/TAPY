@@ -128,79 +128,115 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     val value = node.op match {
       case cmpopType.UNDEFINED => throw new NotImplementedException()
-      case cmpopType.Eq => {
-        if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
-          val leftAllocations = ValueLattice.getAllocationSet(left)
-          val rightAllocations = ValueLattice.getAllocationSet(right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftAllocations == rightAllocations)
-        } else if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
-          val leftString = ValueLattice.getString(left)
-          val rightString = ValueLattice.getString(right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftString == rightString)
-        } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
-          val (leftValue,rightValue) = ValueLattice.elementsToCommonType(left,right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftValue == rightValue)
-        } else {
-          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
-        }
-      }
-      case cmpopType.NotEq => {
-        if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
-          val leftAllocationsElt = ValueLattice.getAllocationSet(left)
-          val rightAllocationsElt = ValueLattice.getAllocationSet(right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftAllocationsElt != rightAllocationsElt)
-        } else if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
-          val leftStringElt = ValueLattice.getString(left)
-          val rightStringElt = ValueLattice.getString(right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftStringElt != rightStringElt)
-        } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
-          val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
-          ValueLattice.setBoolean(ValueLattice.bottom, leftValueElt != rightValueElt)
-        } else {
-          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
-        }
-      }
-      case cmpopType.Lt | cmpopType.LtE | cmpopType.Gt | cmpopType.GtE => {
-        val operator = ((op: cmpopType, e1: Object, e2: Object) => true /* op match {
+      case cmpopType.Eq | cmpopType.NotEq | cmpopType.Lt | cmpopType.LtE | cmpopType.Gt | cmpopType.GtE => {
+        def operator[T <% Ordered[T]](op: cmpopType, e1: T, e2: T) = op match {
+          case cmpopType.Eq => e1 == e2
+          case cmpopType.NotEq => e1 != e2
           case cmpopType.Lt => e1 < e2
           case cmpopType.LtE => e1 <= e2
           case cmpopType.Gt => e1 > e2
           case cmpopType.GtE => e1 >= e2
           case _ => throw new NotImplementedException()
-        }*/)
+        }
+
         if (ValueLattice.elementIsUniqueConcreteString(left) && ValueLattice.elementIsUniqueConcreteString(right)) {
+
           val leftStringElt = ValueLattice.getString(left)
           val rightStringElt = ValueLattice.getString(right)
           (leftStringElt,rightStringElt) match {
-            case (StringLattice.Concrete(leftString),StringLattice.Concrete(rightString)) => ValueLattice.setBoolean(ValueLattice.bottom, leftString < rightString)
-            case _ => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+            case (StringLattice.Concrete(leftString),StringLattice.Concrete(rightString)) => 
+              ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftString, rightString)) //Operator on strings
+            case _ => 
+              ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
           }
+
         } else if (ValueLattice.elementIsUniqueConcreteNumber(left) && ValueLattice.elementIsUniqueConcreteNumber(right)) {
+
           val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
-          if (ValueLattice.elementIsOnlyInteger(leftValueElt) && ValueLattice.elementIsOnlyInteger(rightValueElt)){
+
+          if (ValueLattice.elementIsOnlyInteger(leftValueElt) && ValueLattice.elementIsOnlyInteger(rightValueElt)) {
+
             val leftIntegerElt = ValueLattice.getInteger(leftValueElt)
             val rightIntegerElt = ValueLattice.getInteger(rightValueElt)
             (leftIntegerElt,rightIntegerElt) match {
-              case (IntegerLattice.Concrete(leftInteger),IntegerLattice.Concrete(rightInteger)) => ValueLattice.setBoolean(ValueLattice.bottom, leftInteger < rightInteger)
-              case _ => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+              case (IntegerLattice.Concrete(leftInteger),IntegerLattice.Concrete(rightInteger)) => 
+                ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftInteger, rightInteger)) //Operator on Ints
+              case _ => 
+                ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
             }
-          }
-          if (leftValueElt != rightValueElt) {
-            ValueLattice.setBoolean(ValueLattice.bottom, true)
-          } else {
-            ValueLattice.setBoolean(ValueLattice.bottom, false)
-          }
+
+          } else if (ValueLattice.elementIsOnlyBoolean(leftValueElt) && ValueLattice.elementIsOnlyBoolean(rightValueElt)) {
+
+            val leftBooleanElt = ValueLattice.getBoolean(leftValueElt)
+            val rightBooleanElt = ValueLattice.getBoolean(rightValueElt)
+            (leftBooleanElt,rightBooleanElt) match {
+              case (BooleanLattice.Concrete(leftBoolean),BooleanLattice.Concrete(rightBoolean)) => 
+                ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftBoolean, rightBoolean)) //Operator on Booleans
+              case _ => 
+                ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+            }
+
+          } else if (ValueLattice.elementIsOnlyFloat(leftValueElt) && ValueLattice.elementIsOnlyFloat(rightValueElt)) {
+
+            val leftFloatElt = ValueLattice.getFloat(leftValueElt)
+            val rightFloatElt = ValueLattice.getFloat(rightValueElt)
+            (leftFloatElt,rightFloatElt) match {
+              case (FloatLattice.Concrete(leftFloat),FloatLattice.Concrete(rightFloat)) => 
+                ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftFloat, rightFloat)) //Operator on Floats
+              case _ => 
+                ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+            }
+
+          } else if (ValueLattice.elementIsOnlyLong(leftValueElt) && ValueLattice.elementIsOnlyLong(rightValueElt)) {
+
+            val leftLongElt = ValueLattice.getLong(leftValueElt)
+            val rightLongElt = ValueLattice.getLong(rightValueElt)
+            (leftLongElt,rightLongElt) match {
+              case (LongLattice.Concrete(leftLong),LongLattice.Concrete(rightLong)) => 
+                ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftLong, rightLong)) //Operator on Longs
+              case _ => 
+                ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+            }
+
+          } else if (ValueLattice.elementIsOnlyComplex(leftValueElt) && ValueLattice.elementIsOnlyComplex(rightValueElt)) {
+
+            //In Complex values there is no orderings
+            if (node.op == cmpopType.Eq || node.op == cmpopType.NotEq){
+              val (leftFloatElt1,leftFloatElt2) = ValueLattice.getComplex(leftValueElt)
+              val (rightFloatElt1,rightFloatElt2) = ValueLattice.getComplex(rightValueElt)
+              (leftFloatElt1,leftFloatElt2,rightFloatElt1,rightFloatElt2) match {
+                case (FloatLattice.Concrete(leftFloat1),FloatLattice.Concrete(leftFloat2),FloatLattice.Concrete(rightFloat1),FloatLattice.Concrete(rightFloat2)) => 
+                  ValueLattice.setBoolean(ValueLattice.bottom, operator(node.op, leftFloat1, rightFloat1) && operator(node.op, leftFloat2, rightFloat2))
+                case _ =>
+                  ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+              }
+            } else 
+                ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+
+          } else
+            ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+
+
         } else {
-          ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+
+          //In != and == we can check if registers points to the same object
+          if ((node.op == cmpopType.Eq || node.op == cmpopType.NotEq) && ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
+            val leftAllocationsElt = ValueLattice.getAllocationSet(left)
+            val rightAllocationsElt = ValueLattice.getAllocationSet(right)
+
+            ValueLattice.setBoolean(ValueLattice.bottom, if (node.op == cmpopType.Eq) leftAllocationsElt == rightAllocationsElt else leftAllocationsElt != rightAllocationsElt)
+
+          } else
+            ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
         }
       }
-      case cmpopType.Is => ValueLattice.bottom
-      case cmpopType.IsNot => ValueLattice.bottom
-      case cmpopType.In => ValueLattice.bottom
-      case cmpopType.NotIn => ValueLattice.bottom
+      case cmpopType.Is => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case cmpopType.IsNot => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case cmpopType.In => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case cmpopType.NotIn => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
     }
-    
-    solution
+
+    AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
   def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
