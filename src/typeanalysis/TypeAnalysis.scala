@@ -125,6 +125,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   /* Operators */
   
+  /** CompareOpNode: 
+    On the operators != and == the result of the comparison is found if the element is either Booleans, Long, String, Float, Integer, Complex or 1 Allocation
+    On the operators < <= > and >= the result of the comparison is found if the element is either Booleans, Long, String, Float, Integer
+  **/
   def handleCompareOpNode(node: CompareOpNode, solution: Elt): Elt = {
     val left: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
     val right: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
