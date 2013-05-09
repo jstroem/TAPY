@@ -138,7 +138,15 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         } else if (ValueLattice.elementIsUniqueBoolean(left) && ValueLattice.elementIsUniqueBoolean(right)) {
           val leftBoolean = ValueLattice.getBoolean(left)
           val rightBoolean = ValueLattice.getBoolean(right)
-          if (leftAllocations == rightAllocations) {
+          if (leftBoolean == rightBoolean) {
+            ValueLattice.putElement(ValueLattice.bottom, true);
+          } else {
+            ValueLattice.putElement(ValueLattice.bottom, false);
+          }
+        } else if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          val leftString = ValueLattice.getString(left)
+          val rightString = ValueLattice.getString(right)
+          if (leftString == rightString) {
             ValueLattice.putElement(ValueLattice.bottom, true);
           } else {
             ValueLattice.putElement(ValueLattice.bottom, false);
