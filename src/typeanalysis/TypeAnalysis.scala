@@ -206,6 +206,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     solution
   }
   
+  /**
+    * If left is exactly one number (including boolean) and right is exactly one number, the result is computed.
+    */
   def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
     // See:
     // - http://docs.python.org/2/reference/expressions.html#binary-bitwise-operations
@@ -235,7 +238,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         else if (ValueLattice.elementIsOnlyComplex(el1Common) && ValueLattice.elementIsOnlyComplex(el2Common))
           value = ComplexLattice.binaryOperator(ValueLattice.getComplex(el1Common), ValueLattice.getComplex(el2Common), node.op)
         else
-            throw new NotImplementedException()
+          throw new NotImplementedException()
       } catch {
         case e: ArithmeticException => // TODO: Division by zero
       }
