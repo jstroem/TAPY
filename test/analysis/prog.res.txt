@@ -1,0 +1,81 @@
+Map
+|   ModuleEntryNode(Module entry) =>
+|   |   Map
+|   |     X
+|   |   Map
+|   |     X
+|   |   {}
+|   <1> = 'abc'	(ConstantStringNode) =>
+|   |   Map
+|   |     X
+|   |   Map
+|   |   |   1 =>
+|   |   |   |   [Defined (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not None (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Boolean (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not an Integer (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Long (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [String: abc]
+|   |   |   |     X
+|   |   |   |   {}
+|   |     X
+|   |   {}
+|   <2> = 'def'	(ConstantStringNode) =>
+|   |   Map
+|   |     X
+|   |   Map
+|   |   |   1 =>
+|   |   |   |   [Defined (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not None (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Boolean (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not an Integer (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Long (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [String: abc]
+|   |   |   |     X
+|   |   |   |   {}
+|   |   |   2 =>
+|   |   |   |   [Defined (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not None (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Boolean (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not an Integer (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Long (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [Not a Float (Bottom)]
+|   |   |   |     X
+|   |   |   |   [String: def]
+|   |   |   |     X
+|   |   |   |   {}
+|   |     X
+|   |   {}
+  X
+{}

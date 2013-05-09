@@ -36,25 +36,28 @@ object Main {
       println("\n----------\n")
       println("Pretty printing AST of \"" + file + "\"\n")
       val aspp = ast.accept(ASTPrettyPrinter)
-      (new PrintStream(dir+fname+".ast")).print(aspp)
+      new PrintStream(dir+fname+".ast").print(aspp)
   
       println("\n----------\n")
-      println("Generating CFG of \"" + file + "\"\n")
-      val cfg = ast.accept(CFGGeneratorVisitor)
-      
-      println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
-      cfg.exportToFile(dir + fname)
+      val cfg = ast.accept(CFGGeneratorVisitor).exportToFile(dir + fname)
 
-      val worklist = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfg), AnalysisLattice, cfg)
-      val solution = worklist.run()
       println("\n----------\n")
-      println("Solution result: \n"+ AnalysisLattice.eltToString(solution,"") +"\n")
+      println("Pretty printing analysis result of \"" + file + "\"\n")
+      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfg), AnalysisLattice, cfg).run()
+      new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
     } catch {
       case e: Exception => e.printStackTrace()
     }
   }
 
+  def stringToFile(str: String, file: String): Unit = {
+    val out = new PrintStream(file)
+    out.print(str)
+    out.flush()
+    out.close()
+  }
+  
   def analyzeDirectory(dir : File) : Unit = {
     dir.listFiles().foreach((file) => {
       if (file.isFile()){
