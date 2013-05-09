@@ -41,10 +41,11 @@ object Main {
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
       val cfg = ast.accept(CFGGeneratorVisitor).exportToFile(dir + fname)
-
+      val cfgMin = cfg.minify()
+      
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
-      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfg), AnalysisLattice, cfg).run()
+      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin).run()
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
     } catch {
       case e: Exception => e.printStackTrace()

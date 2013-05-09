@@ -29,7 +29,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
 
   def nodeDependencies(cfgNode: Node): Set[Node] = {
-    return cfg.getPredecessors(cfgNode)
+    return cfg.getSuccessors(cfgNode)
   }
   
   def join(node: Node, solution: Elt): Elt = {
