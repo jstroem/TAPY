@@ -161,6 +161,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     // See:
     // - http://docs.python.org/2/reference/expressions.html#binary-bitwise-operations
     // - http://docs.python.org/2/reference/expressions.html#binary-arithmetic-operations
+    
+    var value: ValueLattice.Elt = null
+    var exception = null
+    
     node.op match {
       case operatorType.UNDEFINED => "UNDEFINED"
       case operatorType.Add => "+"
@@ -177,17 +181,11 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
         
         if (ValueLattice.elementIsNumber(left) && ValueLattice.elementIsNumber(right)) {
-          if (ValueLattice.elementIsFloat(left) && ValueLattice.elementIsFloat(right)) {
-            
-          }
-          
-          
-          
-          val (leftInteger, leftFloat, leftLong, leftComplex) = ValueLattice.getElementNumbers(left)
+          val (left, right) = ValueLattice.elementsToCommonType(left, right)
+          value = ValueLattice.leastUpperBound(left, right)
         } else {
           // TODO: TypeError
         }
-        "*"
         
       case operatorType.Div => "/"
       case operatorType.Mod => "%"
