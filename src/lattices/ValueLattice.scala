@@ -124,6 +124,47 @@ extends ProductLattice(
       ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSet)
     }
 
+    /** Getters **/
+    def getAllocationSet(v: ValueLattice.Elt) : AllocationSiteLattice.Elt = {
+      val (_, _, _, _, _, _, _, _, allocationSet) = ValueLattice.unpackElement(v)
+      allocationSet
+    }
+
+    def elementIsUnique(el: ValueLattice.Elt) : Boolean = {
+      elementIsUniqueNumber(el) || elementIsUniqueString(el) || elementIsUniqueBoolean(el)
+    }
+
+    def elementIsUniqueNumber(el : ValueLattice.Elt) : Boolean = {
+      val (_, _, _, integer, float, long, complex, _, _) = ValueLattice.unpackElement(v)
+      if (isNumber(el)){
+        if (float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom){ //Integer check
+          integer match {
+            case IntegerLattice.Concrete(_) => true
+            case _ => false
+          }
+        } else if (integer == IntegerLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) { //Float check
+          float match {
+            case FloatLattice.Concrete(_) => true
+            case _ => false
+          }
+        } else if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+          long match {
+            case LongLattice.Concrete(_) => true
+            case _ => false
+          }
+        } else if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && complex == ComplexLattice.bottom) { //Long check
+          complex match {
+            case ComplexLattice.Concrete(_,_) => true
+            case _ => false
+          }
+        } else {
+          false
+        }
+      } else {
+        false 
+      }
+    }
+
     def packElement(undefined: UndefinedLattice.Elt = UndefinedLattice.bottom, 
                     none: NoneLattice.Elt = NoneLattice.bottom, 
                     boolean: BooleanLattice.Elt = BooleanLattice.bottom, 
