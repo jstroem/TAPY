@@ -1,2 +1,2 @@
 x = "abc"
-y = "def"
+y = x

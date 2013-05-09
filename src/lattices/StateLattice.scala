@@ -30,11 +30,20 @@ object StateLattice extends ProductLattice(HeapLattice,StackLattice) {
 		stack
 	}
 	
+	def getVariableObjects(el: StateLattice.Elt): Set[String] =
+	  StackLattice.getVariableObject(getStack(el))
+	
 	/* Setters */
 	
 	def setStack(el: StateLattice.Elt, stack: StackLattice.Elt): StateLattice.Elt =
 	  (getHeap(el), stack)
 	
+	def setVariableObject(el: StateLattice.Elt, label: String): StateLattice.Elt =
+	  (getHeap(el), StackLattice.setVariableObject(getStack(el), label))
+	
+	def setExecutionContext(el: StateLattice.Elt, executionContext: ExecutionContextLattice.Elt): StateLattice.Elt =
+	  (getHeap(el), StackLattice.setExecutionContext(getStack(el), executionContext))
+	  
 	/* Updaters */
 	  
 	def updateStackFrame(el: StateLattice.Elt, register: Int, value: ValueLattice.Elt): StateLattice.Elt =

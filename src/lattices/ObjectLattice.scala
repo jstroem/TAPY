@@ -2,7 +2,14 @@ package tapy.lattices
 
 import tapy.dfa._
 
-object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLattice( AbsentLattice, ModifiedLattice)) {
+object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, ModifiedLattice)) {
+  
+  /* Getters */
+  
+  def getValue(el: ObjectPropertyLattice.Elt): ValueLattice.Elt = {
+    val (value, _) = el
+    value
+  }
   
   /* Updaters */
   
@@ -12,6 +19,10 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
 }
 
 object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.Elt](ObjectPropertyLattice) {
+  
+  /* Getters */
+  
+  def getProperty(el: ObjectPropertiesLattice.Elt, property: String) = get(el, property)
   
   /* Updaters */
   
@@ -27,6 +38,9 @@ object ScopeChainLattice extends PowerSubSetLattice[String]()
 object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainLattice) {
   
   /* Getters */
+  
+  def getObjectProperty(el: ObjectLattice.Elt, property: String): ObjectPropertyLattice.Elt =
+    ObjectPropertiesLattice.getProperty(getObjectProperties(el), property)
   
   def getObjectProperties(el: ObjectLattice.Elt): ObjectPropertiesLattice.Elt = {
     val (objectProperties, _) = el

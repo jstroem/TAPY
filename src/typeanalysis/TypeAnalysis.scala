@@ -22,12 +22,17 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: ConstantStringNode => ((solution) => handleConstantString(node, join(node, solution)))
         case node: ConstantNoneNode => ((solution) => handleConstantNone(node, join(node, solution)))
         
+        case node: ReadVariableNode => ((solution) => handleReadVariableNode(node, join(node, solution)))
         case node: WriteVariableNode => ((solution) => handleWriteVariableNode(node, join(node, solution)))
+        
+        case node: CompareOpNode => ((solution) => handleCompareOpNode(node, join(node, solution)))
+        case node: BinOpNode => ((solution) => handleBinOpNode(node, join(node, solution)))
+        case node: UnOpNode => ((solution) => handleUnOpNode(node, join(node, solution)))
         
         case node => ((solution) => join(node, solution))
       }
   }
-
+  
   def nodeDependencies(cfgNode: Node): Set[Node] = {
     return cfg.getSuccessors(cfgNode)
   }
@@ -42,8 +47,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     /* Create the main module object */
-    val obj = ObjectLattice.bottom
-    AnalysisLattice.updateHeap(solution, node, "__main__", obj)
+    AnalysisLattice.setExecutionContext(
+      AnalysisLattice.updateHeap(solution, node, "__main__", ObjectLattice.bottom),
+      node,
+      ExecutionContextLattice.makeElement(List(), "__main__"))
   }
 
   /*
@@ -88,12 +95,39 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   /* Variables */
   
+  def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
+    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
+    val value = variableObjects.foldLeft(ValueLattice.bottom) {(acc, variableObjectLabel) =>
+      val variableObject = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
+      val value = ObjectPropertyLattice.getValue(ObjectLattice.getObjectProperty(variableObject, node.variable))
+      ValueLattice.leastUpperBound(value, acc)
+    }
+    
+    AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+  }
+  
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.valueReg)
     
-    val oldScopeObj = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), "__main__")
-    val newScopeObj = ObjectLattice.updatePropertyValue(oldScopeObj, node.variable, value)
-    
-    AnalysisLattice.updateHeap(solution, node, "__main__", newScopeObj)
+    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
+    variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
+      val currentVariableObject = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
+      val newVariableObject = ObjectLattice.updatePropertyValue(currentVariableObject, node.variable, value)
+      AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
+    }
+  }
+  
+  /* Operators */
+  
+  def handleCompareOpNode(node: CompareOpNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  def handleUnOpNode(node: UnOpNode, solution: Elt): Elt = {
+    solution
   }
 }
