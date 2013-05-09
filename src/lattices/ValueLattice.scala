@@ -59,6 +59,8 @@ extends ProductLattice(
         case (false, false, false, false, true, false, false, true, false, false) => (el1, setComplex(bottom, FloatLattice.elementToComplex(getFloat(el2)))) // complex, float -> complex, complex
         case (false, false, false, false, true, false, false, false, true, false) => (el1, setComplex(bottom, LongLattice.elementToComplex(getLong(el2)))) // complex, long -> complex, complex
         case (false, false, false, false, true, false, false, false, false, true) => (el1, el2) // complex, complex -> complex, complex
+        
+        case _ => throw new IllegalArgumentException()
       }
     }
     throw new NotImplementedException()
@@ -306,6 +308,11 @@ extends ProductLattice(
   def setString(v: ValueLattice.Elt, string: StringLattice.Elt): ValueLattice.Elt = {
     val (undefined, none, boolean, integer, float, long, complex, _, allocationSet) = ValueLattice.unpackElement(v)
     ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSet)
+  }
+  
+  def setAllocationSet(v: ValueLattice.Elt, allocationSite: AllocationSiteLattice.Elt): ValueLattice.Elt = {
+    val (undefined, none, boolean, integer, float, long, complex, string, _) = ValueLattice.unpackElement(v)
+    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSite)
   }
 
   /* Getters */

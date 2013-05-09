@@ -1,5 +1,7 @@
 package tapy.lattices
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import org.python.antlr.ast.operatorType
 import java.lang.Double
 import tapy.dfa._
 
@@ -51,9 +53,34 @@ object FloatLattice extends Lattice[FloatElt] {
   
   /* Element utility functions */
   
+  def binaryOperator(el1: FloatLattice.Elt, el2: FloatLattice.Elt, op: operatorType): ValueLattice.Elt = {
+    (el1, el2) match {
+      case (Concrete(f1), Concrete(f2)) =>
+        op match {
+          case operatorType.UNDEFINED => throw new NotImplementedException()
+          case operatorType.Add => ValueLattice.setFloat(ValueLattice.bottom, f1 + f2)
+          case operatorType.Sub => ValueLattice.setFloat(ValueLattice.bottom, f1 - f2)
+          case operatorType.Mult => ValueLattice.setFloat(ValueLattice.bottom, f1 * f2)
+          case operatorType.Div => ValueLattice.setFloat(ValueLattice.bottom, f1 / f2)
+          case operatorType.Mod => ValueLattice.setFloat(ValueLattice.bottom, f1 % f2)
+          case operatorType.Pow => throw new NotImplementedException()
+          case operatorType.LShift => throw new NotImplementedException()
+          case operatorType.RShift => throw new NotImplementedException()
+          case operatorType.BitOr => throw new NotImplementedException()
+          case operatorType.BitXor => throw new NotImplementedException()
+          case operatorType.BitAnd => throw new NotImplementedException()
+          case operatorType.FloorDiv => throw new NotImplementedException()
+        }
+        
+      case _ =>
+        throw new NotImplementedException()
+    }
+  }
+  
   def elementToComplex(el: FloatLattice.Elt): ComplexLattice.Elt = el match {
     case Abstract() => (Abstract(), Concrete(0))
     case Concrete(i) => (Concrete(i), Concrete(0))
     case Bottom() => (Bottom(), Bottom())
+    case _ => throw new IllegalArgumentException()
   }
 }

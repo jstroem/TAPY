@@ -1,5 +1,7 @@
 package tapy.lattices
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import org.python.antlr.ast.operatorType
 import tapy.dfa._
 
 /*  Assuming that the python program is running on a 32 bit computer.
@@ -53,21 +55,48 @@ object IntegerLattice extends Lattice[IntegerElt] {
   
   /* Element utility functions */
   
+  def binaryOperator(el1: IntegerLattice.Elt, el2: IntegerLattice.Elt, op: operatorType): ValueLattice.Elt = {
+    (el1, el2) match {
+      case (Concrete(i1), Concrete(i2)) =>
+        op match {
+          case operatorType.UNDEFINED => throw new NotImplementedException()
+          case operatorType.Add => ValueLattice.setInteger(ValueLattice.bottom, i1 + i2)
+          case operatorType.Sub => ValueLattice.setInteger(ValueLattice.bottom, i1 - i2)
+          case operatorType.Mult => ValueLattice.setInteger(ValueLattice.bottom, i1 * i2)
+          case operatorType.Div => ValueLattice.setInteger(ValueLattice.bottom, i1 / i2)
+          case operatorType.Mod => ValueLattice.setInteger(ValueLattice.bottom, i1 % i2)
+          case operatorType.Pow => ValueLattice.setInteger(ValueLattice.bottom, i1 ^ i2)
+          case operatorType.LShift => throw new NotImplementedException()
+          case operatorType.RShift => throw new NotImplementedException()
+          case operatorType.BitOr => ValueLattice.setInteger(ValueLattice.bottom, i1 | i2)
+          case operatorType.BitXor => throw new NotImplementedException()
+          case operatorType.BitAnd => ValueLattice.setInteger(ValueLattice.bottom, i1 & i2)
+          case operatorType.FloorDiv => throw new NotImplementedException()
+        }
+        
+      case _ =>
+        throw new NotImplementedException()
+    }
+  }
+  
   def elementToFloat(el: IntegerLattice.Elt): FloatLattice.Elt = el match {
     case Abstract() => FloatLattice.Abstract()
     case Concrete(i) => FloatLattice.Concrete(i)
     case Bottom() => FloatLattice.Bottom()
+    case _ => throw new IllegalArgumentException()
   }
   
   def elementToLong(el: IntegerLattice.Elt): LongLattice.Elt = el match {
     case Abstract() => LongLattice.Abstract()
     case Bottom() => LongLattice.Bottom()
     case Concrete(i) => LongLattice.Concrete(java.math.BigInteger.valueOf(i))
+    case _ => throw new IllegalArgumentException()
   }
   
   def elementToComplex(el: IntegerLattice.Elt): ComplexLattice.Elt = el match {
     case Abstract() => (FloatLattice.Abstract(), FloatLattice.Concrete(0))
     case Concrete(i) => (FloatLattice.Concrete(i), FloatLattice.Concrete(0))
     case Bottom() => (FloatLattice.Bottom(), FloatLattice.Bottom())
+    case _ => throw new IllegalArgumentException()
   }
 }

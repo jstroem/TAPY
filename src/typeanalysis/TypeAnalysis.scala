@@ -1,5 +1,6 @@
 package tapy.typeanalysis
 
+import java.lang.ArithmeticException
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.cmpopType
 import tapy.dfa._
@@ -12,6 +13,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   type Elt = AnalysisLattice.Elt
   
   def bottom = AnalysisLattice.bottom
+  
+  /* Analysis interface */
   
   def generateConstraint(node: Node): Constraint[Elt] = {
     return node match {
@@ -247,35 +250,39 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     var value: ValueLattice.Elt = null
     var exception = null
     
-    node.op match {
-      case operatorType.UNDEFINED => "UNDEFINED"
-      case operatorType.Add => "+"
-      case operatorType.Sub => "-"
-        
-      case operatorType.Mult =>
-        // The * (multiplication) operator yields the product of its arguments. The arguments must either:
-        // - both be numbers, or
-        // - one argument must be an integer (plain or long) and the other must be a sequence (UNSUPPORTED).
-        // In the former case, the numbers are converted to a common type and then multiplied
-        // together. In the latter case, sequence repetition is performed; a negative repetition
-        // factor yields an empty sequence.
-        /*
-        val left = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
-        val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
-        */
-        
-      case operatorType.Div => "/"
-      case operatorType.Mod => "%"
-      case operatorType.Pow => "**"
-      case operatorType.LShift => ">>"
-      case operatorType.RShift => "<<"
-      case operatorType.BitOr => "|"
-      case operatorType.BitXor => "^"
-      case operatorType.BitAnd => "&"
-      case operatorType.FloorDiv => "//"
+    val el1 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
+    val el2 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
+    
+    if (ValueLattice.elementIsNumber(el1) && ValueLattice.elementIsNumber(el2)) {
+      val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
+      
+      val (undefined1, none1, boolean1, integer1, float1, long1, complex1, string1, allocationSet1) = ValueLattice.unpackElement(el1Common)
+      val (undefined2, none2, boolean2, integer2, float2, long2, complex2, string2, allocationSet2) = ValueLattice.unpackElement(el2Common)
+      
+      try {
+        if (ValueLattice.elementIsOnlyBoolean(el1Common) && ValueLattice.elementIsOnlyBoolean(el2Common))
+          value = BooleanLattice.binaryOperator(ValueLattice.getBoolean(el1Common), ValueLattice.getBoolean(el2Common), node.op)
+        else if (ValueLattice.elementIsOnlyInteger(el1Common) && ValueLattice.elementIsOnlyInteger(el2Common))
+          value = IntegerLattice.binaryOperator(ValueLattice.getInteger(el1Common), ValueLattice.getInteger(el2Common), node.op)
+        else if (ValueLattice.elementIsOnlyFloat(el1Common) && ValueLattice.elementIsOnlyFloat(el2Common))
+          value = FloatLattice.binaryOperator(ValueLattice.getFloat(el1Common), ValueLattice.getFloat(el2Common), node.op)
+        else if (ValueLattice.elementIsOnlyLong(el1Common) && ValueLattice.elementIsOnlyLong(el2Common))
+          value = LongLattice.binaryOperator(ValueLattice.getLong(el1Common), ValueLattice.getLong(el2Common), node.op)
+        else if (ValueLattice.elementIsOnlyComplex(el1Common) && ValueLattice.elementIsOnlyComplex(el2Common))
+          value = ComplexLattice.binaryOperator(ValueLattice.getComplex(el1Common), ValueLattice.getComplex(el2Common), node.op)
+        else
+            throw new NotImplementedException()
+      } catch {
+        case e: ArithmeticException => // TODO: Division by zero
+      }
+    } else {
+      // TODO: TypeError
     }
     
-    solution
+    if (value != null)
+      AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+    else
+      solution
   }
   
   def handleUnOpNode(node: UnOpNode, solution: Elt): Elt = {
