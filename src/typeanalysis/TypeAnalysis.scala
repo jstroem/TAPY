@@ -125,39 +125,73 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val right = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
 
     val value = node.op match {
-      case cmpopType.UNDEFINED => throw new InternalErrorException("cmpopType was UNDEFINED");
+      case cmpopType.UNDEFINED => throw new NotImplementedException("cmpopType was UNDEFINED");
       case cmpopType.Eq => {
         if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
           val leftAllocations = ValueLattice.getAllocationSet(left)
           val rightAllocations = ValueLattice.getAllocationSet(right)
-          if (leftAllocations == rightAllocations) {
-            ValueLattice.putElement(ValueLattice.bottom, true);
-          } else {
-            ValueLattice.putElement(ValueLattice.bottom, false);
-          }
-        } else if (ValueLattice.elementIsUniqueBoolean(left) && ValueLattice.elementIsUniqueBoolean(right)) {
-          val leftBoolean = ValueLattice.getBoolean(left)
-          val rightBoolean = ValueLattice.getBoolean(right)
-          if (leftBoolean == rightBoolean) {
-            ValueLattice.putElement(ValueLattice.bottom, true);
-          } else {
-            ValueLattice.putElement(ValueLattice.bottom, false);
-          }
+          ValueLattice.putElement(ValueLattice.bottom, leftAllocations == rightAllocations)
         } else if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
           val leftString = ValueLattice.getString(left)
           val rightString = ValueLattice.getString(right)
-          if (leftString == rightString) {
-            ValueLattice.putElement(ValueLattice.bottom, true);
-          } else {
-            ValueLattice.putElement(ValueLattice.bottom, false);
-          }
+          ValueLattice.putElement(ValueLattice.bottom, leftString == rightString)
+        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+          val (leftValue,rightValue) = ValueLattice.elementsToCommonType(left,right)
+          ValueLattice.putElement(ValueLattice.bottom, leftValue == rightValue)
+        } else {
+          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
         }
       }
-      case cmpopType.NotEq => ValueLattice.bottom
-      case cmpopType.Lt => ValueLattice.bottom
-      case cmpopType.LtE => ValueLattice.bottom
-      case cmpopType.Gt => ValueLattice.bottom
-      case cmpopType.GtE => ValueLattice.bottom
+      case cmpopType.NotEq => {
+        if (ValueLattice.elementIsUniqueAllocation(left) && ValueLattice.elementIsUniqueAllocation(right)) {
+          val leftAllocationsElt = ValueLattice.getAllocationSet(left)
+          val rightAllocationsElt = ValueLattice.getAllocationSet(right)
+          ValueLattice.putElement(ValueLattice.bottom, leftAllocationsElt != rightAllocationsElt)
+        } else if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          val leftStringElt = ValueLattice.getString(left)
+          val rightStringElt = ValueLattice.getString(right)
+          ValueLattice.putElement(ValueLattice.bottom, leftStringElt != rightStringElt)
+        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+          val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
+          ValueLattice.putElement(ValueLattice.bottom, leftValueElt != rightValueElt)
+        } else {
+          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+        }
+      }
+      case cmpopType.Lt | cmpopType.LtE | cmpopType.Gt | cmpopType.GtE => {
+        val operator = (op : cmpopType, e1: Object, e2:Object):Boolean => op match {
+          case cmpopType.Lt => e1 < e2
+          case cmpopType.LtE => e1 <= e2
+          case cmpopType.Gt => e1 > e2
+          case cmpopType.GtE => e1 >= e2
+          case _ => throw new NotImplementedException("cmpopType is not in case");
+        }
+        if (ValueLattice.elementIsUniqueString(left) && ValueLattice.elementIsUniqueString(right)) {
+          val leftStringElt = ValueLattice.getString(left)
+          val rightStringElt = ValueLattice.getString(right)
+          (leftStringElt,rightStringElt) match {
+            case (StringLattice.Concrete(leftString),StringLattice.Concrete(rightString)) => ValueLattice.putElement(ValueLattice.bottom, leftString < rightString)
+            case _ => ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+          }
+        } else if (ValueLattice.elementIsUniqueNumber(left) && ValueLattice.elementIsUniqueNumber(right)) {
+          val (leftValueElt,rightValueElt) = ValueLattice.elementsToCommonType(left,right)
+          if (ValueLattice.elementIsOnlyInteger(leftValue) && ValueLattice.elementIsOnlyInteger(rightValue)){
+            val leftIntegerElt = ValueLattice.getInteger(leftValue)
+            val rightIntegerElt = ValueLattice.getInteger(rightValue)
+            (leftIntegerElt,rightIntegerElt) match {
+              case (IntegerLattice.Concrete(leftInteger),IntegerLattice.Concrete(rightInteger)) => ValueLattice.putElement(ValueLattice.bottom, leftInteger < rightInteger)
+              case _ => ValueLattice.putElement(ValueLattice, BooleanLattice.top)
+            }
+          }
+          if (leftValue != rightValue) {
+            ValueLattice.putElement(ValueLattice.bottom, true)
+          } else {
+            ValueLattice.putElement(ValueLattice.bottom, false)
+          }
+        } else {
+          ValueLattice.putElement(ValueLattice.bottom, BooleanLattice.top)
+        }
+      }
       case cmpopType.Is => ValueLattice.bottom
       case cmpopType.IsNot => ValueLattice.bottom
       case cmpopType.In => ValueLattice.bottom
