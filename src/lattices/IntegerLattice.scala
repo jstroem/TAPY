@@ -3,7 +3,9 @@ package tapy.lattices
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.unaryopType
 import tapy.dfa._
+import tapy.exceptions._
 
 /*  Assuming that the python program is running on a 32 bit computer.
     This limits integers in python to -2**31-1 <= x <= 2**32-1. */
@@ -19,19 +21,6 @@ object IntegerLattice extends Lattice[IntegerElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
-
-  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
-    case (Concrete(s1), Concrete(s2)) => op match {
-      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
-      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
-      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
-      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
-      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
-      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
-      case _ => BooleanLattice.top
-    }
-    case _ => BooleanLattice.top
-  }
   
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
@@ -68,6 +57,19 @@ object IntegerLattice extends Lattice[IntegerElt] {
   }
   
   /* Element utility functions */
+
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
+      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
+      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
+      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
+      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
+      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
+      case _ => BooleanLattice.top
+    }
+    case _ => BooleanLattice.top
+  }
   
   def binaryOperator(el1: IntegerLattice.Elt, el2: IntegerLattice.Elt, op: operatorType): ValueLattice.Elt = {
     (el1, el2) match {
@@ -90,6 +92,21 @@ object IntegerLattice extends Lattice[IntegerElt] {
         
       case _ =>
         throw new NotImplementedException()
+    }
+  }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (Concrete(i)) => op match {
+      case unaryopType.Invert => ValueLattice.setInteger(ValueLattice.bottom, ~i)
+      case unaryopType.Not => if (i==0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.UAdd => ValueLattice.setInteger(ValueLattice.bottom, i)
+      case unaryopType.USub => ValueLattice.setInteger(ValueLattice.bottom, -i)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setInteger(ValueLattice.bottom, top)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
   

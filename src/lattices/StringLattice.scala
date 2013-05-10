@@ -1,8 +1,10 @@
 package tapy.lattices
 
 import tapy.dfa._
+import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
 import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.unaryopType
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 sealed trait StringElt
@@ -46,7 +48,15 @@ object StringLattice extends Lattice[StringElt] {
     case (_, Bottom()) => Bottom()
     case _ => throw new IllegalArgumentException()
   }
+
+  def eltToString(elt: Elt, indent: String): String = elt match {
+    case Concrete(l) => s"$indent[String: $l]\n"
+    case Bottom() => s"$indent[Not a String (Bottom)]\n"
+    case Abstract() => s"$indent[Any String (Top)]\n"
+    case _ => throw new IllegalArgumentException("StringLattice pattern match error")
+  }
   
+  /* Element utility functions */
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
     case (Concrete(s1), Concrete(s2)) => op match {
       case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
@@ -60,14 +70,20 @@ object StringLattice extends Lattice[StringElt] {
     case _ => BooleanLattice.top
   }
 
-  def eltToString(elt: Elt, indent: String): String = elt match {
-    case Concrete(l) => s"$indent[String: $l]\n"
-    case Bottom() => s"$indent[Not a String (Bottom)]\n"
-    case Abstract() => s"$indent[Any String (Top)]\n"
-    case _ => throw new IllegalArgumentException("StringLattice pattern match error")
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (Concrete(str)) => op match {
+      case unaryopType.Invert => throw new UnaryException("String elements cannot do this unary op", op)
+      case unaryopType.Not => if (str == "") ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.UAdd => throw new UnaryException("String elements cannot do this unary op", op)
+      case unaryopType.USub => throw new UnaryException("String elements cannot do this unary op", op)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.UAdd | unaryopType.USub | unaryopType.Invert => throw new UnaryException("String elements cannot do unaryop.Invert", op)
+      case _ => throw new InternalErrorException("unaryopType was undefined") 
+    }
   }
-  
-  /* Element utility functions */
   
   def binaryOperator(el1: StringLattice.Elt, el2: StringLattice.Elt, op: operatorType): ValueLattice.Elt = {
     (el1, el2) match {
