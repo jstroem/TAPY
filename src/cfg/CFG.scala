@@ -270,10 +270,9 @@ case class ControlFlowGraph(entryNodes: Set[Node],
 
     var nodeMap = new IdentityHashMap[Node, GraphvizExporter.Node]()
 
-    this.nodes.foreach((node) => nodeMap.put(node, GraphvizExporter.Node(nodeToString(node))))
-
-    def getNodeId(node: Node) : String = nodeMap.get(node) match {
-      case null => "" 
+    this.nodes.foreach((node) => nodeMap.put(node, GraphvizExporter.Node(GraphvizExporter.escape(nodeToString(node)))))
+    def getNodeId(node: Node) : GraphvizExporter.NodeId = nodeMap.get(node) match {
+      case null => GraphvizExporter.SingleNodeId("")
       case n => n.id
     }
 
@@ -296,7 +295,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
           val exceptTargetsFromN = GraphvizExporter.getOutgoingEdges(n, exceptEdges).map((e) => e.to)
           val exceptTargetsFromM = GraphvizExporter.getOutgoingEdges(m, exceptEdges).map((e) => e.to)
           if (exceptTargetsFromN == exceptTargetsFromM) {
-            val newNodes = (new GraphvizExporter.Node(n.label +"\n" + m.label, m.id)) :: nodes.filter((node) => node.id != n.id && node.id != m.id)
+            val newNodes = (new GraphvizExporter.Node(n.label + GraphvizExporter.escape("\n") + m.label, m.id)) :: nodes.filter((node) => node.id != n.id && node.id != m.id)
             val newEdges = edges.foldLeft(List() : List[GraphvizExporter.Edge])((acc,edge) => edge match {
               case GraphvizExporter.Edge(n.id, m.id, _, _) => acc
               case GraphvizExporter.Edge(e, n.id, _, _) => (new GraphvizExporter.Edge(e, m.id, edge.label, edge.style)) :: acc
@@ -330,7 +329,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     val (blockedNodes, blockedEdges, blockedExceptEdges) = if (collapse) blockify(graphNodes, graphEdges, graphExceptEdges) else (graphNodes, graphEdges, graphExceptEdges)
 
     return new GraphvizExporter.Graph {
-      def nodes = blockedNodes
+      def nodes() = blockedNodes
       def edges() = blockedEdges ::: blockedExceptEdges
       def subgraphs() = List()
       def name() = "ControlFlowGraph"

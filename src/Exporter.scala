@@ -6,6 +6,7 @@ object GraphvizExporter {
   var tab = "\t"
   def export(graph: Graph ,export:  java.io.PrintStream = System.out, clusters : Int = 0) = {
      export.println("digraph "+escape(graph.name())+" {")
+     export.println(tab + "node [shape=record];")
      drawGraph( graph, export,clusters )
      export.println("}")
   }
@@ -30,7 +31,7 @@ object GraphvizExporter {
   }
 
   def drawNodes(nodes: List[Node], export:  java.io.PrintStream = System.out) = {
-    nodes.foreach((node) => export.println( tab + "\"%s\" [shape=%s label=\"%s\"];".format(node.id, node.shape.getOrElse(Record()), escape(node.label))))
+    nodes.foreach((node) => export.println( tab + "%s [shape=%s label=\"%s\"];".format(node.id, node.shape.getOrElse(Record()), node.label)))
   }
 
   def getRanks(nodes: List[Node]): Map[Int, List[Node]] = {
@@ -43,13 +44,13 @@ object GraphvizExporter {
   def drawEdges( edges: List[Edge], export:  java.io.PrintStream = System.out) = {
     edges.foreach({(edge) =>
                     val label = edge.label.getOrElse("")
-                    export.println(tab + "\"%s\" -> \"%s\" [style=\"%s\" label=\"%s\"];".format(edge.from,edge.to, edge.style.getOrElse(Solid()), escape(label)))
+                    export.println(tab + "%s -> %s [style=\"%s\" label=\"%s\"];".format(edge.from,edge.to, edge.style.getOrElse(Solid()), label))
                   })
   }
 
   def drawRanks(ranks: Map[Int, List[Node]], export:  java.io.PrintStream = System.out) = {
     ranks.foreach{
-        case (key, value) => export.println(tab + "{ rank=same; %s }".format(value.map(_.id).reduceLeft(_ + " " + _)))
+        case (key, value) => export.println(tab + "{ rank=same; %s }".format(value.map(_.id.toString()).reduceLeft(_ + " " + _)))
       }
   }
 
@@ -63,7 +64,7 @@ object GraphvizExporter {
     case _ => acc
   })
 
-  def getNodeById(nodeId : String, nodes: List[Node]) : Option[Node] = nodes.find((node) => node.id == nodeId)
+  def getNodeById(nodeId : NodeId, nodes: List[Node]) : Option[Node] = nodes.find((node) => node.id == nodeId)
 
   def escape(s: String): String = {
     s.map(_ match { 
@@ -79,6 +80,15 @@ object GraphvizExporter {
         }).mkString;
   }
 
+  sealed trait NodeId
+  case class SingleNodeId(id: String = UUID.randomUUID().toString()) extends NodeId {
+    override def toString() = "\"%s\"".format(id)
+  }
+  case class MultiNodeId(ids: List[String] = List()) extends NodeId {
+    override def toString() = ids.foldLeft("")((acc,id) => if (acc == "") "\"%s\"".format(id) else acc + (":\"%s\"".format(id)))
+  }
+
+
   abstract class Shape() {
     override def toString() : String = {
       var n = this 
@@ -92,7 +102,7 @@ object GraphvizExporter {
   case class Diamond() extends Shape
   case class Square() extends Shape
   case class Record() extends Shape
-  case class Node(label: String, id : String = UUID.randomUUID().toString(), shape: Option[Shape] = None, rank: Option[Int] = None)
+  case class Node(label: String, id : NodeId = SingleNodeId(), shape: Option[Shape] = None, rank: Option[Int] = None)
 
   abstract class Line() {
     override def toString(): String = {
@@ -105,7 +115,7 @@ object GraphvizExporter {
   }
   case class Solid() extends Line
   case class Dashed() extends Line
-  case class Edge(from : String, to: String, label: Option[String] = None, style: Option[Line] = None)
+  case class Edge(from : NodeId, to : NodeId, label: Option[String] = None, style: Option[Line] = None)
 
   abstract class Graph() {
     def name() : String
