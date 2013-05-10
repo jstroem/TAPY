@@ -114,12 +114,6 @@ extends ProductLattice(
         boolean != BooleanLattice.bottom || integer != IntegerLattice.bottom || float != FloatLattice.bottom || long != LongLattice.bottom || complex != ComplexLattice.bottom)
   }
 
-  def elementIsOnlyNone(el: ValueLattice.Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
-  }
-
   def elementIsOnlyBoolean(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom &&

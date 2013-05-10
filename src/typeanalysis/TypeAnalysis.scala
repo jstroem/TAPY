@@ -152,7 +152,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val el1 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
     val el2 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
     
-    if (ValueLattice.elementIsNumber(el1) && ValueLattice.elementIsNumber(el2)) {
+    if (ValueLattice.elementIsOnlyNumber(el1) && ValueLattice.elementIsOnlyNumber(el2)) {
       /* Both el1 and el2 are numbers (i.e. either boolean, integer, float, long or complex and NOT e.g. string */
       val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
       
