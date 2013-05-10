@@ -55,7 +55,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode => acc.insert(stmCfg).append(new ClassDeclNode(node.classDef.getInternalName()))
-        case node: FunctionEntryNode => acc.insert(stmCfg).append(new FunctionDeclNode(node.funcDef.getInternalName()))
+        case node: FunctionEntryNode => acc.insert(stmCfg).append(new FunctionDeclNode(node))
         case node: BreakNode => acc.append(stmCfg).setExitNodes(Set()) // !
         case node => acc.append(stmCfg)
       }

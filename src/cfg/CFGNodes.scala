@@ -12,8 +12,8 @@ abstract class Node(id: UUID) {
 }
 
 // Class and function declaration
-case class FunctionDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"FunctionDecl($name)"
+case class FunctionDeclNode(entry: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
 }
 case class ClassDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassDecl($name)"
