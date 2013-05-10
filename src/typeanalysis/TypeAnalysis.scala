@@ -172,7 +172,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         else
           throw new NotImplementedException()
       } catch {
-        case e: ArithmeticException => // TODO: Division by zero
+        case e: ArithmeticException => throw new NotImplementedException() // TODO: Division by zero
       }
     } else if (ValueLattice.elementIsOnlyString(el1) && ValueLattice.elementIsOnlyString(el2)) {
       value = StringLattice.binaryOperator(ValueLattice.getString(el1), ValueLattice.getString(el2), node.op)
@@ -187,6 +187,34 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleUnOpNode(node: UnOpNode, solution: Elt): Elt = {
-    solution
+    val el1 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
+
+    var value: ValueLattice.Elt = null
+
+    try {
+      if (ValueLattice.elementIsOnlyBoolean(el1))
+        value = BooleanLattice.unaryOperator(ValueLattice.getBoolean(el1), node.op)
+      else if (ValueLattice.elementIsOnlyInteger(el1))
+        value = IntegerLattice.unaryOperator(ValueLattice.getInteger(el1), node.op)
+      else if (ValueLattice.elementIsOnlyLong(el1))
+        value = LongLattice.unaryOperator(ValueLattice.getLong(el1), node.op)
+      else if (ValueLattice.elementIsOnlyFloat(el1))
+        value = FloatLattice.unaryOperator(ValueLattice.getFloat(el1), node.op)
+      else if (ValueLattice.elementIsOnlyString(el1))
+        value = StringLattice.unaryOperator(ValueLattice.getString(el1), node.op)
+      else if (ValueLattice.elementIsOnlyComplex(el1))
+        value = ComplexLattice.unaryOperator(ValueLattice.getComplex(el1), node.op)
+      else if (ValueLattice.elementIsOnlyNone(el1))
+        value = NoneLattice.unaryOperator(ValueLattice.getNone(el1), node.op)
+      else
+        throw new NotImplementedException()
+    } catch {
+      case e: ArithmeticException => throw new NotImplementedException() //TODO: different errors can happen
+    }
+
+    if (value != null)
+      AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+    else
+      solution
   }
 }

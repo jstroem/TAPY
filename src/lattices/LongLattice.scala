@@ -3,7 +3,9 @@ package tapy.lattices
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.unaryopType
 import java.math.BigInteger
+import tapy.exceptions._
 import tapy.dfa._
 
 sealed trait LongElt
@@ -64,6 +66,21 @@ object LongLattice extends Lattice[LongElt] {
       case _ => BooleanLattice.top
     }
     case _ => BooleanLattice.top
+  }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (Concrete(l)) => op match {
+      case unaryopType.Invert => ValueLattice.setLong(ValueLattice.bottom, l.not())
+      case unaryopType.Not => if (l.compareTo(new BigInteger("0"))==0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.UAdd => ValueLattice.setLong(ValueLattice.bottom, l)
+      case unaryopType.USub => ValueLattice.setLong(ValueLattice.bottom, l.negate())
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setLong(ValueLattice.bottom, LongLattice.top)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
   }
   
   def binaryOperator(el1: LongLattice.Elt, el2: LongLattice.Elt, op: operatorType): ValueLattice.Elt = {

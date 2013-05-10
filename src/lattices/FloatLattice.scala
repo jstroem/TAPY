@@ -2,9 +2,11 @@ package tapy.lattices
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.unaryopType
 import org.python.antlr.ast.cmpopType
 import java.lang.Double
 import tapy.dfa._
+import tapy.exceptions._
 
 sealed trait FloatElt
 
@@ -17,19 +19,6 @@ object FloatLattice extends Lattice[FloatElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
-
-  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
-    case (Concrete(s1), Concrete(s2)) => op match {
-      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
-      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
-      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
-      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
-      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
-      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
-      case _ => BooleanLattice.top
-    }
-    case _ => BooleanLattice.top
-  }
   
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
@@ -66,8 +55,36 @@ object FloatLattice extends Lattice[FloatElt] {
   }
   
   /* Element utility functions */
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
+      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
+      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
+      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
+      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
+      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
+      case _ => BooleanLattice.top
+    }
+    case _ => BooleanLattice.top
+  }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (Concrete(f)) => op match {
+      case unaryopType.Invert => throw new UnaryException("Float elements cannot do unaryop.Invert", op)
+      case unaryopType.Not => if (f == 0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.UAdd => ValueLattice.setFloat(ValueLattice.bottom, f)
+      case unaryopType.USub => ValueLattice.setFloat(ValueLattice.bottom, -f)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Invert => throw new UnaryException("Float elements cannot do unaryop.Invert", op)
+      case unaryopType.UAdd | unaryopType.USub => ValueLattice.setFloat(ValueLattice.bottom, top)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+  }
   
-  def binaryOperator(el1: FloatLattice.Elt, el2: FloatLattice.Elt, op: operatorType): ValueLattice.Elt = {
+  def binaryOperator(el1: Elt, el2: Elt, op: operatorType): ValueLattice.Elt = {
     (el1, el2) match {
       case (Concrete(f1), Concrete(f2)) =>
         op match {
@@ -91,7 +108,7 @@ object FloatLattice extends Lattice[FloatElt] {
     }
   }
   
-  def elementToComplex(el: FloatLattice.Elt): ComplexLattice.Elt = el match {
+  def elementToComplex(el: Elt): ComplexLattice.Elt = el match {
     case Abstract() => (Abstract(), Concrete(0))
     case Concrete(i) => (Concrete(i), Concrete(0))
     case Bottom() => (Bottom(), Bottom())
