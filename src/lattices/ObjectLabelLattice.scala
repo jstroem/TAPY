@@ -14,8 +14,8 @@ case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extend
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = op match {
-    case cmpopType.Eq => if (e1.size == 1 && e2.size == 1) BooleanLattice.Concrete(e1 == e2) else BooleanLattice.top
-    case cmpopType.NotEq => if (e1.size == 1 && e2.size == 1) BooleanLattice.Concrete(e1 != e2) else BooleanLattice.top
+    case cmpopType.Eq => if (eltSize(e1) == 1 && eltSize(e2) == 1) BooleanLattice.Concrete(e1 == e2) else BooleanLattice.top
+    case cmpopType.NotEq => if (eltSize(e1) == 1 && eltSize(e2) == 1) BooleanLattice.Concrete(e1 != e2) else BooleanLattice.top
     case _ => BooleanLattice.top
   }
 }

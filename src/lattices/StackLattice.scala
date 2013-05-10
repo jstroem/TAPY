@@ -3,7 +3,7 @@ package tapy.lattices
 import tapy.dfa._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
-object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLattice) {
+object StackLattice extends ProductLattice(StackFrameLattice, ExecutionContextLattice) {
 
   /* Getters */
   def getStackFrame(el: StackLattice.Elt) : StackFrameLattice.Elt = {
@@ -13,7 +13,7 @@ object StackLattice extends ProductLattice(StackFrameLattice,ExecutionContextLat
 
   def getExecutionContext(el: StackLattice.Elt) : ExecutionContextLattice.Elt = {
     val (_,executionContext) = el
-    return executionContext
+    executionContext
   }
 
   def getVariableObject(el: StackLattice.Elt): Set[ObjectLabel] =

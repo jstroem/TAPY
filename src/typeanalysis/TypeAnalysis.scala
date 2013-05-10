@@ -210,7 +210,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     // 1) Create function object on heap
     val functionFunctionObjectLabel = FunctionObjectLabel(node.entry)
-    val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
+    val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, ObjectLabelLattice.makeElt(Set(functionFunctionObjectLabel)))
     val functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
     var result = AnalysisLattice.updateHeap(solution, node, functionFunctionObjectLabel, functionFunctionObject)
     
@@ -220,7 +220,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
     
     // 3) Add the object as a property to variable object
-    val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionObjectLabel))
+    val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, ObjectLabelLattice.makeElt(Set(functionObjectLabel)))
     writePropertyOnVariableObjects(node, functionName, functionObjectValue, result)
   }
   
