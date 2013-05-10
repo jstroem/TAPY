@@ -1,6 +1,7 @@
 package tapy.lattices
 
 import org.python.antlr.ast.operatorType
+import org.python.antlr.ast.cmpopType
 import tapy.dfa._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
@@ -15,6 +16,24 @@ object BooleanLattice extends Lattice[BooleanElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
+
+  def make(ob: Option[Boolean]) : Elt = ob match {
+    case None => top
+    case Some(b) => Concrete(b)
+  }
+
+  def compare(op: cmpopType, a: Elt, b: Elt) : Option[Boolean] = (a,b) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => Some(s1 == s2)
+      case cmpopType.NotEq => Some(s1 != s2)
+      case cmpopType.Lt => Some(s1 < s2)
+      case cmpopType.LtE => Some(s1 <= s2)
+      case cmpopType.Gt => Some(s1 > s2)
+      case cmpopType.GtE => Some(s1 >= s2)
+      case _ => None
+    }
+    case _ => None
+  }
   
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
