@@ -138,6 +138,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
+  /**
+    * If left is exactly one number (including boolean) and right is exactly one number, the result is computed.
+    */
   def handleBinOpNode(node: BinOpNode, solution: Elt): Elt = {
     // See:
     // - http://docs.python.org/2/reference/expressions.html#binary-bitwise-operations
@@ -149,11 +152,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val el1 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
     val el2 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
     
-    if (ValueLattice.elementIsNumber(el1) && ValueLattice.elementIsNumber(el2)) {
+    if (ValueLattice.elementIsOnlyNumber(el1) && ValueLattice.elementIsOnlyNumber(el2)) {
+      /* Both el1 and el2 are numbers (i.e. either boolean, integer, float, long or complex and NOT e.g. string */
       val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
-      
-      val (undefined1, none1, boolean1, integer1, float1, long1, complex1, string1, allocationSet1) = ValueLattice.unpackElement(el1Common)
-      val (undefined2, none2, boolean2, integer2, float2, long2, complex2, string2, allocationSet2) = ValueLattice.unpackElement(el2Common)
       
       try {
         if (ValueLattice.elementIsOnlyBoolean(el1Common) && ValueLattice.elementIsOnlyBoolean(el2Common))
@@ -167,10 +168,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         else if (ValueLattice.elementIsOnlyComplex(el1Common) && ValueLattice.elementIsOnlyComplex(el2Common))
           value = ComplexLattice.binaryOperator(ValueLattice.getComplex(el1Common), ValueLattice.getComplex(el2Common), node.op)
         else
-            throw new NotImplementedException()
+          throw new NotImplementedException()
       } catch {
         case e: ArithmeticException => // TODO: Division by zero
       }
+    } else if (ValueLattice.elementIsOnlyString(el1) && ValueLattice.elementIsOnlyString(el2)) {
+      value = StringLattice.binaryOperator(ValueLattice.getString(el1), ValueLattice.getString(el2), node.op)
     } else {
       // TODO: TypeError
     }

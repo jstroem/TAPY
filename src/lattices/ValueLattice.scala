@@ -58,107 +58,107 @@ extends ProductLattice(
     } else
       setBoolean(bottom, BooleanLattice.top)
   }
-
+  
   def elementsToCommonType(el1: ValueLattice.Elt, el2: ValueLattice.Elt): (ValueLattice.Elt, ValueLattice.Elt) = {
-    if (elementIsNumber(el1) && elementIsNumber(el2)) {
-      return (elementIsOnlyBoolean(el1), elementIsOnlyInteger(el1), elementIsOnlyFloat(el1), elementIsOnlyLong(el1), elementIsOnlyComplex(el1), 
-              elementIsOnlyBoolean(el2), elementIsOnlyInteger(el2), elementIsOnlyFloat(el2), elementIsOnlyLong(el2), elementIsOnlyComplex(el2)) match {
-        case (true, false, false, false, false, true, false, false, false, false) => (el1, el2) // boolean, boolean -> boolean, boolean
-        case (true, false, false, false, false, false, true, false, false, false) => (setInteger(bottom, BooleanLattice.elementToInteger(getBoolean(el1))), el2) // boolean, integer -> integer, integer
-        case (true, false, false, false, false, false, false, true, false, false) => (setFloat(bottom, BooleanLattice.elementToFloat(getBoolean(el1))), el2) // boolean, float -> float, float
-        case (true, false, false, false, false, false, false, false, true, false) => (setLong(bottom, BooleanLattice.elementToLong(getBoolean(el1))), el2) // boolean, long -> long, long
-        case (true, false, false, false, false, false, false, false, false, false) => (setComplex(bottom, BooleanLattice.elementToComplex(getBoolean(el1))), el2) // boolean, complex -> complex, complex
-        
-        case (false, true, false, false, false, true, false, false, false, false) => (el1, setInteger(bottom, BooleanLattice.elementToInteger(getBoolean(el2))))// integer, boolean -> integer, integer
-        case (false, true, false, false, false, false, true, false, false, false) => (el1, el2) // integer, integer -> integer, integer
-        case (false, true, false, false, false, false, false, true, false, false) => (setFloat(bottom, IntegerLattice.elementToFloat(getInteger(el1))), el2) // integer, float -> float, float
-        case (false, true, false, false, false, false, false, false, true, false) => (setLong(bottom, IntegerLattice.elementToLong(getInteger(el1))), el2) // integer, long -> long, long
-        case (false, true, false, false, false, false, false, false, false, true) => (setComplex(bottom, IntegerLattice.elementToComplex(getInteger(el1))), el2) // integer, complex -> complex, complex
-        
-        case (false, false, true, false, false, true, false, false, false, false) => (el1, setFloat(bottom, BooleanLattice.elementToFloat(getBoolean(el2)))) // float, boolean -> float, float
-        case (false, false, true, false, false, false, true, false, false, false) => (el1, setFloat(bottom, IntegerLattice.elementToFloat(getInteger(el2)))) // float, integer -> float, float
-        case (false, false, true, false, false, false, false, true, false, false) => (el1, el2) // float, float -> float, float
-        case (false, false, true, false, false, false, false, false, true, false) => (el1, setFloat(bottom, LongLattice.elementToFloat(getLong(el2)))) // float, long -> float, float
-        case (false, false, true, false, false, false, false, false, false, true) => (setComplex(bottom, FloatLattice.elementToComplex(getFloat(el1))), el2) // float, complex -> complex, complex
-        
-        case (false, false, false, true, false, true, false, false, false, false) => (el1, setLong(bottom, BooleanLattice.elementToLong(getBoolean(el2)))) // long, boolean -> long, long
-        case (false, false, false, true, false, false, true, false, false, false) => (el1, setLong(bottom, IntegerLattice.elementToLong(getInteger(el2)))) // long, integer -> long, long
-        case (false, false, false, true, false, false, false, true, false, false) => (setFloat(bottom, LongLattice.elementToFloat(getLong(el1))), el2) // long, float -> float, float
-        case (false, false, false, true, false, false, false, false, true, false) => (el1, el2) // long, long -> long, long
-        case (false, false, false, true, false, false, false, false, false, true) => (setComplex(bottom, LongLattice.elementToComplex(getLong(el1))), el2) // long, complex -> complex, complex
-        
-        case (false, false, false, false, true, true, false, false, false, false) => (el1, setComplex(bottom, BooleanLattice.elementToComplex(getBoolean(el2)))) // complex, boolean -> complex, complex
-        case (false, false, false, false, true, false, true, false, false, false) => (el1, setComplex(bottom, IntegerLattice.elementToComplex(getInteger(el2)))) // complex, integer -> complex, complex
-        case (false, false, false, false, true, false, false, true, false, false) => (el1, setComplex(bottom, FloatLattice.elementToComplex(getFloat(el2)))) // complex, float -> complex, complex
-        case (false, false, false, false, true, false, false, false, true, false) => (el1, setComplex(bottom, LongLattice.elementToComplex(getLong(el2)))) // complex, long -> complex, complex
-        case (false, false, false, false, true, false, false, false, false, true) => (el1, el2) // complex, complex -> complex, complex
-        
-        case _ => throw new IllegalArgumentException()
-      }
+    return (elementIsOnlyBoolean(el1), elementIsOnlyInteger(el1), elementIsOnlyFloat(el1), elementIsOnlyLong(el1), elementIsOnlyComplex(el1), 
+            elementIsOnlyBoolean(el2), elementIsOnlyInteger(el2), elementIsOnlyFloat(el2), elementIsOnlyLong(el2), elementIsOnlyComplex(el2)) match {
+      case (true, false, false, false, false, true, false, false, false, false) => (el1, el2) // boolean, boolean -> boolean, boolean
+      case (true, false, false, false, false, false, true, false, false, false) => (setInteger(bottom, BooleanLattice.elementToInteger(getBoolean(el1))), el2) // boolean, integer -> integer, integer
+      case (true, false, false, false, false, false, false, true, false, false) => (setFloat(bottom, BooleanLattice.elementToFloat(getBoolean(el1))), el2) // boolean, float -> float, float
+      case (true, false, false, false, false, false, false, false, true, false) => (setLong(bottom, BooleanLattice.elementToLong(getBoolean(el1))), el2) // boolean, long -> long, long
+      case (true, false, false, false, false, false, false, false, false, false) => (setComplex(bottom, BooleanLattice.elementToComplex(getBoolean(el1))), el2) // boolean, complex -> complex, complex
+      
+      case (false, true, false, false, false, true, false, false, false, false) => (el1, setInteger(bottom, BooleanLattice.elementToInteger(getBoolean(el2))))// integer, boolean -> integer, integer
+      case (false, true, false, false, false, false, true, false, false, false) => (el1, el2) // integer, integer -> integer, integer
+      case (false, true, false, false, false, false, false, true, false, false) => (setFloat(bottom, IntegerLattice.elementToFloat(getInteger(el1))), el2) // integer, float -> float, float
+      case (false, true, false, false, false, false, false, false, true, false) => (setLong(bottom, IntegerLattice.elementToLong(getInteger(el1))), el2) // integer, long -> long, long
+      case (false, true, false, false, false, false, false, false, false, true) => (setComplex(bottom, IntegerLattice.elementToComplex(getInteger(el1))), el2) // integer, complex -> complex, complex
+      
+      case (false, false, true, false, false, true, false, false, false, false) => (el1, setFloat(bottom, BooleanLattice.elementToFloat(getBoolean(el2)))) // float, boolean -> float, float
+      case (false, false, true, false, false, false, true, false, false, false) => (el1, setFloat(bottom, IntegerLattice.elementToFloat(getInteger(el2)))) // float, integer -> float, float
+      case (false, false, true, false, false, false, false, true, false, false) => (el1, el2) // float, float -> float, float
+      case (false, false, true, false, false, false, false, false, true, false) => (el1, setFloat(bottom, LongLattice.elementToFloat(getLong(el2)))) // float, long -> float, float
+      case (false, false, true, false, false, false, false, false, false, true) => (setComplex(bottom, FloatLattice.elementToComplex(getFloat(el1))), el2) // float, complex -> complex, complex
+      
+      case (false, false, false, true, false, true, false, false, false, false) => (el1, setLong(bottom, BooleanLattice.elementToLong(getBoolean(el2)))) // long, boolean -> long, long
+      case (false, false, false, true, false, false, true, false, false, false) => (el1, setLong(bottom, IntegerLattice.elementToLong(getInteger(el2)))) // long, integer -> long, long
+      case (false, false, false, true, false, false, false, true, false, false) => (setFloat(bottom, LongLattice.elementToFloat(getLong(el1))), el2) // long, float -> float, float
+      case (false, false, false, true, false, false, false, false, true, false) => (el1, el2) // long, long -> long, long
+      case (false, false, false, true, false, false, false, false, false, true) => (setComplex(bottom, LongLattice.elementToComplex(getLong(el1))), el2) // long, complex -> complex, complex
+      
+      case (false, false, false, false, true, true, false, false, false, false) => (el1, setComplex(bottom, BooleanLattice.elementToComplex(getBoolean(el2)))) // complex, boolean -> complex, complex
+      case (false, false, false, false, true, false, true, false, false, false) => (el1, setComplex(bottom, IntegerLattice.elementToComplex(getInteger(el2)))) // complex, integer -> complex, complex
+      case (false, false, false, false, true, false, false, true, false, false) => (el1, setComplex(bottom, FloatLattice.elementToComplex(getFloat(el2)))) // complex, float -> complex, complex
+      case (false, false, false, false, true, false, false, false, true, false) => (el1, setComplex(bottom, LongLattice.elementToComplex(getLong(el2)))) // complex, long -> complex, complex
+      case (false, false, false, false, true, false, false, false, false, true) => (el1, el2) // complex, complex -> complex, complex
+      
+      case _ => throw new NotImplementedException()
     }
-    throw new NotImplementedException()
   }
 
-  /* Element tests */
-
-  def elementIsNumber(el: ValueLattice.Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return (
-        undefined == UndefinedLattice.bottom &&
-        none == NoneLattice.bottom &&
-        string == StringLattice.bottom &&
-        allocationSet == Set()
-      ) && (
-        boolean != BooleanLattice.bottom ||
-        integer != IntegerLattice.bottom ||
-        float != FloatLattice.bottom ||
-        long != LongLattice.bottom ||
-        complex != ComplexLattice.bottom)
-  }
-
+  /**
+    * Element is only tests
+    */
+  
   def elementIsOnlyNone(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
+  }
+  
+  def elementIsOnlyNumber(el: ValueLattice.Elt): Boolean = {
+    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+    return (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && string == StringLattice.bottom && allocationSet == Set()) && (
+        boolean != BooleanLattice.bottom || integer != IntegerLattice.bottom || float != FloatLattice.bottom || long != LongLattice.bottom || complex != ComplexLattice.bottom)
   }
 
   def elementIsOnlyBoolean(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
   def elementIsOnlyInteger(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer != IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer != IntegerLattice.bottom &&
         float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
   def elementIsOnlyFloat(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float != FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
   def elementIsOnlyLong(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float == FloatLattice.bottom && long != LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
   def elementIsOnlyComplex(el: ValueLattice.Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return ( undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && string == StringLattice.bottom && allocationSet == Set())
   }
 
+  def elementIsOnlyString(el: ValueLattice.Elt): Boolean = {
+    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string != StringLattice.bottom && allocationSet == Set())
+  }
+
+  /**
+    * Element is unique concrete tests
+    */
+  
   def elementIsUniqueConcrete(el: ValueLattice.Elt): Boolean = {
     elementIsUniqueConcreteNumber(el) || elementIsUniqueConcreteString(el) || elementIsUniqueAllocation(el)
   }
 
   def elementIsUniqueConcreteNumber(el: ValueLattice.Elt): Boolean = {
     val (_, _, boolean, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
-    if (elementIsNumber(el))
+    if (elementIsOnlyNumber(el))
       if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) //boolean check
         boolean match {
           case BooleanLattice.Concrete(_) => true
@@ -190,21 +190,8 @@ extends ProductLattice(
       false
   }
 
-  def elementIsString(el: ValueLattice.Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return (undefined == UndefinedLattice.bottom &&
-            none == NoneLattice.bottom &&
-            boolean == BooleanLattice.bottom &&
-            string != StringLattice.bottom &&
-            allocationSet == Set() &&
-            integer == IntegerLattice.bottom &&
-            float == FloatLattice.bottom &&
-            long == LongLattice.bottom &&
-            complex == ComplexLattice.bottom)
-  }
-
   def elementIsUniqueConcreteString(el: ValueLattice.Elt): Boolean = {
-    if (elementIsString(el)){
+    if (elementIsOnlyString(el)){
       getString(el) match {
         case StringLattice.Concrete(_) => true
         case _ => false
@@ -212,32 +199,6 @@ extends ProductLattice(
     } else {
       false
     }
-  }
-
-  def elementIsBoolean(el: ValueLattice.Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return (undefined == UndefinedLattice.bottom &&
-            none == NoneLattice.bottom &&
-            boolean != BooleanLattice.bottom &&
-            string == StringLattice.bottom &&
-            allocationSet == Set() &&
-            integer == IntegerLattice.bottom &&
-            float == FloatLattice.bottom &&
-            long == LongLattice.bottom &&
-            complex == ComplexLattice.bottom)
-  }
-
-  def elementIsNone(el: ValueLattice.Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(el)
-    return (undefined == UndefinedLattice.bottom &&
-            none != NoneLattice.bottom &&
-            boolean == BooleanLattice.bottom &&
-            string == StringLattice.bottom &&
-            allocationSet == Set() &&
-            integer == IntegerLattice.bottom &&
-            float == FloatLattice.bottom &&
-            long == LongLattice.bottom &&
-            complex == ComplexLattice.bottom)
   }
 
   def elementIsUniqueAllocation(el: ValueLattice.Elt): Boolean = {
@@ -253,7 +214,9 @@ extends ProductLattice(
             complex == ComplexLattice.bottom)
   }
 
-  /* Least upper bound elemt */
+  /**
+    * Least upper bound element
+    */
   
   def lubElement(v: ValueLattice.Elt, elt: UndefinedLattice.Elt): ValueLattice.Elt = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(v)
@@ -301,7 +264,9 @@ extends ProductLattice(
     setString(t, StringLattice.leastUpperBound(string, el))
   }
 
-  /* Setters */
+  /**
+    * Setters
+    */
   
   def setUndefined(v: ValueLattice.Elt, undefined: UndefinedLattice.Elt): ValueLattice.Elt = {
     val (undefined, none, boolean, integer, float, long, complex, string, allocationSet) = ValueLattice.unpackElement(v)
