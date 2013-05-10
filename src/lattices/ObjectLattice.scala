@@ -33,9 +33,9 @@ object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.
   }
 }
 
-object ScopeChainLattice extends PowerSubSetLattice[String]()
+object ScopeChainPowerLattice extends PowerSubSetLattice[List[ObjectLabel]]()
 
-object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainLattice) {
+object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainPowerLattice) {
   
   /* Getters */
   
@@ -47,7 +47,7 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainL
     objectProperties
   }
   
-  def getScopeChain(el: ObjectLattice.Elt): ScopeChainLattice.Elt = {
+  def getScopeChain(el: ObjectLattice.Elt): ScopeChainPowerLattice.Elt = {
     val (_, scopeChain) = el
     scopeChain
   }
