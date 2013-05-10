@@ -208,19 +208,32 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleFunctionDeclNode(node: FunctionDeclNode, solution: Elt): Elt = {
     val functionName = node.entry.funcDef.getInternalName()
     
-    // 1) Create function object on heap
+    // Create labels
     val functionFunctionObjectLabel = FunctionObjectLabel(node.entry)
-    val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
-    val functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
-    var result = AnalysisLattice.updateHeap(solution, node, functionFunctionObjectLabel, functionFunctionObject)
-    
-    // 2) Create object on heap that points to the function with __call__
+    val functionScopeObjectLabel = ScopeObjectLabel(functionName)
     val functionObjectLabel = ObjectObjectLabel(functionName)
-    val functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    
+    // Create value lattice elements
+    val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
+    val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionObjectLabel))
+    
+    // Generate scope-object scope chain
+    val functionScopeObjectScopeChain = AnalysisLattice.getExecutionContext(node, solution).foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
+      val (scopeChain, variableObject) = pair
+      acc + (variableObject :: scopeChain)
+    }
+    
+    // Create objects
+    var functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    var functionScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, functionScopeObjectScopeChain)
+    var functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    
+    // Update the lattice
+    var result = AnalysisLattice.updateHeap(solution, node, functionFunctionObjectLabel, functionFunctionObject)
+    result = AnalysisLattice.updateHeap(result, node, functionScopeObjectLabel, functionScopeObject)
     result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
     
-    // 3) Add the object as a property to variable object
-    val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionObjectLabel))
+    // Add the function name to the current object variables, such that it can be referenced
     writePropertyOnVariableObjects(node, functionName, functionObjectValue, result)
   }
   

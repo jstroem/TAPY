@@ -39,21 +39,27 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   
   /* Getters */
   
-  def getObjectProperty(el: ObjectLattice.Elt, property: String): ObjectPropertyLattice.Elt =
+  def getObjectProperty(el: Elt, property: String): ObjectPropertyLattice.Elt =
     ObjectPropertiesLattice.getProperty(getObjectProperties(el), property)
   
-  def getObjectProperties(el: ObjectLattice.Elt): ObjectPropertiesLattice.Elt = {
+  def getObjectProperties(el: Elt): ObjectPropertiesLattice.Elt = {
     val (objectProperties, _) = el
     objectProperties
   }
   
-  def getScopeChain(el: ObjectLattice.Elt): ScopeChainPowerLattice.Elt = {
+  def getScopeChain(el: Elt): ScopeChainPowerLattice.Elt = {
     val (_, scopeChain) = el
     scopeChain
   }
   
+  /* Setters */
+  
+  def setScopeChain(el: Elt, scopeChain: ScopeChainPowerLattice.Elt): Elt = {
+    (getObjectProperties(el), scopeChain)
+  }
+  
   /* Updaters */
   
-  def updatePropertyValue(el: ObjectLattice.Elt, property: String, value: ValueLattice.Elt): ObjectLattice.Elt =
+  def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt =
     (ObjectPropertiesLattice.updatePropertyValue(getObjectProperties(el), property, value), getScopeChain(el))
 }
