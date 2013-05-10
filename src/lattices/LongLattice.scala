@@ -13,9 +13,15 @@ sealed trait LongElt
 object LongLattice extends Lattice[LongElt] {
   type Elt = LongElt
   
-  case class Concrete(l:BigInteger) extends Elt
-  case class Bottom() extends Elt
-  case class Abstract() extends Elt
+  case class Concrete(l:BigInteger) extends Elt {
+    override def toString() = l.toString()
+  }
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class Abstract() extends Elt {
+    override def toString() = "long"
+  }
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()

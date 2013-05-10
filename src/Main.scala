@@ -12,6 +12,7 @@ import tapy.export._
 import tapy.dfa.Worklist
 import tapy.lattices.AnalysisLattice
 import tapy.typeanalysis.TypeAnalysis
+import tapy.lattices.HeapLattice
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -47,6 +48,15 @@ object Main {
       println("Pretty printing analysis result of \"" + file + "\"\n")
       val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin).run()
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
+
+
+      println("\n----------\n")
+      if (cfgMin.exitNodes.size > 0){
+        println("Pretty priting Heap for one Cfg Exit node \""+file+"\"")
+        HeapLattice.exportToFile(AnalysisLattice.getHeap(cfgMin.exitNodes.head, solution), dir + fname)
+      } else {
+        println("No exitNode therefore no printing of heap\n")
+      }
     } catch {
       case e: Exception => e.printStackTrace()
     }

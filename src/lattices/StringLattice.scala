@@ -12,9 +12,15 @@ sealed trait StringElt
 object StringLattice extends Lattice[StringElt] {
   type Elt = StringElt
   
-  case class Bottom() extends Elt
-  case class Concrete(s: String) extends Elt
-  case class Abstract() extends Elt
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class Concrete(s: String) extends Elt {
+    override def toString() = "'%s'".format(s)
+  }
+  case class Abstract() extends Elt {
+    override def toString() = "string"
+  }
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()

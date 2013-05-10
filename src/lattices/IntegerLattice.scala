@@ -15,9 +15,15 @@ sealed trait IntegerElt
 object IntegerLattice extends Lattice[IntegerElt] {
   type Elt = IntegerElt
   
-  case class Concrete(i: Int) extends Elt
-  case class Bottom() extends Elt
-  case class Abstract() extends Elt
+  case class Concrete(i: Int) extends Elt {
+    override def toString() = i.toString()
+  }
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class Abstract() extends Elt {
+    override def toString() = "integer"
+  }
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()

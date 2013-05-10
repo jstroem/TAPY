@@ -13,9 +13,15 @@ sealed trait FloatElt
 object FloatLattice extends Lattice[FloatElt] {
   type Elt = FloatElt
   
-  case class Concrete(l:Double) extends Elt
-  case class Bottom() extends Elt
-  case class Abstract() extends Elt
+  case class Concrete(f:Double) extends Elt {
+    override def toString() = f.toString()
+  }
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class Abstract() extends Elt {
+    override def toString() = "float"
+  }
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()

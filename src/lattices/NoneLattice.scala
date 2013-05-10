@@ -11,8 +11,12 @@ sealed trait NoneElt
 object NoneLattice extends Lattice[NoneElt] {
   type Elt = NoneElt
 
-  case class Bottom() extends Elt
-  case class None() extends Elt
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class None() extends Elt {
+    override def toString() = "None"
+  }
   
   def top: Elt = None()
   def bottom: Elt = Bottom()

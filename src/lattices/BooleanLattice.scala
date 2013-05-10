@@ -12,9 +12,15 @@ sealed trait BooleanElt
 object BooleanLattice extends Lattice[BooleanElt] {
   type Elt = BooleanElt
   
-  case class Concrete(b: Boolean) extends Elt
-  case class Bottom() extends Elt
-  case class Abstract() extends Elt
+  case class Concrete(b: Boolean) extends Elt {
+    override def toString() = b.toString()
+  }
+  case class Bottom() extends Elt {
+    override def toString() = "?"
+  }
+  case class Abstract() extends Elt {
+    override def toString() = "boolean"
+  }
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()

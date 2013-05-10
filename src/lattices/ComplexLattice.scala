@@ -10,6 +10,12 @@ import tapy.exceptions._
 object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
   
   /* Element utility functions */
+  def toString(el : Elt) : String = el match {
+    case (FloatLattice.Concrete(real),FloatLattice.Concrete(imag)) => s"${real.toString()} + ${imag.toString()}j"
+    case (FloatLattice.Bottom(),FloatLattice.Bottom()) => "?"
+    case _ => "complex"
+  }
+
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = {
     val ((f1l,f1r),(f2l,f2r)) = (e1,e2)
     val cmpl = FloatLattice.elementCompare(op, f1l, f2l)
