@@ -9,7 +9,7 @@ import tapy.dfa._
 abstract class ObjectLabel(id: UUID)
 
 case class ClassObjectLabel(function: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
-case class FunctionObjectLabel(function: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
+case class FunctionObjectLabel(function: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 case class ScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 

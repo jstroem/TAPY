@@ -57,6 +57,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     * Utility functions
     */
   
+  def findPropertyInScope(node: Node, property: String, solution: Elt): ValueLattice.Elt = {
+    
+  }
+  
   def writePropertyOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt = {
     val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
     variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
@@ -71,7 +75,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     /* Create the main module object */
     
-    val moduleObjectLabel = ObjectObjectLabel("__main__")
+    val moduleObjectLabel = ScopeObjectLabel("__main__")
     AnalysisLattice.setExecutionContext(
       AnalysisLattice.updateHeap(solution, node, moduleObjectLabel, ObjectLattice.bottom),
       node,
@@ -183,7 +187,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         else
           throw new NotImplementedException()
       } catch {
-        case e: ArithmeticException => throw new NotImplementedException() // TODO: Division by zero
+        case e: ArithmeticException => // TODO: Division by zero
       }
     } else if (ValueLattice.elementIsOnlyString(el1) && ValueLattice.elementIsOnlyString(el2)) {
       value = StringLattice.binaryOperator(ValueLattice.getString(el1), ValueLattice.getString(el2), node.op)
@@ -198,35 +202,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleUnOpNode(node: UnOpNode, solution: Elt): Elt = {
-    val el1 = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
-
-    var value: ValueLattice.Elt = null
-
-    try {
-      if (ValueLattice.elementIsOnlyBoolean(el1))
-        value = BooleanLattice.unaryOperator(ValueLattice.getBoolean(el1), node.op)
-      else if (ValueLattice.elementIsOnlyInteger(el1))
-        value = IntegerLattice.unaryOperator(ValueLattice.getInteger(el1), node.op)
-      else if (ValueLattice.elementIsOnlyLong(el1))
-        value = LongLattice.unaryOperator(ValueLattice.getLong(el1), node.op)
-      else if (ValueLattice.elementIsOnlyFloat(el1))
-        value = FloatLattice.unaryOperator(ValueLattice.getFloat(el1), node.op)
-      else if (ValueLattice.elementIsOnlyString(el1))
-        value = StringLattice.unaryOperator(ValueLattice.getString(el1), node.op)
-      else if (ValueLattice.elementIsOnlyComplex(el1))
-        value = ComplexLattice.unaryOperator(ValueLattice.getComplex(el1), node.op)
-      else if (ValueLattice.elementIsOnlyNone(el1))
-        value = NoneLattice.unaryOperator(ValueLattice.getNone(el1), node.op)
-      else
-        throw new NotImplementedException()
-    } catch {
-      case e: ArithmeticException => throw new NotImplementedException() //TODO: different errors can happen
-    }
-
-    if (value != null)
-      AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
-    else
-      solution
+    solution
   }
   
   /**
@@ -237,8 +213,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val functionName = node.entry.funcDef.getInternalName()
     
     // Create labels
-    val functionFunctionObjectLabel = FunctionObjectLabel(node.entry)
     val functionScopeObjectLabel = ScopeObjectLabel(functionName)
+    val functionFunctionObjectLabel = FunctionObjectLabel(node.entry, functionScopeObjectLabel)
     val functionObjectLabel = ObjectObjectLabel(functionName)
     
     // Create value lattice elements
@@ -252,13 +228,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
     
     // Create objects
-    var functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
     var functionScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, functionScopeObjectScopeChain)
+    var functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
     var functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
     
     // Update the lattice
-    var result = AnalysisLattice.updateHeap(solution, node, functionFunctionObjectLabel, functionFunctionObject)
-    result = AnalysisLattice.updateHeap(result, node, functionScopeObjectLabel, functionScopeObject)
+    var result = AnalysisLattice.updateHeap(solution, node, functionScopeObjectLabel, functionScopeObject)
+    result = AnalysisLattice.updateHeap(result, node, functionFunctionObjectLabel, functionFunctionObject)
     result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
     
     // Add the function name to the current object variables, such that it can be referenced
@@ -270,6 +246,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
+    
+    
+    
+    
     solution
   }
 }
