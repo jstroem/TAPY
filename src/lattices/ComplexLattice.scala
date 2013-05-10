@@ -3,7 +3,9 @@ package tapy.lattices
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.unaryopType
 import tapy.dfa._
+import tapy.exceptions._
 
 object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
   
@@ -19,6 +21,22 @@ object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
         case _ => BooleanLattice.top
       }
       case _ => BooleanLattice.top
+    }
+  }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (FloatLattice.Concrete(left),FloatLattice.Concrete(right)) => op match {
+      case unaryopType.Invert => throw new UnaryException("Complex elements cannot do unaryop.Invert", op)
+      case unaryopType.Not => if (left == 0 && right == 0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.UAdd => ValueLattice.setComplex(ValueLattice.bottom, el)
+      case unaryopType.USub => ValueLattice.setComplex(ValueLattice.bottom, (FloatLattice.Concrete(-left),FloatLattice.Concrete(-right)))
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Invert => throw new UnaryException("Complex elements cannot do unaryop.Invert", op)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.USub | unaryopType.UAdd => ValueLattice.setComplex(ValueLattice.bottom, ComplexLattice.top)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
   

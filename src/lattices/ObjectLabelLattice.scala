@@ -11,6 +11,7 @@ abstract class ObjectLabel(id: UUID)
 case class ClassObjectLabel(function: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 case class FunctionObjectLabel(function: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
+case class ScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = op match {

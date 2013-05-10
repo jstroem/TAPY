@@ -2,7 +2,9 @@ package tapy.lattices
 
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.unaryopType
 import tapy.dfa._
+import tapy.exceptions._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 sealed trait BooleanElt
@@ -60,7 +62,7 @@ object BooleanLattice extends Lattice[BooleanElt] {
   
   /* Element utility functions */
 
-  def elementCompare(op: cmpopType, a: Elt, b: Elt) : BooleanLattice.Elt = (a,b) match {
+  def elementCompare(op: cmpopType, a: Elt, b: Elt) : Elt = (a,b) match {
     case (Concrete(s1), Concrete(s2)) => op match {
       case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
       case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
@@ -72,8 +74,23 @@ object BooleanLattice extends Lattice[BooleanElt] {
     }
     case _ => BooleanLattice.top
   }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (Concrete(b)) => op match {
+      case unaryopType.Invert => if (b) ValueLattice.setInteger(ValueLattice.bottom, -2) else ValueLattice.setInteger(ValueLattice.bottom, -1)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, !b)
+      case unaryopType.UAdd => if (b) ValueLattice.setInteger(ValueLattice.bottom, 1) else ValueLattice.setInteger(ValueLattice.bottom, 0)
+      case unaryopType.USub => if (b) ValueLattice.setInteger(ValueLattice.bottom, -1) else ValueLattice.setInteger(ValueLattice.bottom, 0)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => op match {
+      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setInteger(ValueLattice.bottom, IntegerLattice.top)
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+  }
   
-  def binaryOperator(el1: BooleanLattice.Elt, el2: BooleanLattice.Elt, op: operatorType): ValueLattice.Elt = {
+  def binaryOperator(el1: Elt, el2: Elt, op: operatorType): ValueLattice.Elt = {
     (el1, el2) match {
       case (Concrete(b1), Concrete(b2)) =>
         val i1 = if (b1) 1 else 0
@@ -100,28 +117,28 @@ object BooleanLattice extends Lattice[BooleanElt] {
     }
   }
   
-  def elementToInteger(el: BooleanLattice.Elt): IntegerLattice.Elt = el match {
+  def elementToInteger(el: Elt): IntegerLattice.Elt = el match {
     case Abstract() => IntegerLattice.Abstract()
     case Concrete(b) => IntegerLattice.Concrete(if (b) 1 else 0)
     case Bottom() => IntegerLattice.Bottom()
     case _ => throw new IllegalArgumentException()
   }
   
-  def elementToFloat(el: BooleanLattice.Elt): FloatLattice.Elt = el match {
+  def elementToFloat(el: Elt): FloatLattice.Elt = el match {
     case Abstract() => FloatLattice.Abstract()
     case Concrete(b) => FloatLattice.Concrete(if (b) 1 else 0)
     case Bottom() => FloatLattice.Bottom()
     case _ => throw new IllegalArgumentException()
   }
   
-  def elementToLong(el: BooleanLattice.Elt): LongLattice.Elt = el match {
+  def elementToLong(el: Elt): LongLattice.Elt = el match {
     case Abstract() => LongLattice.Abstract()
     case Concrete(b) => LongLattice.Concrete(java.math.BigInteger.valueOf(if (b) 1 else 0))
     case Bottom() => LongLattice.Bottom()
     case _ => throw new IllegalArgumentException()
   }
   
-  def elementToComplex(el: BooleanLattice.Elt): ComplexLattice.Elt = el match {
+  def elementToComplex(el: Elt): ComplexLattice.Elt = el match {
     case Abstract() => (FloatLattice.Abstract(), FloatLattice.Concrete(0))
     case Concrete(b) => (FloatLattice.Concrete(if (b) 1 else 0), FloatLattice.Concrete(0))
     case Bottom() => (FloatLattice.Bottom(), FloatLattice.Bottom())

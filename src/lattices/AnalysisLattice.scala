@@ -70,7 +70,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   
   def packElement(node: Node, el: AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt, heap: HeapLattice.Elt, stack: StackFrameLattice.Elt, executionContext: ExecutionContextLattice.Elt): Elt = {
     var (programState,_) = el
-    programState = ProgramStateLattice.update(programState, node, (heap,(stack,executionContext)))
+    programState = ProgramStateLattice.update(programState, node, (heap, (stack,executionContext)))
     return (programState, callGraph)
   }
 

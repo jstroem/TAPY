@@ -1,7 +1,10 @@
 package tapy.lattices
 
 import tapy.dfa._
+import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.unaryopType
+
 
 sealed trait NoneElt
 
@@ -25,6 +28,15 @@ object NoneLattice extends Lattice[NoneElt] {
       case _ => BooleanLattice.top
     }
     case _ => BooleanLattice.top
+  }
+
+  def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
+    case (None()) => op match {
+      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, true)
+      case unaryopType.UAdd | unaryopType.USub | unaryopType.Invert => throw new UnaryException("NoneType elements cannot do unaryop.Invert", op)
+      case _ => throw new InternalErrorException("unaryopType was undefined")
+    }
+    case _ => throw new InternalErrorException("None was bottom unaryoperator should not be possible")
   }
   
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
