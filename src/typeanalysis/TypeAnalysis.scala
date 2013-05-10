@@ -53,6 +53,19 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.setState(solution, node, state)
   }
 
+  /**
+    * Utility functions
+    */
+  
+  def writePropertyOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt = {
+    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
+    variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
+      val currentVariableObject = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
+      val newVariableObject = ObjectLattice.updatePropertyValue(currentVariableObject, property, value)
+      AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
+    }
+  }
+  
   /* Misc */
   
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
@@ -120,13 +133,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
     val value: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.valueReg)
-    
-    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
-    variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
-      val currentVariableObject = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val newVariableObject = ObjectLattice.updatePropertyValue(currentVariableObject, node.variable, value)
-      AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
-    }
+    writePropertyOnVariableObjects(node, node.variable, value, solution)
   }
   
   /* Operators */
@@ -199,18 +206,22 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     */
   
   def handleFunctionDeclNode(node: FunctionDeclNode, solution: Elt): Elt = {
+    val functionName = node.entry.funcDef.getInternalName()
+    
     // 1) Create function object on heap
-    val functionObjectLabel = FunctionObjectLabel(node.entry)
-    val functionObject = ObjectLattice.bottom
-    AnalysisLattice.updateHeap(solution, node, functionObjectLabel, ObjectLattice.bottom)
+    val functionFunctionObjectLabel = FunctionObjectLabel(node.entry)
+    val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
+    val functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    var result = AnalysisLattice.updateHeap(solution, node, functionFunctionObjectLabel, functionFunctionObject)
     
     // 2) Create object on heap that points to the function with __call__
-    
+    val functionObjectLabel = ObjectObjectLabel(functionName)
+    val functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
     
     // 3) Add the object as a property to variable object
-    
-    
-    solution
+    val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionObjectLabel))
+    writePropertyOnVariableObjects(node, functionName, functionObjectValue, result)
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
