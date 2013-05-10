@@ -8,9 +8,11 @@ import tapy.dfa._
 
 abstract class ObjectLabel(id: UUID)
 
+abstract class CallableObjectLabel(id: UUID) extends ObjectLabel(id)
+
 case class ClassObjectLabel(function: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
-case class FunctionObjectLabel(function: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
-case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
+case class FunctionObjectLabel(function: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
+case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 case class ScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id)
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {

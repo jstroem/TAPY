@@ -262,7 +262,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val stackFrame = AnalysisLattice.getStackFrame(node, solution)
     val function = StackFrameLattice.getRegisterValue(stackFrame, node.functionReg)
     
-    if (ValueLattice.elementIsOnlyObjectLabels[FunctionObjectLabel](function))
+    if (ValueLattice.elementIsOnlyObjectLabels[CallableObjectLabel](function))
       return solution
     else
       // TypeError
