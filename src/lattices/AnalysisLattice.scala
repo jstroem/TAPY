@@ -10,7 +10,7 @@ object ProgramStateLattice extends MapLattice[Node, StateLattice.Elt](StateLatti
   def getState(el: ProgramStateLattice.Elt, node: Node): StateLattice.Elt =
     get(el, node)
   
-  def getVariableObjects(el: ProgramStateLattice.Elt, node: Node): Set[String] =
+  def getVariableObjects(el: ProgramStateLattice.Elt, node: Node): Set[ObjectLabel] =
     StateLattice.getVariableObjects(getState(el, node))
     
   /* Setters */
@@ -42,7 +42,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def getHeap(node: Node, el: AnalysisLattice.Elt): HeapLattice.Elt = StateLattice.getHeap(getState(node, el))
   def getStackFrame(node: Node, el: AnalysisLattice.Elt): StackFrameLattice.Elt = StackLattice.getStackFrame(getStack(node,el))
   def getExecutionContext(node: Node, el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(node,el))
-  def getVariableObjects(el: AnalysisLattice.Elt, node: Node): Set[String] = ProgramStateLattice.getVariableObjects(getProgramState(el), node)
+  def getVariableObjects(el: AnalysisLattice.Elt, node: Node): Set[ObjectLabel] = ProgramStateLattice.getVariableObjects(getProgramState(el), node)
   
   /* Setters */
   
@@ -52,7 +52,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def setCallGraph(el: AnalysisLattice.Elt, node: Node, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
     (getProgramState(el), callGraph)
   
-  def setVariableObject(el: AnalysisLattice.Elt, node: Node, label: String): AnalysisLattice.Elt =
+  def setVariableObject(el: AnalysisLattice.Elt, node: Node, label: ObjectLabel): AnalysisLattice.Elt =
     setState(el, node, StateLattice.setVariableObject(getState(node, el), label))
   
   def setExecutionContext(el: AnalysisLattice.Elt, node: Node, executionContext: ExecutionContextLattice.Elt): AnalysisLattice.Elt =
@@ -63,7 +63,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def updateStackFrame(el: AnalysisLattice.Elt, node: Node, register: Int, value: ValueLattice.Elt): AnalysisLattice.Elt =
     setState(el, node, StateLattice.updateStackFrame(getState(node, el), register, value))
   
-  def updateHeap(el: AnalysisLattice.Elt, node: Node, label: String, obj: ObjectLattice.Elt): AnalysisLattice.Elt =
+  def updateHeap(el: AnalysisLattice.Elt, node: Node, label: ObjectLabel, obj: ObjectLattice.Elt): AnalysisLattice.Elt =
     setState(el, node, StateLattice.updateHeap(getState(node, el), label, obj))
 
   /* Pack and unpack */

@@ -53,10 +53,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     /* Create the main module object */
+    
+    val moduleObjectLabel = ObjectObjectLabel("__main__")
     AnalysisLattice.setExecutionContext(
-      AnalysisLattice.updateHeap(solution, node, "__main__", ObjectLattice.bottom),
+      AnalysisLattice.updateHeap(solution, node, moduleObjectLabel, ObjectLattice.bottom),
       node,
-      ExecutionContextLattice.makeElement(List(), "__main__"))
+      ExecutionContextLattice.makeElement(List(), moduleObjectLabel))
   }
 
   /*

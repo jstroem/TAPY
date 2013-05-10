@@ -4,14 +4,6 @@ import tapy.dfa._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.cmpopType
 
-object AllocationSiteLattice extends PowerSubSetLattice[String] {
-  def compare(op: cmpopType, e1: AllocationSiteLattice.Elt, e2: AllocationSiteLattice.Elt) : Option[Boolean] = op match {
-    case cmpopType.Eq => if (e1.size == 1 && e2.size == 1) Some(e1 == e2) else None
-    case cmpopType.NotEq => if (e1.size == 1 && e2.size == 1) Some(e1 != e2) else None
-    case _ => None
-  }
-}
-
 object ValueLattice
 extends ProductLattice(
   UndefinedLattice, 
@@ -29,14 +21,14 @@ extends ProductLattice(
               ComplexLattice, 
               new ProductLattice(
                 StringLattice, 
-                AllocationSiteLattice)))))))) {
+                ObjectLabelLattice)))))))) {
 
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
   def compare(op: cmpopType, left: Elt, right: Elt) : Elt = {
     if (elementIsUniqueConcreteString(left) && elementIsUniqueConcreteString(right))
       setBoolean(bottom, BooleanLattice.make(StringLattice.compare(op, getString(left), getString(right))))
     else if (elementIsUniqueAllocation(left) && elementIsUniqueAllocation(right))
-      setBoolean(bottom, BooleanLattice.make(AllocationSiteLattice.compare(op, getAllocationSet(left), getAllocationSet(right))))
+      setBoolean(bottom, BooleanLattice.make(ObjectLabelLattice.compare(op, getAllocationSet(left), getAllocationSet(right))))
     else if (elementIsOnlyNone(left) && elementIsOnlyNone(right))
       setBoolean(bottom, BooleanLattice.make(NoneLattice.compare(op, getNone(left), getNone(right))))
     else if (elementIsUniqueConcreteNumber(left) && elementIsUniqueConcreteNumber(right)) {
@@ -316,7 +308,7 @@ extends ProductLattice(
     ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSet)
   }
   
-  def setAllocationSet(v: ValueLattice.Elt, allocationSite: AllocationSiteLattice.Elt): ValueLattice.Elt = {
+  def setAllocationSet(v: ValueLattice.Elt, allocationSite: ObjectLabelLattice.Elt): ValueLattice.Elt = {
     val (undefined, none, boolean, integer, float, long, complex, string, _) = ValueLattice.unpackElement(v)
     ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, allocationSite)
   }
@@ -357,7 +349,7 @@ extends ProductLattice(
     string
   }
   
-  def getAllocationSet(v: ValueLattice.Elt): AllocationSiteLattice.Elt = {
+  def getAllocationSet(v: ValueLattice.Elt): ObjectLabelLattice.Elt = {
     val (_, _, _, _, _, _, _, _, allocationSet) = ValueLattice.unpackElement(v)
     allocationSet
   }
@@ -372,11 +364,11 @@ extends ProductLattice(
                   long: LongLattice.Elt = LongLattice.bottom, 
                   complex: ComplexLattice.Elt = ComplexLattice.bottom, 
                   string: StringLattice.Elt = StringLattice.bottom, 
-                  allocationSet: AllocationSiteLattice.Elt = AllocationSiteLattice.bottom): ValueLattice.Elt = {
+                  allocationSet: ObjectLabelLattice.Elt = ObjectLabelLattice.bottom): ValueLattice.Elt = {
     return (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet))))))))
   }
 
-  def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, AllocationSiteLattice.Elt) = {
+  def unpackElement(el: ValueLattice.Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, ObjectLabelLattice.Elt) = {
     val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, allocationSet)))))))) = el
     return (undefined, none, boolean, integer, float, long, complex, string, allocationSet)
   }

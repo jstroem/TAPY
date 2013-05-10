@@ -1,0 +1,11 @@
+package tapy.lattices
+
+import tapy.dfa._
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
+
+object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice) {
+  /* Getters */
+  
+  def getRegisterValue(el: StackFrameLattice.Elt, register: Int): ValueLattice.Elt =
+    el.getOrElse(register, ValueLattice.bottom)
+}
