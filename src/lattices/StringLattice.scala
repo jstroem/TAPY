@@ -2,6 +2,8 @@ package tapy.lattices
 
 import tapy.dfa._
 import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.operatorType
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 sealed trait StringElt
 
@@ -64,5 +66,30 @@ object StringLattice extends Lattice[StringElt] {
     case Abstract() => s"$indent[Any String (Top)]\n"
     case _ => throw new IllegalArgumentException("StringLattice pattern match error")
   }
-
+  
+  /* Element utility functions */
+  
+  def binaryOperator(el1: StringLattice.Elt, el2: StringLattice.Elt, op: operatorType): ValueLattice.Elt = {
+    (el1, el2) match {
+      case (Concrete(s1), Concrete(s2)) =>
+        op match {
+          case operatorType.UNDEFINED => throw new NotImplementedException()
+          case operatorType.Add => ValueLattice.setString(ValueLattice.bottom, s1 + s2)
+          case operatorType.Sub => throw new NotImplementedException()
+          case operatorType.Mult => throw new NotImplementedException()
+          case operatorType.Div => throw new NotImplementedException()
+          case operatorType.Mod => throw new NotImplementedException()
+          case operatorType.Pow => throw new NotImplementedException()
+          case operatorType.LShift => throw new NotImplementedException()
+          case operatorType.RShift => throw new NotImplementedException()
+          case operatorType.BitOr => throw new NotImplementedException()
+          case operatorType.BitXor => throw new NotImplementedException()
+          case operatorType.BitAnd => throw new NotImplementedException()
+          case operatorType.FloorDiv => throw new NotImplementedException()
+        }
+        
+      case _ =>
+        throw new NotImplementedException()
+    }
+  }
 }

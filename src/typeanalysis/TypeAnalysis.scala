@@ -172,6 +172,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       } catch {
         case e: ArithmeticException => // TODO: Division by zero
       }
+    } else if (ValueLattice.elementIsOnlyString(el1) && ValueLattice.elementIsOnlyString(el2)) {
+      value = StringLattice.binaryOperator(ValueLattice.getString(el1), ValueLattice.getString(el2), node.op)
     } else {
       // TODO: TypeError
     }
