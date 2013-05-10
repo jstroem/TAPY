@@ -27,9 +27,9 @@ object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.
   /* Updaters */
   
   def updatePropertyValue(el: ObjectPropertiesLattice.Elt, property: String, value: ValueLattice.Elt): ObjectPropertiesLattice.Elt = {
-    val oldValue = el.getOrElse(property, ObjectPropertyLattice.bottom)
+    val oldValue = getProperty(el, property)
     val newValue = ObjectPropertyLattice.updatePropertyValue(oldValue, property, value)
-    el + (property -> newValue)
+    update(el, property, newValue)
   }
 }
 

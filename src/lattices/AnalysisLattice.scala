@@ -16,7 +16,7 @@ object ProgramStateLattice extends MapLattice[Node, StateLattice.Elt](StateLatti
   /* Setters */
   
   def setExecutionContext(el: ProgramStateLattice.Elt, node: Node, executionContext: ExecutionContextLattice.Elt): ProgramStateLattice.Elt =
-    el + (node -> StateLattice.setExecutionContext(getState(el, node), executionContext))
+    update(el, node, StateLattice.setExecutionContext(getState(el, node), executionContext))
 }
 
 object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node)] // Any: Context sensitivity
@@ -47,7 +47,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   /* Setters */
   
   def setState(el: AnalysisLattice.Elt, node: Node, state: StateLattice.Elt): AnalysisLattice.Elt =
-    (getProgramState(el) + (node -> state), getCallGraph(el))
+    (ProgramStateLattice.update(getProgramState(el), node, state), getCallGraph(el))
   
   def setCallGraph(el: AnalysisLattice.Elt, node: Node, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
     (getProgramState(el), callGraph)
@@ -70,7 +70,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   
   def packElement(node: Node, el: AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt, heap: HeapLattice.Elt, stack: StackFrameLattice.Elt, executionContext: ExecutionContextLattice.Elt): Elt = {
     var (programState,_) = el
-    programState = programState + (node -> (heap,(stack,executionContext)))
+    programState = ProgramStateLattice.update(programState, node, (heap,(stack,executionContext)))
     return (programState, callGraph)
   }
 
