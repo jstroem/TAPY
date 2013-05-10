@@ -5,15 +5,13 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 object ExecutionContextLattice extends PowerSubSetLattice[(List[ObjectLabel], ObjectLabel)] {
   
-  /* Constructors */
-  
-  def makeElement(scopeChain: List[ObjectLabel], variableObject: ObjectLabel): ExecutionContextLattice.Elt =
-    Set((scopeChain, variableObject))
-  
   /* Getters */
   
   def getVariableObject(el: ExecutionContextLattice.Elt): Set[ObjectLabel] =
     el.map({ case (_, variableObject) => variableObject })
+  
+  def getVariableObjectsOnScopeChains(el: ExecutionContextLattice.Elt): Set[List[ObjectLabel]] =
+    el.map({ case (scopeChain, variableObject) => variableObject :: scopeChain })
     
   /* Setters */
   

@@ -58,7 +58,18 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     */
   
   def findPropertyInScope(node: Node, property: String, solution: Elt): ValueLattice.Elt = {
+    val executionContext = AnalysisLattice.getExecutionContext(node, solution)
+    val chains = ExecutionContextLattice.getVariableObjectsOnScopeChains(executionContext)
     
+    chains.foldLeft(ValueLattice.bottom) {(acc, chain) =>
+      val value = chain.foldLeft(ValueLattice.bottom) {(acc, objectLabel) =>
+        if (acc != ValueLattice.bottom)
+          acc
+        else
+          ObjectPropertyLattice.getValue(ObjectLattice.getObjectProperty(AnalysisLattice.getHeapObject(node, objectLabel, solution), property))
+      }
+      ValueLattice.leastUpperBound(value, acc)
+    }
   }
   
   def writePropertyOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt = {
@@ -79,7 +90,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.setExecutionContext(
       AnalysisLattice.updateHeap(solution, node, moduleObjectLabel, ObjectLattice.bottom),
       node,
-      ExecutionContextLattice.makeElement(List(), moduleObjectLabel))
+      Set((List(), moduleObjectLabel)))
   }
 
   /*
@@ -125,6 +136,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
+    // Todo use lookup
     val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
     val value = variableObjects.foldLeft(ValueLattice.bottom) {(acc, variableObjectLabel) =>
       val variableObject = HeapLattice.getHeapObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
@@ -220,6 +232,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     // Create value lattice elements
     val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
     val functionObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionObjectLabel))
+
     
     // Generate scope-object scope chain
     val functionScopeObjectScopeChain = AnalysisLattice.getExecutionContext(node, solution).foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
@@ -236,7 +249,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     var result = AnalysisLattice.updateHeap(solution, node, functionScopeObjectLabel, functionScopeObject)
     result = AnalysisLattice.updateHeap(result, node, functionFunctionObjectLabel, functionFunctionObject)
     result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
-    
+
     // Add the function name to the current object variables, such that it can be referenced
     writePropertyOnVariableObjects(node, functionName, functionObjectValue, result)
   }
@@ -246,10 +259,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
+    val stackFrame = AnalysisLattice.getStackFrame(node, solution)
+    val function = StackFrameLattice.getRegisterValue(stackFrame, node.functionReg)
     
-    
-    
-    
-    solution
+    if (ValueLattice.elementIsOnlyObjectLabels[FunctionObjectLabel](function))
+      return solution
+    else
+      // TypeError
+      throw new NotImplementedException()
   }
 }

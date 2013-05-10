@@ -21,4 +21,3 @@ class PowerSubSetLattice[A] extends Lattice[Set[A]] {
     s"${indent}{$elementsString}\n"
   }
 }
-

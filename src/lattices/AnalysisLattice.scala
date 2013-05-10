@@ -40,6 +40,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def getState(node: Node, el: AnalysisLattice.Elt): StateLattice.Elt = ProgramStateLattice.get(getProgramState(el), node)
   def getStack(node: Node, el: AnalysisLattice.Elt): StackLattice.Elt = StateLattice.getStack(getState(node, el))
   def getHeap(node: Node, el: AnalysisLattice.Elt): HeapLattice.Elt = StateLattice.getHeap(getState(node, el))
+  def getHeapObject(node: Node, label: ObjectLabel, el: AnalysisLattice.Elt): ObjectLattice.Elt = StateLattice.getHeapObject(getState(node, el), label)
   def getStackFrame(node: Node, el: AnalysisLattice.Elt): StackFrameLattice.Elt = StackLattice.getStackFrame(getStack(node,el))
   def getExecutionContext(node: Node, el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(node,el))
   def getVariableObjects(el: AnalysisLattice.Elt, node: Node): Set[ObjectLabel] = ProgramStateLattice.getVariableObjects(getProgramState(el), node)

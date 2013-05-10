@@ -16,6 +16,10 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
 		stack
 	}
 	
+	def getHeapObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt = {
+	  HeapLattice.getHeapObject(getHeap(el), label)
+	}
+	
 	def getVariableObjects(el: Elt): Set[ObjectLabel] =
 	  StackLattice.getVariableObject(getStack(el))
 	

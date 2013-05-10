@@ -5,14 +5,12 @@ import tapy.dfa._
 object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, ModifiedLattice)) {
   
   /* Getters */
-  
   def getValue(el: ObjectPropertyLattice.Elt): ValueLattice.Elt = {
     val (value, _) = el
     value
   }
   
   /* Updaters */
-  
   def updatePropertyValue(el: ObjectPropertyLattice.Elt, property: String, value: ValueLattice.Elt): ObjectPropertyLattice.Elt = {
     (value, el._2)
   }
@@ -21,11 +19,9 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
 object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.Elt](ObjectPropertyLattice) {
   
   /* Getters */
-  
   def getProperty(el: ObjectPropertiesLattice.Elt, property: String) = get(el, property)
   
   /* Updaters */
-  
   def updatePropertyValue(el: ObjectPropertiesLattice.Elt, property: String, value: ValueLattice.Elt): ObjectPropertiesLattice.Elt = {
     val oldValue = getProperty(el, property)
     val newValue = ObjectPropertyLattice.updatePropertyValue(oldValue, property, value)

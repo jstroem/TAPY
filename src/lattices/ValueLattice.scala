@@ -95,49 +95,56 @@ extends ProductLattice(
   def elementIsOnlyNone(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
   
   def elementIsOnlyNumber(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    return (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && string == StringLattice.bottom && objectLabels == Set()) && (
+     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom) && (
         boolean != BooleanLattice.bottom || integer != IntegerLattice.bottom || float != FloatLattice.bottom || long != LongLattice.bottom || complex != ComplexLattice.bottom)
   }
 
   def elementIsOnlyBoolean(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyInteger(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer != IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyFloat(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float != FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float != FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyLong(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long != LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long != LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyComplex(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyString(el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string != StringLattice.bottom && objectLabels == Set())
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string != StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+  }
+
+  def elementIsOnlyObjectLabels[T](el: Elt): Boolean = {
+    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
+        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) &&
+        (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && objectLabel.isInstanceOf[T]})
   }
 
   /**
