@@ -35,6 +35,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: BinOpNode => ((solution) => handleBinOpNode(node, join(node, solution)))
         case node: UnOpNode => ((solution) => handleUnOpNode(node, join(node, solution)))
         
+        case node: FunctionDeclNode => ((solution) => handleFunctionDeclNode(node, join(node, solution)))
+        case node: FunctionEntryNode => ((solution) => handleFunctionEntryNode(node, join(node, solution)))
+        case node: CallNode => ((solution) => handleCallNode(node, join(node, solution)))
+        
         case node => ((solution) => join(node, solution))
       }
   }
@@ -187,6 +191,33 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleUnOpNode(node: UnOpNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  /**
+    * Functions 
+    */
+  
+  def handleFunctionDeclNode(node: FunctionDeclNode, solution: Elt): Elt = {
+    // 1) Create function object on heap
+    val functionObjectLabel = FunctionObjectLabel(node.entry)
+    val functionObject = ObjectLattice.bottom
+    AnalysisLattice.updateHeap(solution, node, functionObjectLabel, ObjectLattice.bottom)
+    
+    // 2) Create object on heap that points to the function with __call__
+    
+    
+    // 3) Add the object as a property to variable object
+    
+    
+    solution
+  }
+  
+  def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  def handleCallNode(node: CallNode, solution: Elt): Elt = {
     solution
   }
 }
