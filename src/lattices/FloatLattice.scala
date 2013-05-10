@@ -18,17 +18,17 @@ object FloatLattice extends Lattice[FloatElt] {
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
 
-  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = (e1,e2) match {
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
     case (Concrete(s1), Concrete(s2)) => op match {
-      case cmpopType.Eq => Some(s1 == s2)
-      case cmpopType.NotEq => Some(s1 != s2)
-      case cmpopType.Lt => Some(s1 < s2)
-      case cmpopType.LtE => Some(s1 <= s2)
-      case cmpopType.Gt => Some(s1 > s2)
-      case cmpopType.GtE => Some(s1 >= s2)
-      case _ => None
+      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
+      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
+      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
+      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
+      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
+      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
+      case _ => BooleanLattice.top
     }
-    case _ => None
+    case _ => BooleanLattice.top
   }
   
   def compare(a: Elt, b: Elt) = (a, b) match {

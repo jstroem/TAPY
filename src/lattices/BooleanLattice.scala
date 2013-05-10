@@ -16,24 +16,6 @@ object BooleanLattice extends Lattice[BooleanElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
-
-  def make(ob: Option[Boolean]) : Elt = ob match {
-    case None => top
-    case Some(b) => Concrete(b)
-  }
-
-  def compare(op: cmpopType, a: Elt, b: Elt) : Option[Boolean] = (a,b) match {
-    case (Concrete(s1), Concrete(s2)) => op match {
-      case cmpopType.Eq => Some(s1 == s2)
-      case cmpopType.NotEq => Some(s1 != s2)
-      case cmpopType.Lt => Some(s1 < s2)
-      case cmpopType.LtE => Some(s1 <= s2)
-      case cmpopType.Gt => Some(s1 > s2)
-      case cmpopType.GtE => Some(s1 >= s2)
-      case _ => None
-    }
-    case _ => None
-  }
   
   def compare(a: Elt, b: Elt) = (a, b) match {
     case (Abstract(), _)  => true
@@ -77,6 +59,19 @@ object BooleanLattice extends Lattice[BooleanElt] {
   }
   
   /* Element utility functions */
+
+  def elementCompare(op: cmpopType, a: Elt, b: Elt) : BooleanLattice.Elt = (a,b) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
+      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
+      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
+      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
+      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
+      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
+      case _ => BooleanLattice.top
+    }
+    case _ => BooleanLattice.top
+  }
   
   def binaryOperator(el1: BooleanLattice.Elt, el2: BooleanLattice.Elt, op: operatorType): ValueLattice.Elt = {
     (el1, el2) match {

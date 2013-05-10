@@ -14,19 +14,6 @@ object StringLattice extends Lattice[StringElt] {
   
   def top: Elt = Abstract()
   def bottom: Elt = Bottom()
-
-  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = (e1,e2) match {
-    case (Concrete(s1), Concrete(s2)) => op match {
-      case cmpopType.Eq => Some(s1 == s2)
-      case cmpopType.NotEq => Some(s1 != s2)
-      case cmpopType.Lt => Some(s1 < s2)
-      case cmpopType.LtE => Some(s1 <= s2)
-      case cmpopType.Gt => Some(s1 > s2)
-      case cmpopType.GtE => Some(s1 >= s2)
-      case _ => None
-    }
-    case _ => None
-  }
   
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
     case (Abstract(), _) => true
@@ -56,6 +43,19 @@ object StringLattice extends Lattice[StringElt] {
     case (Bottom(), _) => Bottom()
     case (_, Bottom()) => Bottom()
     case _ => throw new IllegalArgumentException()
+  }
+  
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
+    case (Concrete(s1), Concrete(s2)) => op match {
+      case cmpopType.Eq => BooleanLattice.Concrete(s1 == s2)
+      case cmpopType.NotEq => BooleanLattice.Concrete(s1 != s2)
+      case cmpopType.Lt => BooleanLattice.Concrete(s1 < s2)
+      case cmpopType.LtE => BooleanLattice.Concrete(s1 <= s2)
+      case cmpopType.Gt => BooleanLattice.Concrete(s1 > s2)
+      case cmpopType.GtE => BooleanLattice.Concrete(s1 >= s2)
+      case _ => BooleanLattice.top
+    }
+    case _ => BooleanLattice.top
   }
 
   def eltToString(elt: Elt, indent: String): String = elt match {

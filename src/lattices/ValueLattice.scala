@@ -5,10 +5,10 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import org.python.antlr.ast.cmpopType
 
 object AllocationSiteLattice extends PowerSubSetLattice[String] {
-  def compare(op: cmpopType, e1: AllocationSiteLattice.Elt, e2: AllocationSiteLattice.Elt) : Option[Boolean] = op match {
-    case cmpopType.Eq => if (e1.size == 1 && e2.size == 1) Some(e1 == e2) else None
-    case cmpopType.NotEq => if (e1.size == 1 && e2.size == 1) Some(e1 != e2) else None
-    case _ => None
+  def elementCompare(op: cmpopType, e1: AllocationSiteLattice.Elt, e2: AllocationSiteLattice.Elt) : BooleanLattice.Elt = op match {
+    case cmpopType.Eq => if (e1.size == 1 && e2.size == 1) BooleanLattice.Concrete(e1 == e2) else BooleanLattice.top
+    case cmpopType.NotEq => if (e1.size == 1 && e2.size == 1) BooleanLattice.Concrete(e1 != e2) else BooleanLattice.top
+    case _ => BooleanLattice.top
   }
 }
 
@@ -30,34 +30,34 @@ extends ProductLattice(
               new ProductLattice(
                 StringLattice, 
                 AllocationSiteLattice)))))))) {
+  
+  /* Element utility functions */
 
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
-  def compare(op: cmpopType, left: Elt, right: Elt) : Elt = {
+  def elementCompare(op: cmpopType, left: Elt, right: Elt) : Elt = {
     if (elementIsUniqueConcreteString(left) && elementIsUniqueConcreteString(right))
-      setBoolean(bottom, BooleanLattice.make(StringLattice.compare(op, getString(left), getString(right))))
+      setBoolean(bottom, StringLattice.elementCompare(op, getString(left), getString(right)))
     else if (elementIsUniqueAllocation(left) && elementIsUniqueAllocation(right))
-      setBoolean(bottom, BooleanLattice.make(AllocationSiteLattice.compare(op, getAllocationSet(left), getAllocationSet(right))))
+      setBoolean(bottom, AllocationSiteLattice.elementCompare(op, getAllocationSet(left), getAllocationSet(right)))
     else if (elementIsOnlyNone(left) && elementIsOnlyNone(right))
-      setBoolean(bottom, BooleanLattice.make(NoneLattice.compare(op, getNone(left), getNone(right))))
+      setBoolean(bottom, NoneLattice.elementCompare(op, getNone(left), getNone(right)))
     else if (elementIsUniqueConcreteNumber(left) && elementIsUniqueConcreteNumber(right)) {
       val (leftCommon,rightCommon) = elementsToCommonType(left,right)
       if (elementIsOnlyInteger(leftCommon) && elementIsOnlyInteger(rightCommon))
-        setBoolean(bottom, BooleanLattice.make(IntegerLattice.compare(op, getInteger(leftCommon), getInteger(rightCommon))))
+        setBoolean(bottom, IntegerLattice.elementCompare(op, getInteger(leftCommon), getInteger(rightCommon)))
       else if (elementIsOnlyBoolean(leftCommon) && elementIsOnlyBoolean(rightCommon))
-        setBoolean(bottom, BooleanLattice.make(BooleanLattice.compare(op, getBoolean(leftCommon), getBoolean(rightCommon))))
+        setBoolean(bottom, BooleanLattice.elementCompare(op, getBoolean(leftCommon), getBoolean(rightCommon)))
       else if (elementIsOnlyFloat(leftCommon) && elementIsOnlyFloat(rightCommon))
-        setBoolean(bottom, BooleanLattice.make(FloatLattice.compare(op, getFloat(leftCommon), getFloat(rightCommon))))
+        setBoolean(bottom, FloatLattice.elementCompare(op, getFloat(leftCommon), getFloat(rightCommon)))
       else if (elementIsOnlyLong(leftCommon) && elementIsOnlyLong(rightCommon)) 
-        setBoolean(bottom, BooleanLattice.make(LongLattice.compare(op, getLong(leftCommon), getLong(rightCommon))))
+        setBoolean(bottom, LongLattice.elementCompare(op, getLong(leftCommon), getLong(rightCommon)))
       else if (elementIsOnlyComplex(leftCommon) && elementIsOnlyComplex(rightCommon))
-        setBoolean(bottom, BooleanLattice.make(ComplexLattice.compare(op, getComplex(leftCommon), getComplex(rightCommon))))
+        setBoolean(bottom, ComplexLattice.elementCompare(op, getComplex(leftCommon), getComplex(rightCommon)))
       else 
         setBoolean(bottom, BooleanLattice.top)
     } else
       setBoolean(bottom, BooleanLattice.top)
   }
-  
-  /* Element utility functions */
 
   def elementsToCommonType(el1: ValueLattice.Elt, el2: ValueLattice.Elt): (ValueLattice.Elt, ValueLattice.Elt) = {
     if (elementIsNumber(el1) && elementIsNumber(el2)) {
