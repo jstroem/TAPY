@@ -8,17 +8,17 @@ import tapy.dfa._
 object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
   
   /* Element utility functions */
-  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = {
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = {
     val ((f1l,f1r),(f2l,f2r)) = (e1,e2)
-    val cmpl = FloatLattice.compare(op, f1l, f2l)
-    val cmpr = FloatLattice.compare(op, f1r, f2r)
+    val cmpl = FloatLattice.elementCompare(op, f1l, f2l)
+    val cmpr = FloatLattice.elementCompare(op, f1r, f2r)
     (cmpl,cmpr) match {
-      case (Some(left),Some(right)) => op match {
-        case cmpopType.Eq => Some(left && right)
-        case cmpopType.NotEq => Some(left || right)
-        case _ => None
+      case (BooleanLattice.Concrete(left),BooleanLattice.Concrete(right)) => op match {
+        case cmpopType.Eq => BooleanLattice.Concrete(left && right)
+        case cmpopType.NotEq => BooleanLattice.Concrete(left || right)
+        case _ => BooleanLattice.top
       }
-      case _ => None
+      case _ => BooleanLattice.top
     }
   }
   

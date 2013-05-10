@@ -135,7 +135,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val left: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg1Reg)
     val right: ValueLattice.Elt = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(node, solution), node.arg2Reg)
 
-    val value = ValueLattice.compare(node.op, left, right)
+    val value = ValueLattice.elementCompare(node.op, left, right)
 
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }

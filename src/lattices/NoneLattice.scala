@@ -14,17 +14,17 @@ object NoneLattice extends Lattice[NoneElt] {
   def top: Elt = None()
   def bottom: Elt = Bottom()
 
-  def compare(op: cmpopType, e1: Elt, e2: Elt) : Option[Boolean] = (e1,e2) match {
+  def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = (e1,e2) match {
     case (None(), None()) => op match {
-      case cmpopType.Eq => Some(true)
-      case cmpopType.NotEq => Some(false)
-      case cmpopType.Lt => Some(false)
-      case cmpopType.LtE => Some(true)
-      case cmpopType.Gt => Some(false)
-      case cmpopType.GtE => Some(true)
-      case _ => scala.None
+      case cmpopType.Eq => BooleanLattice.Concrete(true)
+      case cmpopType.NotEq => BooleanLattice.Concrete(false)
+      case cmpopType.Lt => BooleanLattice.Concrete(false)
+      case cmpopType.LtE => BooleanLattice.Concrete(true)
+      case cmpopType.Gt => BooleanLattice.Concrete(false)
+      case cmpopType.GtE => BooleanLattice.Concrete(true)
+      case _ => BooleanLattice.top
     }
-    case _ => scala.None
+    case _ => BooleanLattice.top
   }
   
   def compare(a: Elt, b: Elt): Boolean = return (a, b) match {
