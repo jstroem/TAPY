@@ -46,7 +46,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         
         case node: FunctionDeclNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleFunctionDeclNode(node, join)}
         case node: FunctionEntryNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleFunctionEntryNode(node, join)}
+        case node: ExitNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleExitNode(node, join)}
         case node: CallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleCallNode(node, join)}
+        case node: AfterCallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleAfterCallNode(node, join)}
         
         case node => {(solution) => joinPredecessors(node, solution) }
       }
@@ -304,6 +306,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.setState(solution, node, StateLattice.top)
   }
   
+  def handleExitNode(node: ExitNode, solution: Elt): Elt = {
+    AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.bottom)
+  }
+  
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
     val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
     
@@ -382,5 +388,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): CallGraphLattice.Elt = {
     Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.functionEntryNode), (null, objLabel.functionExitNode, null, afterCallNode))
+  }
+  
+  def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
+    solution
   }
 }
