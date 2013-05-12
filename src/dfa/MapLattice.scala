@@ -5,7 +5,8 @@ sealed trait MapElement
 // Elements of the set that are not present as keys in the Map are thought to be mapped to bottom element of lattice
 class MapLattice[S, T](lattice: Lattice[T]) extends Lattice[MapElement] {
   type Elt = MapElement
-
+  type MapElt = Map[S, T]
+    
   case class Top() extends MapElement
   case class Concrete(m: Map[S, T]) extends MapElement
 

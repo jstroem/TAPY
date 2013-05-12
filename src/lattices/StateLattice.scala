@@ -21,15 +21,12 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
 	}
 	
 	def getVariableObjects(el: Elt): Set[ObjectLabel] =
-	  StackLattice.getVariableObject(getStack(el))
+	  StackLattice.getVariableObjects(getStack(el))
 	
 	/* Setters */
 	
 	def setStack(el: Elt, stack: StackLattice.Elt): Elt =
 	  (getHeap(el), stack)
-	
-	def setVariableObject(el: Elt, label: ObjectLabel): Elt =
-	  (getHeap(el), StackLattice.setVariableObject(getStack(el), label))
 	
 	def setExecutionContext(el: Elt, executionContext: ExecutionContextLattice.Elt): Elt =
 	  (getHeap(el), StackLattice.setExecutionContext(getStack(el), executionContext))

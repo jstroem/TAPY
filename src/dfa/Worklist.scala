@@ -18,7 +18,7 @@ class Worklist[T] (analysis: Analysis[T], lattice: Lattice[T], graph: ControlFlo
         val newSolution = constraint(solution)
         
         if (newSolution != solution) {
-          worklist = worklist ++ analysis.nodeDependencies(node)
+          worklist = worklist ++ analysis.nodeDependencies(node, newSolution)
         }
 
         visit (worklist, newSolution)

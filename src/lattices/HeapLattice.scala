@@ -12,6 +12,9 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   def getObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =
     get(el, label)
   
+  def getObject(el: MapElt, label: ObjectLabel): ObjectLattice.Elt =
+    get(Concrete(el), label)
+  
   def getObjects(el: Elt, labels: Set[ObjectLabel]): Set[ObjectLattice.Elt] =
     labels.foldLeft(Set[ObjectLattice.Elt]()) {(acc, label) => acc + getObject(el, label)}
   

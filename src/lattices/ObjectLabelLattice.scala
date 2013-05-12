@@ -15,14 +15,17 @@ abstract class CallableObjectLabel(id: UUID) extends ObjectLabel(id)
 case class ClassObjectLabel(classRef: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
 	override def toString() = s"Class Object ${classRef.toString()}"
 }
-case class FunctionObjectLabel(functionEntryNode: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+case class FunctionObjectLabel(functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, scope: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
 	override def toString() = s"Function Object ${functionEntryNode.toString()}"
 }
 case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
 	override def toString() = s"Real Object $label"
 }
-case class ScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-	override def toString() = s"Scope Object $label"
+case class ModuleScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+	override def toString() = s"Module Scope Object $label"
+}
+case class FunctionScopeObjectLabel(functionEntryNode: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+  override def toString() = s"Function Scope Object ${functionEntryNode.toString()}"
 }
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {

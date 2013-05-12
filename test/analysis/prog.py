@@ -1,4 +1,7 @@
-def foo():
-	return 1
+x = 1
 
-foo()
+def foo():
+	y = x
+	return y
+
+z = foo()

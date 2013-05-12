@@ -19,8 +19,28 @@ object ProgramStateLattice extends MapLattice[Node, StateLattice.Elt](StateLatti
     update(el, node, StateLattice.setExecutionContext(getState(el, node), executionContext))
 }
 
-object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node)] // Any: Context sensitivity
+object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node)] { // Any: Context sensitivity
 
+  /* Getters */
+  
+  def getPredecessors(el: CallGraphLattice.Elt, node: Node): Set[Node] =
+    if (el != null)
+      el.foldLeft(Set[Node]()) {(acc, elt) =>
+        val (_, pred, _, succ) = elt
+        if (succ == node) acc + pred else acc
+      }
+    else
+      Set()
+  
+  def getSuccessors(el: CallGraphLattice.Elt, node: Node): Set[Node] =
+    if (el != null)
+      el.foldLeft(Set[Node]()) {(acc, elt) =>
+        val (_, pred, _, succ) = elt
+        if (pred == node) acc + succ else acc
+      }
+    else
+      Set()
+}
 object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLattice) {
     
   /* Getters */
@@ -42,7 +62,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def getHeap(node: Node, el: AnalysisLattice.Elt): HeapLattice.Elt = StateLattice.getHeap(getState(node, el))
   def getHeapObject(node: Node, label: ObjectLabel, el: AnalysisLattice.Elt): ObjectLattice.Elt = StateLattice.getHeapObject(getState(node, el), label)
   def getStackFrame(node: Node, el: AnalysisLattice.Elt): StackFrameLattice.Elt = StackLattice.getStackFrame(getStack(node,el))
-  def getExecutionContext(node: Node, el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(node,el))
+  def getExecutionContexts(node: Node, el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(node,el))
   def getVariableObjects(el: AnalysisLattice.Elt, node: Node): Set[ObjectLabel] = ProgramStateLattice.getVariableObjects(getProgramState(el), node)
   
   /* Setters */
@@ -53,11 +73,8 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def setCallGraph(el: AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
     (getProgramState(el), callGraph)
   
-  def setVariableObject(el: AnalysisLattice.Elt, node: Node, label: ObjectLabel): AnalysisLattice.Elt =
-    setState(el, node, StateLattice.setVariableObject(getState(node, el), label))
-  
-  def setExecutionContext(el: AnalysisLattice.Elt, node: Node, executionContext: ExecutionContextLattice.Elt): AnalysisLattice.Elt =
-    (ProgramStateLattice.setExecutionContext(getProgramState(el), node, executionContext), getCallGraph(el))
+  def setExecutionContexts(el: AnalysisLattice.Elt, node: Node, executionContexts: ExecutionContextLattice.Elt): AnalysisLattice.Elt =
+    (ProgramStateLattice.setExecutionContext(getProgramState(el), node, executionContexts), getCallGraph(el))
     
   /* Updaters */
   

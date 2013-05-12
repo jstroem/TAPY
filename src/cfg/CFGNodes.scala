@@ -12,7 +12,7 @@ abstract class Node(id: UUID) {
 }
 
 // Class and function declaration
-case class FunctionDeclNode(entry: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class FunctionDeclNode(entry: FunctionEntryNode, exit: ExitNode, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
 }
 case class ClassDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
@@ -23,7 +23,7 @@ case class ClassDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Nod
 case class ClassEntryNode(note: String, classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassEntryNode($note)"
 }
-case class FunctionEntryNode(note: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class FunctionEntryNode(note: String, exitNode: ExitNode, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionEntryNode($note)"
 }
 case class ExitNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
@@ -125,7 +125,7 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
 }
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)
-case class CallNode(resultReg: Int, functionReg: Int, argRegs: List[Int], keywordRegs: Map[String, Int] = Map(), starArgReg: Option[Int] = None, kwArgReg: Option[Int] = None, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class CallNode(functionReg: Int, argRegs: List[Int], keywordRegs: Map[String, Int] = Map(), starArgReg: Option[Int] = None, kwArgReg: Option[Int] = None, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
     val args = ASTPrettyPrinter.implodeStringList(argRegs.map((argReg) => reg(argReg)), ", ")
     val kwargs = ASTPrettyPrinter.implodeStringList(keywordRegs.toList.map((entry) => entry._1 + "=" + reg(entry._2)), ", ", true)
@@ -133,7 +133,13 @@ case class CallNode(resultReg: Int, functionReg: Int, argRegs: List[Int], keywor
     val keywords = kwArgReg match { case Some(arg) => "**" + reg(arg) case None => "" }
     
     val mixed_args = ASTPrettyPrinter.implodeStringList(scala.List(args, kwargs, starargs, keywords), ", ", true)
-    s"${reg(resultReg)} = ${reg(functionReg)}($mixed_args)\t(CallNode)"
+    s"_ = ${reg(functionReg)}($mixed_args)\t(CallNode)"
+  }
+}
+
+case class AfterCallNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString() = {
+    s"${reg(resultReg)} = _\t(AfterCallNode)"
   }
 }
 

@@ -16,16 +16,13 @@ object StackLattice extends ProductLattice(StackFrameLattice, ExecutionContextLa
     executionContext
   }
 
-  def getVariableObject(el: Elt): Set[ObjectLabel] =
-    ExecutionContextLattice.getVariableObject(getExecutionContext(el))
+  def getVariableObjects(el: Elt): Set[ObjectLabel] =
+    ExecutionContextLattice.getVariableObjects(getExecutionContext(el))
   
   /* Setters */
-  def setExecutionContext(el: Elt, executionContext: ExecutionContextLattice.Elt): Elt =
-    (getStackFrame(el), executionContext)
+  def setExecutionContext(el: Elt, executionContexts: ExecutionContextLattice.Elt): Elt =
+    (getStackFrame(el), executionContexts)
   
   def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt): Elt =
     (StackFrameLattice.updateRegisterValue(getStackFrame(el), register, value), getExecutionContext(el))
-  
-  def setVariableObject(el: Elt, label: ObjectLabel): Elt =
-    (getStackFrame(el), ExecutionContextLattice.setVariableObject(getExecutionContext(el), label))
 }
