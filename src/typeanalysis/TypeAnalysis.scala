@@ -62,6 +62,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def nodeDependencies(cfgNode: Node): Set[Node] = {
+    val callGraphSuccessors = this.callGraph.foldLeft(Set[Node]()) {(acc, elt) =>
+      val (_, pred, _, succ) = elt
+      if (pred == cfgNode) acc + succ else acc
+    }
     return cfg.getSuccessors(cfgNode)
   }
   
