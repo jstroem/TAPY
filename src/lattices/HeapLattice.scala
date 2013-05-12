@@ -9,8 +9,11 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
 
   /* Getters */
   
-  def getHeapObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =
+  def getObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =
     get(el, label)
+  
+  def getObjects(el: Elt, labels: Set[ObjectLabel]): Set[ObjectLattice.Elt] =
+    labels.foldLeft(Set[ObjectLattice.Elt]()) {(acc, label) => acc + getObject(el, label)}
   
   /* Updaters */
   
@@ -31,7 +34,7 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   				val (accNodes,accEdges) = acc
   				val (objectLabel,objectElement) = pair
 
-  				val objectProperties = ObjectLattice.getObjectProperties(objectElement)
+  				val objectProperties = ObjectLattice.getProperties(objectElement)
   				val nodeName = GraphvizExporter.escape(objectLabel.toString())
   				val (nodeLabel,edges) = objectProperties match {
   					case ObjectPropertiesLattice.Concrete(objectMap: Map[String,ObjectPropertyLattice.Elt]) => {
@@ -44,7 +47,8 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
 
 		  					nodeName += ("|{%s|<%s> %s}".format(escapedPropertyName, escapedPropertyName, GraphvizExporter.escape(ValueLattice.toString(valueElement))))
 
-		  					edges = ValueLattice.getObjectLabels(valueElement).foldLeft(edges)((edges,toObjectLabel) => {
+		  					val objectLabels = ValueLattice.getObjectLabels(valueElement)
+		  					edges = ValueLattice.getObjectLabels(valueElement).foldLeft(edges)((edges, toObjectLabel) => {
 		  						GraphvizExporter.Edge(GraphvizExporter.MultiNodeId(List(objectLabel.getIdString(),escapedPropertyName)),GraphvizExporter.SingleNodeId(toObjectLabel.getIdString())) :: edges
 		  					})
 		  					(nodeName,edges)

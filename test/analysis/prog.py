@@ -1,3 +1,4 @@
-def aFunc():
-	"1"
-"2"
+def foo():
+	return 1
+
+foo()

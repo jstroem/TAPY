@@ -15,8 +15,8 @@ abstract class CallableObjectLabel(id: UUID) extends ObjectLabel(id)
 case class ClassObjectLabel(classRef: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
 	override def toString() = s"Class Object ${classRef.toString()}"
 }
-case class FunctionObjectLabel(function: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
-	override def toString() = s"Function Object ${function.toString()}"
+case class FunctionObjectLabel(functionEntryNode: FunctionEntryNode, scope: ScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+	override def toString() = s"Function Object ${functionEntryNode.toString()}"
 }
 case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
 	override def toString() = s"Real Object $label"
@@ -32,5 +32,9 @@ object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
     case _ => BooleanLattice.top
   }
 
-  def toString(el: Elt) : String = "(" + el.foldLeft("")((acc,objectLabel) => if (acc == "") objectLabel.toString() else acc + ", "+ objectLabel.toString()) + ")"
+  def toString(el: Elt) : String =
+    if (el == null)
+      "(<TOP>)"
+    else
+      "(" + el.foldLeft("")((acc,objectLabel) => if (acc == "") objectLabel.toString() else acc + ", "+ objectLabel.toString()) + ")"
 }

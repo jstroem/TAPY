@@ -50,7 +50,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def setState(el: AnalysisLattice.Elt, node: Node, state: StateLattice.Elt): AnalysisLattice.Elt =
     (ProgramStateLattice.update(getProgramState(el), node, state), getCallGraph(el))
   
-  def setCallGraph(el: AnalysisLattice.Elt, node: Node, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
+  def setCallGraph(el: AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
     (getProgramState(el), callGraph)
   
   def setVariableObject(el: AnalysisLattice.Elt, node: Node, label: ObjectLabel): AnalysisLattice.Elt =
