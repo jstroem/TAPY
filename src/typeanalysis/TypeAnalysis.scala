@@ -161,13 +161,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
+    val value = findPropertyInScope(node, node.variable, solution)
     // Todo use lookup
+    /*
     val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
     val value = variableObjects.foldLeft(ValueLattice.bottom) {(acc, variableObjectLabel) =>
       val variableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
       val value = ObjectPropertyLattice.getValue(ObjectLattice.getProperty(variableObject, node.variable))
       ValueLattice.leastUpperBound(value, acc)
     }
+    */
     
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }

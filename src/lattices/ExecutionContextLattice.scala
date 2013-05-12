@@ -11,5 +11,5 @@ object ExecutionContextLattice extends PowerSubSetLattice[(List[ObjectLabel], Ob
     if (el != null) el.map({ case (_, variableObject) => variableObject }) else Set()
   
   def getVariableObjectsOnScopeChains(el: ExecutionContextLattice.Elt): Set[List[ObjectLabel]] =
-    el.map({ case (scopeChain, variableObject) => variableObject :: scopeChain })
+    if (el != null) el.map({ case (scopeChain, variableObject) => variableObject :: scopeChain }) else Set()
 }
