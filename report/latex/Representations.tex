@@ -1,5 +1,8 @@
 \chapter{Monotoneframework implementation}
 
+To get started on the implementation we have made a brief implemtation of the monotone framework that is decoupled from the actual analysis.
+This implementation counts commonly used lattice structures, the worklist algorithm, a graph structure and an analysis interface (or trait in scala-lingo).
+
 \section{Lattices}
 
 In order to make our lives easier when constructing the final analysis lattice, we have implemented several common lattice structures as type generic classes. These common lattice structures include, among others, a map- and product lattice. In this section we will briefly go over the implementation decisions made for these structures.
