@@ -21,35 +21,45 @@ else:
 	\caption{For-loop example}\label{code:forExample}
 \end{listing}
 
-First, \inlinecode{expression\_list} is evaluated. This should yield an iterable object, such that an iterator object can be created. Now for each element of the iterator the body of the for loop is evaluated once. As mentioned, if an else block is provided to the loop, it is evaluated when all iterations are done, and the iteration did not stop because of a break statement. \\
-To simulate the evaluation sequence of such a for loop in our control flow graph, we need to take a look at the iterator object: to get the next element from a Python iterator object the next method is used. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception. The CFG for the for-loop example \ref{code:forExample} can been seen below \ref{fig:forCfg}.
-
-\begin{figure}[p]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/for-example-cfg.png}
+\begin{wrapfigure}{r}{0.5\textwidth}
+	\vspace{-20pt}
+	\begin{center}
+		\includegraphics[width=0.48\textwidth]{images/for-example-cfg.png}
+	\end{center}
+	\vspace{-10pt}
 	\caption{Control Flow Graph for the for-loop example \ref{code:forExample}}
 	\label{fig:forCfg}
-\end{figure}
+	\vspace{-10pt}
+\end{wrapfigure}
 
-\begin{figure}[p]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/while.png}
+First, \inlinecode{expression\_list} is evaluated. This should yield an iterable object, such that an iterator object can be created. Now for each element of the iterator the body of the for loop is evaluated once. As mentioned, if an else block is provided to the loop, it is evaluated when all iterations are done, and the iteration did not stop because of a break statement. \\
+To simulate the evaluation sequence of such a for loop in our control flow graph, we need to take a look at the iterator object: to get the next element from a Python iterator object the next method is used. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception. The CFG for the for-loop example \ref{code:forExample} can been seen in figure \ref{fig:forCfg}.
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+	\vspace{-20pt}
+	\begin{center}
+		\includegraphics[width=0.48\textwidth]{images/while.png}
+	\end{center}
+	\vspace{-10pt}
 	\caption{Control Flow Graph for a while-loop}
 	\label{fig:whileCfg}
-\end{figure}
-
-\begin{figure}[p]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/Call-example.png}
-	\caption{Control Flow Graph for a call example}
-	\label{fig:callCfg}
-\end{figure}
-
+	\vspace{-10pt}
+\end{wrapfigure}
 For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}. \\
 $CFG_{cond}$ is the control flow graph that results from the condition. If the condition is the boolean \inlinecode{True}, $CFG_{cond}$ will be the control flow graph consisting of a single node, namely \textit{ConstantBooleanNode}. Inspired from TAJS, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register ($reg_{cond}$ in figure \ref{fig:callCfg}) together with the actual constant value, \inlinecode{True} in this case. \\
 The other nodes \textit{ConstantIntNode}, \textit{ConstantFloatNode}, \textit{ConstantLongNode}, \textit{ConstantComplexNode}, \textit{ConstantStringNode}, \textit{ConstantNoneNode}, \textit{NewListNode}, \textit{NewDictionaryNode} and \textit{NewTupleNode} work in a similar way to \textit{ConstantBooleanNode}. \\
 The motivation for introducing registers is that a single expression as e.g. \inlinecode{s1.addGrade('math', 10)} is evaluated in several steps. \\
 First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the control flow graph using \textit{ReadPropertyNode}, which holds a result register, a base register, i.e. the register where to find the object, and the name of the property to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}. \\
+\begin{wrapfigure}{r}{0.5\textwidth}
+	\vspace{-20pt}
+	\begin{center}
+		\includegraphics[width=0.48\textwidth]{images/Call-example.png}
+	\end{center}
+	\vspace{-10pt}
+	\caption{Control Flow Graph for a call example}
+	\label{fig:callCfg}
+	\vspace{-10pt}
+\end{wrapfigure}
 Secondly, each argument given to the function is evaluated, and finally the actual call is done. Calls in the control flow graph is modeled using the \textit{CallNode}, which holds a result register, a function register and a list of arguments registers. \\
 Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the control flow graph found in figure \ref{fig:callCfg} (where the numbers to the left represent the result registers of the nodes).\\
 \todo{Tilfoeje afsnit om \_\_getattribute\_\_ og \_\_getattr\_\_, samt hvordan disse haandteres.} \\
@@ -112,13 +122,16 @@ Each node in $CFG_{try}$ (that does not already have an outgoing exception edge)
 The above models that if an exception occurs during evaluation of one of the statements in a try block, then the control flow will proceed from the first except block. \\
 If there is no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifially $CFG_{finally-unhandled-exc}$). However, we don't add any exception edges here; these will be added inductively because of (*) in case there are any surrounding except or finally blocks.
 
-\begin{figure}[p]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/Try-except-else-finally.png}
+\begin{wrapfigure}{r}{0.5\textwidth}
+	\vspace{-20pt}
+	\begin{center}
+		\includegraphics[width=0.48\textwidth]{images/Try-except-else-finally.png}
+	\end{center}
+	\vspace{-10pt}
 	\caption{Control Flow Graph for try try-except example \ref{code:tryExceptAfter}}
-	\label{fig:callCfg}
-\end{figure}
-
+	\label{fig:tryExceptCfg}
+	\vspace{-10pt}
+\end{wrapfigure}
 \subsection{The except block}
 The entry node of each except block is connected using an exception edge to the entry node of the next except block (except for the last block, of course). Thus we make an exception edge from the entry node of $CFG_{except-foo}$ to the entry node of $CFG_{except}$. \\
 We do this because the first except block might not catch the exception (because of the type restrictions), in which the control flow proceeds at the next except block. \\
