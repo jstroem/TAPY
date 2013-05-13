@@ -32,6 +32,8 @@ TAPY/
 *.aux 
 *.log 
 *.out
+*.fdb_latexmk
+*.fls
 
 # Scala-IDE specific
 .scala_dependencies

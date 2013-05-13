@@ -7,7 +7,7 @@ The concrete lattices follows below.
 Value =& Undefined \times None \times Boolean \times Integer \\
        & \times Float \times Long \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
-The value lattice is used to tell the value of a temporary variable (see the lattice Stack), and a property on an object (see the lattice Object). The Undefined and None lattices both contains two nodes, Top and bottom. In Python when a function does not return a value, it is the constant None\cite{pyref.constants} which is returned, e.g.:
+The value lattice is used to tell the value of a temporary variable (see the lattice Stack), and a property on an object (see the lattice Object). The $Undefined$ and $None$ lattices both contains two nodes, Top and bottom. In Python when a function does not return a value, it is the constant None\cite{pyref.constants} which is returned, e.g.:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): 
@@ -27,8 +27,7 @@ a() is None // true
 	\label{fig:latticeInteger}
 	\vspace{-10pt}
 \end{wrapfigure}
-Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively\cite{pyref.stdtypes}. The Integer lattice is defined here\ref{fig:latticeInteger}
-The Float, Long and String lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object in the heap, which we model in the Value lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
+Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in Figure \ref{fig:latticeInteger} The Float, Long and String lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object in the heap, which we model in the Value lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
 
 \subsection{Abstract State}
 We use the following lattice to model abstract state:
@@ -66,7 +65,7 @@ def a():
 	\end{minted}
 \caption{Scope example}\label{code:ScopeExample}
 \end{listing}
-For this particular Scope example\ref{code:scopeExample} we will have the following objects on the heap:
+For this particular Scope example in Listing \ref{code:ScopeExample} we will have the following objects on the heap:
 \begin{enumerate}
   \item The \inlinecode{\_\_main\_\_} object,
   \item The object of the function \inlinecode{a},
@@ -74,7 +73,7 @@ For this particular Scope example\ref{code:scopeExample} we will have the follow
   \item The scope object of \inlinecode{a} (which is an object similar to the \inlinecode{\_\_main\_\_} object, i.e. an object where local variables are written onto).
 \end{enumerate}
 In line 3 the variable object will be set to the scope object of the function a (or more precise, its label), and the scope chain will be the list containing the \inlinecode{\_\_main\_\_} object. When the variable x is read, x is not found on the variable object, so it is looked up in the scope chain, where it is found on the \inlinecode{\_\_main\_\_} object. When there are more than one object on the scope chain, those objects are of course just traversed starting from the head of the list.
-In this section we try to motivate why we have three objects on the heap for each function. The object of the function a in \ref{code:FunctionPropertyExample} is necessary as functions are themselves objects, as in JavaScript. For instance we can set a property on a function object as line 3 in the following example illustrates:
+In this section we try to motivate why we have three objects on the heap for each function. The object of the function a in Listing \ref{code:FunctionPropertyExample} is necessary as functions are themselves objects, as in JavaScript. For instance we can set a property on a function object as line 3 in the following example illustrates:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a():
@@ -94,7 +93,7 @@ a.__call__() # "a"
 	\end{minted}
 \caption{Function object and \_\_call\_\_ example}\label{code:printFunctionExample}
 \end{listing}
-Thus the function object in \ref{code:printFunctionExample} can be considered as the object of the method-wrapper. It is important to distinguish between the object of the function, and the function object, since \inlinecode{\_\_call\_\_} is not just a reference to the object of the function, as illustrated below:
+Thus the function object in Listing \ref{code:printFunctionExample} can be considered as the object of the method-wrapper. It is important to distinguish between the object of the function, and the function object, since \inlinecode{\_\_call\_\_} is not just a reference to the object of the function, as illustrated below:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): 
@@ -104,7 +103,7 @@ a.__call__.prop = 10 # TypeError: 'method-wrapper'
 	\end{minted}
 \caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
 \end{listing}
-Finally, the scope object of a function in \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function:
+Finally, the scope object of a function in Listing \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): 
