@@ -39,11 +39,17 @@ In the following sections the $Heap$ and $Stack$ lattice will be described, but 
 \begin{equation*}
 Object = (PropertyName \rightarrow Value) \times P(ObjectLabel^{*})
 \end{equation*}
-
+Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects.
+As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so
+we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in.
+Thus the object lattice is the product between ObjectValues and a scope chain modelled as a list of object labels.
 \subsection{The Heap}
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
+The heap is modelled by a map from object labels to an object value. We found it benefitial to distinquise between different types of objects but still handle them in the same way in the heap.
+To achieve this we made several different subclasses to the object label object, e.g. function object, which besides its name and id also holds a reference to the cfg node that is the entry node for that function.
+
 
 \subsection{The Stack}
 The $Stack$ lattice is defined as:
