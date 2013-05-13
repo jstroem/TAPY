@@ -29,6 +29,9 @@ TAPY/
 
 #Docx temps
 ~$*.docx
+*.aux 
+*.log 
+*.out
 
 # Scala-IDE specific
 .scala_dependencies
