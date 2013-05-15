@@ -453,20 +453,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     val argRegPairs = args.zipWithIndex.map({case (arg,idx) => 
       if (callNode.argRegs.size < idx) {
-        (arg,callNode.argRegs[idx])
+        (arg,callNode.argRegs(idx))
       } else {
-        (arg,defaultArgRegs[idx - callNode.argRegs.size])
+        (arg,defaultArgRegs(idx - callNode.argRegs.size))
       }
     })
 
     argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
-
-      val currentArgumentProperty = ObjectLattice.getProperty(functionScopeObject, argName)
-      val newArgumentProperty = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
-      val newMergedProperty = ObjectPropertyLattice.leastUpperBound(currentArgumentProperty, newArgumentProperty)
-
-      ObjectLattice.setProperty(functionScopeObject, argName, newMergedProperty)
+      val newProperty = writePropertyOnValue(functionScopeObject, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
+      ObjectLattice.setProperty(functionScopeObject, argName, newProperty)
     }
   }
   
