@@ -282,10 +282,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     
     // Generate scope-object scope chain
-    val functionScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
-      val (scopeChain, variableObject) = pair
-      acc + (variableObject :: scopeChain)
-    }
+    val functionScopeObjectScopeChain = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts)
     
     // Create objects
     val functionScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, functionScopeObjectScopeChain)
@@ -310,13 +307,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     // Create value lattice elements
     val classObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(classObjectLabel))
-
     
     // Generate scope-object scope chain
-    val classScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
-      val (scopeChain, variableObject) = pair
-      acc + (variableObject :: scopeChain)
-    }
+    val classScopeObjectScopeChain = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts)
     
     // Create objects
     val classScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, classScopeObjectScopeChain)
@@ -361,10 +354,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleExitNode(node: ExitNode, solution: Elt): Elt = {
+    // Set the execution contexts to bottom: Joining at the callee site will ensure that the
+    // execution contexts at the after call node will be set to the execution contexts at the
+    // call node
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.bottom)
   }
   
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
+    // TODO: Handle class call
     val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
     
     try {
@@ -508,6 +505,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleClassEntryNode(node: ClassEntryNode, solution: Elt): Elt = {
+    // TODO
     solution
   }
 }
