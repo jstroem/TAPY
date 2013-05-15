@@ -54,8 +54,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: AfterCallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleAfterCallNode(node, join)}
 
         case node: GlobalNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleGlobalNode(node, join)}
+        case node: ClassDeclNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleClassDeclNode(node, join)}
+        case node: ClassEntryNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleClassEntryNode(node, join)}
 
-        
         case node => {(solution) => joinPredecessors(node, solution) }
       }
   }
@@ -107,16 +108,21 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     writePropertyOnVariableObjects(node, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
   
   def writePropertyOnVariableObjects(node: Node, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
-    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
-    variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
-      val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
-      
-      val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
-      val newVariableObject = ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
-      
+    val variableObjectLabels = AnalysisLattice.getVariableObjects(solution, node)
+    variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
+      val newVariableObject = writePropertyOnObject(node, variableObjectLabel, property, value, solution)
       AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
     }
+  }
+  
+  def writePropertyValueOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ValueLattice.Elt, solution: Elt): ObjectLattice.Elt =
+    writePropertyOnObject(node, objectLabel, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
+  
+  def writePropertyOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): ObjectLattice.Elt = {
+    val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), objectLabel)
+    val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
+    val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
+    ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
   }
   
   /* Misc */
@@ -266,9 +272,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val functionName = node.entry.funcDef.getInternalName()
     
     // Create labels
-    val functionScopeObjectLabel = FunctionScopeObjectLabel(node.entry)
-    val functionFunctionObjectLabel = FunctionObjectLabel(node.entry, node.exit, functionScopeObjectLabel)
-    val functionObjectLabel = ObjectObjectLabel(functionName)
+    val functionScopeObjectLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
+    val functionFunctionObjectLabel = FunctionObjectLabel(node, node.entry, node.exit, functionScopeObjectLabel)
+    val functionObjectLabel = HeapObjectLabel(functionName)
     
     // Create value lattice elements
     val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
@@ -293,6 +299,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     // Add the function name to the current object variables, such that it can be referenced
     writePropertyValueOnVariableObjects(node, functionName, functionObjectValue, result)
+  }
+  
+  def handleClassDeclNode(node: ClassDeclNode, solution: Elt): Elt = {
+    solution
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
@@ -356,8 +366,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
           val obj = HeapLattice.getObject(this.heap, objLabel)
           
           val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) =
-            if (objLabel.isInstanceOf[ObjectObjectLabel]) {
-              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[ObjectObjectLabel], obj, accSolution)
+            if (objLabel.isInstanceOf[HeapObjectLabel]) {
+              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[HeapObjectLabel], obj, accSolution)
               
             } else if (objLabel.isInstanceOf[FunctionObjectLabel]) {
               handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, accSolution)
@@ -377,7 +387,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
   
-  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: ObjectObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
+  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: HeapObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
     // Check if this is the object of a function
     val call = ObjectLattice.getProperty(obj, "__call__")
     val callValue = ObjectPropertyLattice.getValue(call)
@@ -463,7 +473,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
   }
 
-
   // Global node declares that the variable should be used as a global variable.
   // It is possible to have some value assigned to the variable before this declaration
   // this value should then be moved to the global variable scope, and
@@ -472,5 +481,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
     solution
   }
-
+  
+  def handleClassEntryNode(node: ClassEntryNode, solution: Elt): Elt = {
+    solution
+  }
 }
+

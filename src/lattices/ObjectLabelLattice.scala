@@ -12,21 +12,29 @@ abstract class ObjectLabel(id: UUID) {
 
 abstract class CallableObjectLabel(id: UUID) extends ObjectLabel(id)
 
-case class ClassObjectLabel(classRef: ClassEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-	override def toString() = s"Class Object ${classRef.toString()}"
+case class ModuleScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+  override def toString() = s"Module Scope Object $label"
 }
-case class FunctionObjectLabel(functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, scope: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+
+case class ClassObjectLabel(classDeclNode: ClassDeclNode, classEntryNode: ClassEntryNode, classExitNode: ExitNode, scope: ClassScopeObjectLabel, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+	override def toString() = s"Class Object ${classEntryNode.toString()}"
+}
+case class ClassScopeObjectLabel(classDeclNode: ClassDeclNode, classEntryNode: ClassEntryNode, classExitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+  override def toString() = s"Function Scope Object ${classEntryNode.toString()}"
+}
+
+case class FunctionObjectLabel(functionDeclNode: FunctionDeclNode, functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, scope: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
 	override def toString() = s"Function Object ${functionEntryNode.toString()}"
 }
-case class ObjectObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
-	override def toString() = s"Real Object $label"
-}
-case class ModuleScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-	override def toString() = s"Module Scope Object $label"
-}
-case class FunctionScopeObjectLabel(functionEntryNode: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+case class FunctionScopeObjectLabel(functionDeclNode: FunctionDeclNode, functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
   override def toString() = s"Function Scope Object ${functionEntryNode.toString()}"
 }
+
+case class HeapObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+	override def toString() = s"Real Object $label"
+}
+case class NewStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
+case class OldStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = op match {
