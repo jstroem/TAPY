@@ -107,16 +107,21 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     writePropertyOnVariableObjects(node, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
   
   def writePropertyOnVariableObjects(node: Node, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
-    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
-    variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
-      val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
-      
-      val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
-      val newVariableObject = ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
-      
+    val variableObjectLabels = AnalysisLattice.getVariableObjects(solution, node)
+    variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
+      val newVariableObject = writePropertyOnObject(node, variableObjectLabel, property, value, solution)
       AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
     }
+  }
+  
+  def writePropertyValueOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ValueLattice.Elt, solution: Elt): ObjectLattice.Elt =
+    writePropertyOnObject(node, objectLabel, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
+  
+  def writePropertyOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): ObjectLattice.Elt = {
+    val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), objectLabel)
+    val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
+    val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
+    ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
   }
   
   /* Misc */
