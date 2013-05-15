@@ -1,13 +1,22 @@
+package tapy.typeanalysis
+
 import tapy.cfg._
 
 object Environment {
-  def getEnvironments(g: ControlFlowGraph): Map[Node, Set[String]] = {
+  def build(g: ControlFlowGraph): Map[Node, Set[String]] = {
     def getVarName = {(n: Node) => n match {
       case WriteVariableNode(s,_,_) => s
       case _ => ""
     }}
+ 
+    val entries = g.nodes.foldLeft (Set[Node]()) {(acc, n) => n match {
+      case n: FunctionEntryNode => acc + n
+      case n: ModuleEntryNode => acc + n
+      // TODO CLASSES
+      case _ => acc
+    }}
 
-    g.entryNodes.foldLeft (Map[Node, Set[String]]()) ({(acc, n) =>
+    entries.foldLeft (Map[Node, Set[String]]()) ({(acc, n) =>
       val vars = reachable(n, g).map(getVarName) - ""
       acc + (n -> vars)
     })
