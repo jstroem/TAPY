@@ -50,7 +50,7 @@ case class ControlFlowGraph(entryNodes: Set[Node],
 
   def addExitNode(newExitNode: Node): ControlFlowGraph = addExitNodes(Set(newExitNode))
   def addExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
-    return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes: Set[Node], exceptExitNodes, nodes, edges, exceptionEdges)
+    return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
 
   def addExceptExitNodes(newExceptExitNodes: Set[Node]): ControlFlowGraph = {
@@ -70,6 +70,10 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   def setExceptExitNode(node: Node): ControlFlowGraph = setExceptExitNodes(Set(node))
   def setExceptExitNodes(newExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes, newExitNodes, nodes, edges, exceptionEdges)
+  }
+  
+  def removeExitNode(node: Node): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes, exitNodes - node, exceptExitNodes, nodes, edges, exceptionEdges)
   }
 
   /*

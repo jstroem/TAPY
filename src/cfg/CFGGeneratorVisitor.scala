@@ -132,7 +132,17 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val entryNode = new FunctionEntryNode(node.getInternalName(), exitNode, node)
 
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
-    return bodyCfg.append(exitNode)
+    
+    // Insert explicit return None node
+    val noneRegister = nextRegister()
+    val returnNoneCfg = new ControlFlowGraph(new ConstantNoneNode(noneRegister))
+      .append(new ReturnNode(noneRegister))
+    
+    bodyCfg.exitNodes.foldLeft(bodyCfg.append(exitNode)) {(acc, node) => node match {
+        case node: ReturnNode => acc
+        case node => acc.removeEdges(node, exitNode).insert(returnNoneCfg, node, exitNode)
+      }
+    }
   }
 
   // Note: ClassDeclNode inserted in generateCFGOfStatementList
@@ -368,7 +378,6 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return conditionCfg.append(ifEntryNode)
                        .append(Set(thenCfg,
                                    elseCfg))
-                       .append(ifExitNode)
   }
 
   override def visitWith(node: With): ControlFlowGraph = {
