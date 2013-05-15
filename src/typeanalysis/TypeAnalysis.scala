@@ -52,6 +52,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: ReturnNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleReturnNode(node, join)}
         case node: AfterCallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleAfterCallNode(node, join)}
 
+        case node: ClassDeclNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleClassDeclNode(node, join)}
+        case node: ClassEntryNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleClassEntryNode(node, join)}
+
         
         case node => {(solution) => joinPredecessors(node, solution) }
       }
@@ -265,7 +268,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     // Create labels
     val functionScopeObjectLabel = FunctionScopeObjectLabel(node.entry)
     val functionFunctionObjectLabel = FunctionObjectLabel(node.entry, node.exit, functionScopeObjectLabel)
-    val functionObjectLabel = ObjectObjectLabel(functionName)
+    val functionObjectLabel = HeapObjectLabel(functionName)
     
     // Create value lattice elements
     val functionFunctionObjectCallValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(functionFunctionObjectLabel))
@@ -353,8 +356,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
           val obj = HeapLattice.getObject(this.heap, objLabel)
           
           val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) =
-            if (objLabel.isInstanceOf[ObjectObjectLabel]) {
-              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[ObjectObjectLabel], obj, accSolution)
+            if (objLabel.isInstanceOf[HeapObjectLabel]) {
+              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[HeapObjectLabel], obj, accSolution)
               
             } else if (objLabel.isInstanceOf[FunctionObjectLabel]) {
               handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, accSolution)
@@ -374,7 +377,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
   
-  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: ObjectObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
+  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: HeapObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
     // Check if this is the object of a function
     val call = ObjectLattice.getProperty(obj, "__call__")
     val callValue = ObjectPropertyLattice.getValue(call)
@@ -458,5 +461,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
     val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
     AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
+  }
+  
+  def handleClassDeclNode(node: ClassDeclNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  def handleClassEntryNode(node: ClassEntryNode, solution: Elt): Elt = {
+    solution
   }
 }
