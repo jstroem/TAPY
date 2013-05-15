@@ -487,8 +487,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
-      val newProperty = writePropertyOnValue(functionScopeObject, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
-      ObjectLattice.setProperty(functionScopeObject, argName, newProperty)
+      writePropertyValueOnObject(functionScopeObject, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
     }
   }
   
