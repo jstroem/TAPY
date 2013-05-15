@@ -1,13 +1,14 @@
 package tapy.typeanalysis
 
 import java.lang.ArithmeticException
-import org.python.antlr.ast.operatorType
-import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.arguments
+import org.python.antlr.ast.Name
 import tapy.dfa._
 import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
 import tapy.exceptions._
+import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
   type Elt = AnalysisLattice.Elt
@@ -273,7 +274,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     
     // Generate scope-object scope chain
-    val functionScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
+    val functionScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]](List())) {(acc, pair) =>
       val (scopeChain, variableObject) = pair
       acc + (variableObject :: scopeChain)
     }
@@ -405,9 +406,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
     val callGraph = Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.functionEntryNode), (null, objLabel.functionExitNode, null, afterCallNode))
-    val functionScopeObject = HeapLattice.getObject(this.heap, objLabel.scope)
+    var functionScopeObject = HeapLattice.getObject(this.heap, objLabel.scope)
 
+    functionScopeObject = handleFunctionArguments(callNode, functionScopeObject, objLabel.functionEntryNode.funcDef.getInternalArgs())  
+    val newSolution = AnalysisLattice.updateHeap(solution, callNode, objLabel.scope, functionScopeObject)
 
+    (newSolution,callGraph)
+  }
+
+  //Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming
+  def handleFunctionArguments(callNode: CallNode, functionScopeObject: ObjectLattice.Elt, arguments : arguments) : ObjectLattice.Elt = {
     if (callNode.keywordRegs.size > 0) {
       throw new NotImplementedException("Keywords on function calls is not implemented");
     }
@@ -419,9 +427,24 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
 
     //Set the parameters as variables in the functionScopeObject
-    //callNode.argRegs.foldLeft(functionScopeObject) {(acc,arg)}
+    var args = arguments.getInternalArgs().toList.map(_ match {
+      case t: Name => t.getInternalId()
+      case _ => throw new NotImplementedException("Other elements than Name was used as arguments in function definition")
+    })
 
-    (solution,callGraph)
+    //If the argument size is not equal an exception should potentially be rasied
+    if (args.size != callNode.argRegs.size) {
+     throw new NotImplementedException("List of registers given as arguments to function does not match the argument length")
+    }
+
+    args.zip(callNode.argRegs).foldLeft(functionScopeObject) {(acc,pair) =>
+      val (argName,reg) = pair
+      val currentArgumentProperty = ObjectLattice.getProperty(functionScopeObject, argName)
+      val newArgumentProperty = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
+      val newMergedProperty = ObjectPropertyLattice.leastUpperBound(currentArgumentProperty, newArgumentProperty)
+
+      ObjectLattice.setProperty(functionScopeObject, argName, newMergedProperty)
+    }
   }
   
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
