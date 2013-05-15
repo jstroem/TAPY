@@ -109,19 +109,19 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def writePropertyOnVariableObjects(node: Node, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
     val variableObjectLabels = AnalysisLattice.getVariableObjects(solution, node)
     variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
-      val newVariableObject = writePropertyOnObject(node, variableObjectLabel, property, value, solution)
+      val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
+      val newVariableObject = writePropertyOnObject(currentVariableObject, property, value)
       AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
     }
   }
   
-  def writePropertyValueOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ValueLattice.Elt, solution: Elt): ObjectLattice.Elt =
-    writePropertyOnObject(node, objectLabel, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
+  def writePropertyValueOnObject(obj: ObjectLattice.Elt, property: String, value: ValueLattice.Elt): ObjectLattice.Elt =
+    writePropertyOnObject(obj, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value))
   
-  def writePropertyOnObject(node: Node, objectLabel: ObjectLabel, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): ObjectLattice.Elt = {
-    val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), objectLabel)
-    val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
+  def writePropertyOnObject(obj: ObjectLattice.Elt, property: String, value: ObjectPropertyLattice.Elt): ObjectLattice.Elt = {
+    val currentPropertyValue = ObjectLattice.getProperty(obj, property)
     val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
-    ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
+    ObjectLattice.setProperty(obj, property, newPropertyValue)
   }
   
   /* Misc */
@@ -287,9 +287,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
     
     // Create objects
-    var functionScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, functionScopeObjectScopeChain)
-    var functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
-    var functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    val functionScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, functionScopeObjectScopeChain)
+    val functionFunctionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
+    val functionObject = ObjectLattice.updatePropertyValue(ObjectLattice.bottom, "__call__", functionFunctionObjectCallValue)
     
     // Update the lattice
     var result = AnalysisLattice.updateHeap(solution, node, functionScopeObjectLabel, functionScopeObject)
@@ -301,7 +301,32 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleClassDeclNode(node: ClassDeclNode, solution: Elt): Elt = {
-    solution
+    val className = node.entry.classDef.getInternalName()
+    
+    // Create labels
+    val classScopeObjectLabel = ClassScopeObjectLabel(node, node.entry, node.exit)
+    val classObjectLabel = ClassObjectLabel(node, node.entry, node.exit, classScopeObjectLabel)
+    
+    // Create value lattice elements
+    val classObjectValue = ValueLattice.setObjectLabels(ValueLattice.bottom, Set(classObjectLabel))
+
+    
+    // Generate scope-object scope chain
+    val classScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
+      val (scopeChain, variableObject) = pair
+      acc + (variableObject :: scopeChain)
+    }
+    
+    // Create objects
+    val classScopeObject = ObjectLattice.setScopeChain(ObjectLattice.bottom, classScopeObjectScopeChain)
+    val classObject = ObjectLattice.bottom
+    
+    // Update the lattice
+    var result = AnalysisLattice.updateHeap(solution, node, classScopeObjectLabel, classScopeObject)
+    result = AnalysisLattice.updateHeap(result, node, classObjectLabel, classObject)
+
+    // Add the function name to the current object variables, such that it can be referenced
+    writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {

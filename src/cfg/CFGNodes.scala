@@ -15,12 +15,12 @@ abstract class Node(id: UUID) {
 case class FunctionDeclNode(entry: FunctionEntryNode, exit: ExitNode, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
 }
-case class ClassDeclNode(name: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"ClassDecl($name)"
+case class ClassDeclNode(entry: ClassEntryNode, exit: ExitNode, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ClassDecl(${entry.classDef.getInternalName()})"
 }
 
 // Class and function entries/exits
-case class ClassEntryNode(note: String, classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ClassEntryNode(note: String, exitNode: ExitNode, classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassEntryNode($note)"
 }
 case class FunctionEntryNode(note: String, exitNode: ExitNode, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {

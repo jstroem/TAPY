@@ -54,7 +54,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return statements.toList.foldLeft(new ControlFlowGraph(entryNode)) {(acc, stm) =>
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
-        case node: ClassEntryNode => acc.insert(stmCfg).append(new ClassDeclNode(node.classDef.getInternalName()))
+        case node: ClassEntryNode => acc.insert(stmCfg).append(new ClassDeclNode(node, node.exitNode))
         case node: FunctionEntryNode => acc.insert(stmCfg).append(new FunctionDeclNode(node, node.exitNode))
         case node: BreakNode => acc.append(stmCfg).setExitNodes(Set()) // !
         case node => acc.append(stmCfg)
@@ -149,8 +149,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitClassDef(node: ClassDef): ControlFlowGraph = {
     println("visitClassDef")
     
-    val entryNode = new ClassEntryNode(node.getInternalName(), node)
     val exitNode = new ExitNode(node.getInternalName())
+    val entryNode = new ClassEntryNode(node.getInternalName(), exitNode, node)
 
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     return bodyCfg.append(exitNode)
