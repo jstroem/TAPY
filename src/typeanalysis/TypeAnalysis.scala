@@ -478,7 +478,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
 
     val argRegPairs = args.zipWithIndex.map({case (arg,idx) => 
-      if (callNode.argRegs.size < idx) {
+      if (callNode.argRegs.size > idx) {
         (arg,callNode.argRegs(idx))
       } else {
         (arg,defaultArgRegs(idx - callNode.argRegs.size))
@@ -487,7 +487,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
-      writePropertyValueOnObject(functionScopeObject, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
+      writePropertyValueOnObject(acc, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
     }
   }
   
