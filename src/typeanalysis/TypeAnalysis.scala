@@ -21,6 +21,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   var stack: StackLattice.Elt = null
   var stackFrame: StackFrameLattice.Elt = null
   var state: StateLattice.Elt = null
+  var environments: Map[Node, Set[String]] = Environment.build(cfg)
   
   var objectLabelsSeen = Set[ObjectLabel]() // Used to make the top element of the Value lattice
   
@@ -51,6 +52,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: CallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleCallNode(node, join)}
         case node: ReturnNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleReturnNode(node, join)}
         case node: AfterCallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleAfterCallNode(node, join)}
+
+        case node: GlobalNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleGlobalNode(node, join)}
 
         
         case node => {(solution) => joinPredecessors(node, solution) }
@@ -459,4 +462,15 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
     AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
   }
+
+
+  // Global node declares that the variable should be used as a global variable.
+  // It is possible to have some value assigned to the variable before this declaration
+  // this value should then be moved to the global variable scope, and
+  // the property entry for the variable in the current variable object should indicate that
+  // it is a global variable.
+  def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
+    solution
+  }
+
 }
