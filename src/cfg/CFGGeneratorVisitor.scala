@@ -55,10 +55,21 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode => acc.insert(stmCfg).append(new ClassDeclNode(node.classDef.getInternalName()))
-        case node: FunctionEntryNode => acc.insert(stmCfg).append(new FunctionDeclNode(node, node.exitNode))
+        case node: FunctionEntryNode => {
+          val (defaultArgCfg,defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
+          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, node.exitNode,defaultArgRegs))
+        }
         case node: BreakNode => acc.append(stmCfg).setExitNodes(Set()) // !
         case node => acc.append(stmCfg)
       }
+    }
+  }
+
+  def generateDefaultArguments(arguments: arguments): (ControlFlowGraph,List[Int]) = {
+    arguments.getInternalDefaults().toList.foldLeft((new ControlFlowGraph(new NoOpNode("BoolOp entry")),List[Int]())){(acc,default) => 
+      val (cfg, regs) = acc
+      val newCfg = cfg.append(default.accept(this))
+      (newCfg, lastExpressionRegister :: regs)
     }
   }
 

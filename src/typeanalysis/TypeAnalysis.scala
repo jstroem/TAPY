@@ -379,11 +379,11 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     if (call == ObjectPropertyLattice.bottom) {
       // TypeError: Trying to call a non-function object
-      throw new NotImplementedException()
+      throw new NotImplementedException("TypeError: Trying to call a non-function object")
       
     } else if (!ValueLattice.elementIsOnlyObjectLabels[FunctionObjectLabel](callValue)) {
       // TypeError: Trying to call a non-function object
-      throw new NotImplementedException()
+      throw new NotImplementedException("TypeError: Trying to call a non-function object")
       
     } else {
       val callObjLabels = ValueLattice.getObjectLabels(callValue)
@@ -398,7 +398,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         } else {
           // TypeError: Trying to call a non-function object
           // Could it be the case that __call__ was set to a non-function object, which has __call__ to a function object?
-          throw new NotImplementedException()
+          throw new NotImplementedException("TypeError: Trying to call a non-function object")
         }
       }
     }
@@ -408,14 +408,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val callGraph = Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.functionEntryNode), (null, objLabel.functionExitNode, null, afterCallNode))
     var functionScopeObject = HeapLattice.getObject(this.heap, objLabel.scope)
 
-    functionScopeObject = handleFunctionArguments(callNode, functionScopeObject, objLabel.functionEntryNode.funcDef.getInternalArgs())  
+    functionScopeObject = handleFunctionArguments(callNode, functionScopeObject, objLabel.functionEntryNode.funcDef.getInternalArgs(), objLabel.functionDeclNode.defaultArgRegs)  
     val newSolution = AnalysisLattice.updateHeap(solution, callNode, objLabel.scope, functionScopeObject)
 
     (newSolution,callGraph)
   }
 
   //Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming
-  def handleFunctionArguments(callNode: CallNode, functionScopeObject: ObjectLattice.Elt, arguments : arguments) : ObjectLattice.Elt = {
+  def handleFunctionArguments(callNode: CallNode, functionScopeObject: ObjectLattice.Elt, arguments : arguments, defaultArgRegs: List[Int]) : ObjectLattice.Elt = {
     if (callNode.keywordRegs.size > 0) {
       throw new NotImplementedException("Keywords on function calls is not implemented");
     }
@@ -433,12 +433,21 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     })
 
     //If the argument size is not equal an exception should potentially be rasied
-    if (args.size != callNode.argRegs.size) {
-     throw new NotImplementedException("List of registers given as arguments to function does not match the argument length")
+    if (args.size - defaultArgRegs.size > callNode.argRegs.size) {
+     throw new NotImplementedException("List of registers given as arguments to function is smaller than required argument length")
     }
 
-    args.zip(callNode.argRegs).foldLeft(functionScopeObject) {(acc,pair) =>
+    val argRegPairs = args.zipWithIndex.map({case (arg,idx) => 
+      if (callNode.argRegs.size < idx) {
+        (arg,callNode.argRegs[idx])
+      } else {
+        (arg,defaultArgRegs[idx - callNode.argRegs.size])
+      }
+    })
+
+    argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
+
       val currentArgumentProperty = ObjectLattice.getProperty(functionScopeObject, argName)
       val newArgumentProperty = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
       val newMergedProperty = ObjectPropertyLattice.leastUpperBound(currentArgumentProperty, newArgumentProperty)
