@@ -266,8 +266,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val functionName = node.entry.funcDef.getInternalName()
     
     // Create labels
-    val functionScopeObjectLabel = FunctionScopeObjectLabel(node.entry)
-    val functionFunctionObjectLabel = FunctionObjectLabel(node.entry, node.exit, functionScopeObjectLabel)
+    val functionScopeObjectLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
+    val functionFunctionObjectLabel = FunctionObjectLabel(node, node.entry, node.exit, functionScopeObjectLabel)
     val functionObjectLabel = HeapObjectLabel(functionName)
     
     // Create value lattice elements
@@ -293,6 +293,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     // Add the function name to the current object variables, such that it can be referenced
     writePropertyValueOnVariableObjects(node, functionName, functionObjectValue, result)
+  }
+  
+  def handleClassDeclNode(node: ClassDeclNode, solution: Elt): Elt = {
+    solution
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
@@ -461,10 +465,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
     val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
     AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
-  }
-  
-  def handleClassDeclNode(node: ClassDeclNode, solution: Elt): Elt = {
-    solution
   }
   
   def handleClassEntryNode(node: ClassEntryNode, solution: Elt): Elt = {
