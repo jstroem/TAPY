@@ -92,6 +92,21 @@ extends ProductLattice(
       case _ => throw new NotImplementedException()
     }
   }
+  
+  def splitElement(el: Elt): Set[Elt] = {
+    var result = Set[Elt]()
+    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
+    if (undefined != UndefinedLattice.bottom) result = result + setUndefined(bottom, undefined)
+    if (none != NoneLattice.bottom) result = result + setNone(bottom, none)
+    if (boolean != BooleanLattice.bottom) result = result + setBoolean(bottom, boolean)
+    if (integer != IntegerLattice.bottom) result = result + setInteger(bottom, integer)
+    if (float != FloatLattice.bottom) result = result + setFloat(bottom, float)
+    if (long != LongLattice.bottom) result = result + setLong(bottom, long)
+    if (complex != ComplexLattice.bottom) result = result + setComplex(bottom, complex)
+    if (string != StringLattice.bottom) result = result + setString(bottom, string)
+    if (objectLabels != ObjectLabelLattice.bottom) result = result + setObjectLabels(bottom, objectLabels)
+    result
+  }
 
   /**
     * Element is only tests

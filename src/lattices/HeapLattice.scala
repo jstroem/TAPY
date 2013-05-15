@@ -6,7 +6,7 @@ import tapy.cfg._
 import java.io._
 
 object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLattice) {
-
+  
   /* Getters */
   
   def getObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =

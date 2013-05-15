@@ -5,13 +5,15 @@ import tapy.dfa._
 object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, ModifiedLattice)) {
   
   /* Getters */
+  
   def getValue(el: ObjectPropertyLattice.Elt): ValueLattice.Elt = {
     val (value, _) = el
     value
   }
   
-  /* Updaters */
-  def updatePropertyValue(el: ObjectPropertyLattice.Elt, property: String, value: ValueLattice.Elt): ObjectPropertyLattice.Elt = {
+  /* Setters */
+  
+  def setValue(el: ObjectPropertyLattice.Elt, value: ValueLattice.Elt): ObjectPropertyLattice.Elt = {
     (value, el._2)
   }
 }
@@ -19,12 +21,20 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
 object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.Elt](ObjectPropertyLattice) {
   
   /* Getters */
-  def getProperty(el: ObjectPropertiesLattice.Elt, property: String) = get(el, property)
+  
+  def getProperty(el: Elt, property: String) = get(el, property)
+  
+  /* Setters */
+  
+  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt = {
+    update(el, property, value)
+  }
   
   /* Updaters */
-  def updatePropertyValue(el: ObjectPropertiesLattice.Elt, property: String, value: ValueLattice.Elt): ObjectPropertiesLattice.Elt = {
+  
+  def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
     val oldValue = getProperty(el, property)
-    val newValue = ObjectPropertyLattice.updatePropertyValue(oldValue, property, value)
+    val newValue = ObjectPropertyLattice.setValue(oldValue, value)
     update(el, property, newValue)
   }
 }
@@ -54,7 +64,11 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
     (getProperties(el), scopeChain)
   }
   
+  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt =
+    (ObjectPropertiesLattice.setProperty(getProperties(el), property, value), getScopeChain(el))
+  
   /* Updaters */
+    
   
   def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt =
     (ObjectPropertiesLattice.updatePropertyValue(getProperties(el), property, value), getScopeChain(el))
