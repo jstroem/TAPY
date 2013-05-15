@@ -174,7 +174,7 @@ case class PrintNode(dest: Option[Int], valueRegs: List[Int], id: UUID = UUID.ra
 
 // Misc
 case class GlobalNode(variable: String, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"TODO\t(GlobalNode)"
+  override def toString = s"Gloabal ${variable}\t(GlobalNode)"
 }
 
 case class AssertIterable(reg: Int, length: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
