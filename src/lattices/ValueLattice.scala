@@ -160,11 +160,11 @@ extends ProductLattice(
         float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string != StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
-  def elementIsOnlyObjectLabels[T](el: Elt): Boolean = {
+  def elementIsOnlyObjectLabels[T <: ObjectLabel: Manifest](el: Elt): Boolean = {
     val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
         float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) &&
-        (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && objectLabel.isInstanceOf[T]})
+        (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && manifest[T].erasure.isInstance(objectLabel)})
   }
 
   /**
