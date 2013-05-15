@@ -20,6 +20,7 @@ object StackLattice extends ProductLattice(StackFrameLattice, ExecutionContextLa
     ExecutionContextLattice.getVariableObjects(getExecutionContext(el))
   
   /* Setters */
+    
   def setExecutionContext(el: Elt, executionContexts: ExecutionContextLattice.Elt): Elt =
     (getStackFrame(el), executionContexts)
   

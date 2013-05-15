@@ -48,7 +48,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: FunctionEntryNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleFunctionEntryNode(node, join)}
         case node: ExitNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleExitNode(node, join)}
         case node: CallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleCallNode(node, join)}
+        case node: ReturnNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleReturnNode(node, join)}
         case node: AfterCallNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleAfterCallNode(node, join)}
+
         
         case node => {(solution) => joinPredecessors(node, solution) }
       }
@@ -74,7 +76,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def joinPredecessors(node: Node, solution: Elt): Elt = {
     val predecessors = cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessors(this.callGraph, node)
-    val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) => 
+    val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
       StateLattice.leastUpperBound(acc, AnalysisLattice.getState(pred, solution)))
     AnalysisLattice.setState(solution, node, state)
   }
@@ -97,11 +99,18 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
   
-  def writePropertyOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt = {
+  def writePropertyValueOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt =
+    writePropertyOnVariableObjects(node, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
+  
+  def writePropertyOnVariableObjects(node: Node, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
     val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
     variableObjects.foldLeft(solution) {(acc, variableObjectLabel) =>
       val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val newVariableObject = ObjectLattice.updatePropertyValue(currentVariableObject, property, value)
+      val currentPropertyValue = ObjectLattice.getProperty(currentVariableObject, property)
+      
+      val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
+      val newVariableObject = ObjectLattice.setProperty(currentVariableObject, property, newPropertyValue)
+      
       AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
     }
   }
@@ -162,27 +171,17 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
     val value = findPropertyInScope(node, node.variable, solution)
-    // Todo use lookup
-    /*
-    val variableObjects = AnalysisLattice.getVariableObjects(solution, node)
-    val value = variableObjects.foldLeft(ValueLattice.bottom) {(acc, variableObjectLabel) =>
-      val variableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val value = ObjectPropertyLattice.getValue(ObjectLattice.getProperty(variableObject, node.variable))
-      ValueLattice.leastUpperBound(value, acc)
-    }
-    */
-    
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
-    val value: ValueLattice.Elt = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
-    writePropertyOnVariableObjects(node, node.variable, value, solution)
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
+    writePropertyValueOnVariableObjects(node, node.variable, value, solution)
   }
   
   /* Operators */
   
-  /** CompareOpNode: 
+  /** CompareOpNode:
     On the operators != and == the result of the comparison is found if the element is either Booleans, Long, String, Float, Integer, Complex or 1 Allocation
     On the operators < <= > and >= the result of the comparison is found if the element is either Booleans, Long, String, Float, Integer
   **/
@@ -211,24 +210,35 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     if (ValueLattice.elementIsOnlyNumber(el1) && ValueLattice.elementIsOnlyNumber(el2)) {
       /* Both el1 and el2 are numbers (i.e. either boolean, integer, float, long or complex and NOT e.g. string */
-      val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
+      val (el1s, el2s) = (ValueLattice.splitElement(el1), ValueLattice.splitElement(el2))
       
-      try {
-        if (ValueLattice.elementIsOnlyBoolean(el1Common) && ValueLattice.elementIsOnlyBoolean(el2Common))
-          value = BooleanLattice.binaryOperator(ValueLattice.getBoolean(el1Common), ValueLattice.getBoolean(el2Common), node.op)
-        else if (ValueLattice.elementIsOnlyInteger(el1Common) && ValueLattice.elementIsOnlyInteger(el2Common))
-          value = IntegerLattice.binaryOperator(ValueLattice.getInteger(el1Common), ValueLattice.getInteger(el2Common), node.op)
-        else if (ValueLattice.elementIsOnlyFloat(el1Common) && ValueLattice.elementIsOnlyFloat(el2Common))
-          value = FloatLattice.binaryOperator(ValueLattice.getFloat(el1Common), ValueLattice.getFloat(el2Common), node.op)
-        else if (ValueLattice.elementIsOnlyLong(el1Common) && ValueLattice.elementIsOnlyLong(el2Common))
-          value = LongLattice.binaryOperator(ValueLattice.getLong(el1Common), ValueLattice.getLong(el2Common), node.op)
-        else if (ValueLattice.elementIsOnlyComplex(el1Common) && ValueLattice.elementIsOnlyComplex(el2Common))
-          value = ComplexLattice.binaryOperator(ValueLattice.getComplex(el1Common), ValueLattice.getComplex(el2Common), node.op)
-        else
-          throw new NotImplementedException()
-      } catch {
-        case e: ArithmeticException => // TODO: Division by zero
-      }
+      value =
+        el1s.foldLeft(ValueLattice.bottom) {(acc, el1) =>
+          el2s.foldLeft(acc) {(acc, el2) =>
+            println("fold")
+            val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
+            try {
+              val value =
+                if (ValueLattice.elementIsOnlyBoolean(el1Common) && ValueLattice.elementIsOnlyBoolean(el2Common))
+                  BooleanLattice.binaryOperator(ValueLattice.getBoolean(el1Common), ValueLattice.getBoolean(el2Common), node.op)
+                else if (ValueLattice.elementIsOnlyInteger(el1Common) && ValueLattice.elementIsOnlyInteger(el2Common))
+                  IntegerLattice.binaryOperator(ValueLattice.getInteger(el1Common), ValueLattice.getInteger(el2Common), node.op)
+                else if (ValueLattice.elementIsOnlyFloat(el1Common) && ValueLattice.elementIsOnlyFloat(el2Common))
+                  FloatLattice.binaryOperator(ValueLattice.getFloat(el1Common), ValueLattice.getFloat(el2Common), node.op)
+                else if (ValueLattice.elementIsOnlyLong(el1Common) && ValueLattice.elementIsOnlyLong(el2Common))
+                  LongLattice.binaryOperator(ValueLattice.getLong(el1Common), ValueLattice.getLong(el2Common), node.op)
+                else if (ValueLattice.elementIsOnlyComplex(el1Common) && ValueLattice.elementIsOnlyComplex(el2Common))
+                  ComplexLattice.binaryOperator(ValueLattice.getComplex(el1Common), ValueLattice.getComplex(el2Common), node.op)
+                else
+                  throw new NotImplementedException()
+              ValueLattice.leastUpperBound(value, acc)
+            } catch {
+              case e: ArithmeticException =>
+                // Division by zero
+                throw new NotImplementedException()
+            }
+          }
+        }
     } else if (ValueLattice.elementIsOnlyString(el1) && ValueLattice.elementIsOnlyString(el2)) {
       value = StringLattice.binaryOperator(ValueLattice.getString(el1), ValueLattice.getString(el2), node.op)
     } else {
@@ -279,7 +289,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     result = AnalysisLattice.updateHeap(result, node, functionObjectLabel, functionObject)
 
     // Add the function name to the current object variables, such that it can be referenced
-    writePropertyOnVariableObjects(node, functionName, functionObjectValue, result)
+    writePropertyValueOnVariableObjects(node, functionName, functionObjectValue, result)
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
@@ -394,6 +404,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
-    solution
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
+    AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+  }
+  
+  def handleReturnNode(node: ReturnNode, solution: Elt): Elt = {
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
+    val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
+    AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
   }
 }
