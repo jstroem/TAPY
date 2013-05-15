@@ -29,7 +29,8 @@ TAPY/
 
 #Docx temps
 ~$*.docx
-*.aux 
+*.aux
+*.pdf 
 *.log 
 *.out
 *.fdb_latexmk
