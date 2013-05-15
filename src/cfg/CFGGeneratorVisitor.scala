@@ -10,7 +10,7 @@ import org.python.antlr.ast._
 import org.python.antlr.ast
 import org.python.antlr.base._
 import scala.collection.JavaConversions._
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import tapy.exceptions._
 import java.io._
 
 object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {

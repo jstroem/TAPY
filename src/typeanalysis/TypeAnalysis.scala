@@ -1,13 +1,14 @@
 package tapy.typeanalysis
 
 import java.lang.ArithmeticException
-import org.python.antlr.ast.operatorType
-import org.python.antlr.ast.cmpopType
+import org.python.antlr.ast.arguments
+import org.python.antlr.ast.Name
 import tapy.dfa._
 import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import tapy.exceptions._
+import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
   type Elt = AnalysisLattice.Elt
@@ -344,32 +345,34 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       } else {
         // Update the call graph accordingly
         val objLabels = ValueLattice.getObjectLabels(function)
-        val callGraph = objLabels.foldLeft(this.callGraph) {(acc, objLabel) =>
+        val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) = objLabels.foldLeft((solution,this.callGraph)) {(acc, objLabel) =>
+          val (accSolution, accCallGraph) = acc
+
           val obj = HeapLattice.getObject(this.heap, objLabel)
           
-          val result: CallGraphLattice.Elt =
+          val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) =
             if (objLabel.isInstanceOf[ObjectObjectLabel]) {
-              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[ObjectObjectLabel], obj, solution)
+              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[ObjectObjectLabel], obj, accSolution)
               
             } else if (objLabel.isInstanceOf[FunctionObjectLabel]) {
-              handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, solution)
+              handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, accSolution)
               
             } else {
               // Does not occur: elements has been checked to be CallableObjectLabels
               throw new InternalError()
             }
           
-          CallGraphLattice.leastUpperBound(result, acc)
+          (newSolution,CallGraphLattice.leastUpperBound(callGraph, accCallGraph))
         }
         
-        return AnalysisLattice.setCallGraph(solution, callGraph)
+        return AnalysisLattice.setCallGraph(newSolution, callGraph)
       }
     } catch {
       case e: NotImplementedException => e.printStackTrace(); AnalysisLattice.setState(solution, node, StateLattice.top)
     }
   }
   
-  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: ObjectObjectLabel, obj: ObjectLattice.Elt, solution: Elt): CallGraphLattice.Elt = {
+  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: ObjectObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
     // Check if this is the object of a function
     val call = ObjectLattice.getProperty(obj, "__call__")
     val callValue = ObjectPropertyLattice.getValue(call)
@@ -384,11 +387,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       
     } else {
       val callObjLabels = ValueLattice.getObjectLabels(callValue)
-      callObjLabels.foldLeft(CallGraphLattice.bottom) {(acc, callObjLabel) =>
+      callObjLabels.foldLeft((solution,CallGraphLattice.bottom)) {(acc, callObjLabel) =>
+        val (accSolution, accCallGraph) = acc
         val callObj = HeapLattice.getObject(this.heap, callObjLabel)
         
         if (callObjLabel.isInstanceOf[FunctionObjectLabel]) {
-            handleFunctionObjectCall(callNode, afterCallNode, callObjLabel.asInstanceOf[FunctionObjectLabel], callObj, solution)
+            val (newSolution, callGraph) = handleFunctionObjectCall(callNode, afterCallNode, callObjLabel.asInstanceOf[FunctionObjectLabel], callObj, accSolution)
+            (newSolution,CallGraphLattice.leastUpperBound(callGraph, accCallGraph))
           
         } else {
           // TypeError: Trying to call a non-function object
@@ -399,8 +404,47 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
   
-  def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): CallGraphLattice.Elt = {
-    Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.functionEntryNode), (null, objLabel.functionExitNode, null, afterCallNode))
+  def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
+    val callGraph = Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.functionEntryNode), (null, objLabel.functionExitNode, null, afterCallNode))
+    var functionScopeObject = HeapLattice.getObject(this.heap, objLabel.scope)
+
+    functionScopeObject = handleFunctionArguments(callNode, functionScopeObject, objLabel.functionEntryNode.funcDef.getInternalArgs())  
+    val newSolution = AnalysisLattice.updateHeap(solution, callNode, objLabel.scope, functionScopeObject)
+
+    (newSolution,callGraph)
+  }
+
+  //Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming
+  def handleFunctionArguments(callNode: CallNode, functionScopeObject: ObjectLattice.Elt, arguments : arguments) : ObjectLattice.Elt = {
+    if (callNode.keywordRegs.size > 0) {
+      throw new NotImplementedException("Keywords on function calls is not implemented");
+    }
+    if (callNode.starArgReg != None) {
+      throw new NotImplementedException("Star arguments on function calls is not implemented");
+    }
+    if (callNode.kwArgReg != None) {
+      throw new NotImplementedException("kw arguments on function calls is not implemented");
+    }
+
+    //Set the parameters as variables in the functionScopeObject
+    var args = arguments.getInternalArgs().toList.map(_ match {
+      case t: Name => t.getInternalId()
+      case _ => throw new NotImplementedException("Other elements than Name was used as arguments in function definition")
+    })
+
+    //If the argument size is not equal an exception should potentially be rasied
+    if (args.size != callNode.argRegs.size) {
+     throw new NotImplementedException("List of registers given as arguments to function does not match the argument length")
+    }
+
+    args.zip(callNode.argRegs).foldLeft(functionScopeObject) {(acc,pair) =>
+      val (argName,reg) = pair
+      val currentArgumentProperty = ObjectLattice.getProperty(functionScopeObject, argName)
+      val newArgumentProperty = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
+      val newMergedProperty = ObjectPropertyLattice.leastUpperBound(currentArgumentProperty, newArgumentProperty)
+
+      ObjectLattice.setProperty(functionScopeObject, argName, newMergedProperty)
+    }
   }
   
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
