@@ -225,7 +225,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
         case t: Attribute => visitAttribute(t, tmpVariableRegister) 
         case t: Tuple => visitAssignAux(tmpVariableRegister, t.getInternalElts())
         case t: ast.List => visitAssignAux(tmpVariableRegister, t.getInternalElts())
-        case t => throw new NotImplementedException()
+        case t => throw new NotImplementedException("")
       }
       i = i + 1
       

@@ -216,7 +216,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       value =
         el1s.foldLeft(ValueLattice.bottom) {(acc, el1) =>
           el2s.foldLeft(acc) {(acc, el2) =>
-            println("fold")
             val (el1Common, el2Common) = ValueLattice.elementsToCommonType(el1, el2)
             try {
               val value =
@@ -313,11 +312,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         // local declarations will be written onto that object.
         val executionContexts: Set[(List[ObjectLabel], ObjectLabel)] = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map({(scopeChain) => (scopeChain, scopeObjectLabel)})
         return AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+      } else {
+        // Exception: TODO
+        AnalysisLattice.setState(solution, node, StateLattice.bottom)
       }
+    } else {
+      // TODO: Why is heap null?
+      AnalysisLattice.setState(solution, node, StateLattice.bottom)
     }
-    
-    // Give up?
-    AnalysisLattice.setState(solution, node, StateLattice.top)
   }
   
   def handleExitNode(node: ExitNode, solution: Elt): Elt = {
@@ -368,7 +370,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         return AnalysisLattice.setCallGraph(newSolution, callGraph)
       }
     } catch {
-      case e: NotImplementedException => e.printStackTrace(); AnalysisLattice.setState(solution, node, StateLattice.top)
+      case e: NotImplementedException => e.printStackTrace(); AnalysisLattice.setState(solution, node, StateLattice.bottom)
     }
   }
   
