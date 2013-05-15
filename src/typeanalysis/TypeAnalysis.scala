@@ -274,7 +274,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     
     // Generate scope-object scope chain
-    val functionScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]](List())) {(acc, pair) =>
+    val functionScopeObjectScopeChain = this.executionContexts.foldLeft(Set[List[ObjectLabel]]()) {(acc, pair) =>
       val (scopeChain, variableObject) = pair
       acc + (variableObject :: scopeChain)
     }
