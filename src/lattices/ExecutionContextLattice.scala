@@ -7,9 +7,9 @@ object ExecutionContextLattice extends PowerSubSetLattice[(List[ObjectLabel], Ob
   
   /* Getters */
   
-  def getVariableObjects(el: ExecutionContextLattice.Elt): Set[ObjectLabel] =
+  def getVariableObjects(el: Elt): Set[ObjectLabel] =
     if (el != null) el.map({ case (_, variableObject) => variableObject }) else Set()
   
-  def getVariableObjectsOnScopeChains(el: ExecutionContextLattice.Elt): Set[List[ObjectLabel]] =
+  def getVariableObjectsOnScopeChains(el: Elt): Set[List[ObjectLabel]] =
     if (el != null) el.map({ case (scopeChain, variableObject) => variableObject :: scopeChain }) else Set()
 }

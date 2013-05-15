@@ -54,19 +54,27 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     return statements.toList.foldLeft(new ControlFlowGraph(entryNode)) {(acc, stm) =>
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
-        case node: ClassEntryNode => acc.insert(stmCfg).append(new ClassDeclNode(node, node.exitNode))
-        case node: FunctionEntryNode => {
-          val (defaultArgCfg,defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
-          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, node.exitNode,defaultArgRegs))
-        }
-        case node: BreakNode => acc.append(stmCfg).setExitNodes(Set()) // !
-        case node => acc.append(stmCfg)
+        case node: ClassEntryNode =>
+          // The class body are evaluated at declaration time, so we need to connect it (contrary to functions)
+          val classDeclNode = new ClassDeclNode(node, node.exitNode)
+          val afterClassDeclNode = new NoOpNode("After-class-decl")
+          acc.append(classDeclNode).append(afterClassDeclNode).insert(stmCfg, classDeclNode, afterClassDeclNode)
+          
+        case node: FunctionEntryNode =>
+          val (defaultArgCfg, defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
+          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, node.exitNode, defaultArgRegs))
+          
+        case node: BreakNode =>
+          acc.append(stmCfg).setExitNodes(Set()) // !
+          
+        case node =>
+          acc.append(stmCfg)
       }
     }
   }
 
-  def generateDefaultArguments(arguments: arguments): (ControlFlowGraph,List[Int]) = {
-    arguments.getInternalDefaults().toList.foldLeft((new ControlFlowGraph(new NoOpNode("BoolOp entry")),List[Int]())){(acc,default) => 
+  def generateDefaultArguments(arguments: arguments): (ControlFlowGraph, List[Int]) = {
+    arguments.getInternalDefaults().toList.foldLeft((new ControlFlowGraph(new NoOpNode("BoolOp entry")),List[Int]())) {(acc, default) => 
       val (cfg, regs) = acc
       val newCfg = cfg.append(default.accept(this))
       (newCfg, lastExpressionRegister :: regs)
@@ -149,7 +157,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     val returnNoneCfg = new ControlFlowGraph(new ConstantNoneNode(noneRegister))
       .append(new ReturnNode(noneRegister))
     
-    bodyCfg.exitNodes.foldLeft(bodyCfg.append(exitNode)) {(acc, node) => node match {
+    return bodyCfg.exitNodes.foldLeft(bodyCfg.append(exitNode)) {(acc, node) => node match {
         case node: ReturnNode => acc
         case node => acc.removeEdges(node, exitNode).insert(returnNoneCfg, node, exitNode)
       }
