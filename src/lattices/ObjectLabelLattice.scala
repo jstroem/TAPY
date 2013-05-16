@@ -7,7 +7,7 @@ import tapy.lattices._
 import tapy.dfa._
 
 abstract class ObjectLabel(id: UUID) {
-	def getIdString() :String = id.toString()
+	def getIdString(): String = id.toString()
 }
 
 abstract class CallableObjectLabel(id: UUID) extends ObjectLabel(id)

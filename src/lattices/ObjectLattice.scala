@@ -113,7 +113,7 @@ object ScopeChainPowerLattice extends PowerSubSetLattice[List[ObjectLabel]]()
  */
 object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainPowerLattice) {
   
-  /* Getters */  
+  /* Getters */
   
   def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt = {
     ObjectPropertiesLattice.getProperty(getProperties(el), property)

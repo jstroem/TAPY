@@ -20,13 +20,13 @@ case class ClassDeclNode(entry: ClassEntryNode, exit: ExitNode, bases: List[Stri
 }
 
 // Class and function entries/exits
-case class ClassEntryNode(note: String, exitNode: ExitNode, bases: List[String], classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ClassEntryNode(note: String, bases: List[String], classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassEntryNode($note)"
 }
-case class FunctionEntryNode(note: String, exitNode: ExitNode, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class FunctionEntryNode(note: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionEntryNode($note)"
 }
-case class ExitNode(note: String, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ExitNode(note: String, entryNode: Node, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ExitNode($note)"
 }
 
