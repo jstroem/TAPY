@@ -3,6 +3,9 @@ x = object
 class A(object):
 	pass
 
+class A1(x):
+	pass
+
 class B(A):
 	x = 10
 

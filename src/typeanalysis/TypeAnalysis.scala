@@ -140,6 +140,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   val builtInObject = ObjectLattice.bottom
   val builtInObjectValue = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, ValueLattice.setObjectLabels(ValueLattice.bottom, Set(builtInObjectLabel)))
   
+  def builtInObjectOverwritten(node: Node, solution: Elt): Boolean = {
+    findPropertyInScope(node, "object", solution) != builtInObjectValue
+  }
+  
   /* Misc */
   
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
@@ -353,16 +357,15 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
             val value = ObjectPropertyLattice.getValue(property)
             val labels = ValueLattice.getObjectLabels(value)
             
-            if (labels.size > 0 && ValueLattice.elementIsOnlyObjectLabels[ClassObjectLabel](value)) {
+            if (labels.size > 0 && ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](value)) {
               // This particular baseName can be multiple classes (e.g. class C(x): ..., where x has been defined as:
               // if (...): x = C else: x = D), so we must check that each of these possibilities are definately new style class objects!
               labels.foldLeft(true) {(acc, label) =>
                 label match {
-                  case label: NewStyleClassObjectLabel => acc // acc && isDefinatelyNewStyleClassObject(node, label.bases, solution)
-                  case label: OldStyleClassObjectLabel => false // acc && isDefinatelyNewStyleClassObject(node, label.bases, solution)
-                  case _ =>
-                    // Does not occur: value was checked above
-                    throw new InternalError()
+                  case label: NewStyleClassObjectLabel => acc
+                  case label: OldStyleClassObjectLabel => false
+                  case label: BuiltInClassObjectLabel => label == builtInObjectLabel
+                  case _ => throw new NotImplementedException("Using something that is not a class as base class.")
                 }
               }
               
@@ -374,17 +377,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         baseNames.size > 0 && allBasesExtendsObject
         
       } else
-        // TODO: Could be improved
+        // TODO: Could be improved (but the user should really not overwrite the built in object :-)
         false
         
     } catch {
       case e: NotImplementedException => false 
     }
-  }
-  
-  /* Returns true if the built in object may have been overwritten. */
-  def builtInObjectOverwritten(node: Node, solution: Elt): Boolean = {
-    findPropertyInScope(node, "object", solution) != builtInObjectValue
   }
   
   def isDefinatelyOldStyleClassObject(node: Node, baseNames: List[String], solution: Elt): Boolean = {
@@ -419,7 +417,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         noBasesExtendsObject
         
       } else
-        // TODO: Could be improved
+        // TODO: Could be improved (but the user should really not overwrite the built in object :-)
         baseNames.size == 0
     } catch {
       case e: NotImplementedException => false 

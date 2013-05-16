@@ -37,6 +37,7 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
   }
   
   /* Setters */
+  
   def setValue(el: Elt, value: ValueLattice.Elt): ObjectPropertyLattice.Elt = {
     (value, el._2)
   }
@@ -113,6 +114,7 @@ object ScopeChainPowerLattice extends PowerSubSetLattice[List[ObjectLabel]]()
 object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainPowerLattice) {
   
   /* Getters */  
+  
   def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt = {
     ObjectPropertiesLattice.getProperty(getProperties(el), property)
   }
@@ -131,6 +133,7 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   }
   
   /* Setters */
+  
   def setScopeChain(el: Elt, scopeChain: ScopeChainPowerLattice.Elt): Elt = {
     (getProperties(el), scopeChain)
   }
@@ -140,6 +143,7 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   }
 
   /* Updaters */
+  
   def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
     (ObjectPropertiesLattice.updatePropertyValue(getProperties(el), property, value), getScopeChain(el))
   }
