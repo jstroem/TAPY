@@ -16,23 +16,21 @@ case class ModuleScopeObjectLabel(label: String, id: UUID = UUID.randomUUID()) e
   override def toString() = s"Module Scope Object $label"
 }
 
-case class ClassObjectLabel(classDeclNode: ClassDeclNode, classEntryNode: ClassEntryNode, classExitNode: ExitNode, scope: ClassScopeObjectLabel, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-	override def toString() = s"Class Object ${classEntryNode.toString()}"
-}
-case class ClassScopeObjectLabel(classDeclNode: ClassDeclNode, classEntryNode: ClassEntryNode, classExitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-  override def toString() = s"Function Scope Object ${classEntryNode.toString()}"
+case class ClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+	override def toString() = s"Class Object ${entryNode.toString()}"
 }
 
-case class FunctionObjectLabel(functionDeclNode: FunctionDeclNode, functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, scope: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
-	override def toString() = s"Function Object ${functionEntryNode.toString()}"
+case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, scope: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+	override def toString() = s"Function Object ${entryNode.toString()}"
 }
-case class FunctionScopeObjectLabel(functionDeclNode: FunctionDeclNode, functionEntryNode: FunctionEntryNode, functionExitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
-  override def toString() = s"Function Scope Object ${functionEntryNode.toString()}"
+case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
+  override def toString() = s"Function Scope Object ${entryNode.toString()}"
 }
 
 case class HeapObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
-	override def toString() = s"Real Object $label"
+	override def toString() = s"Heap Object $label"
 }
+case class ClassInstanceObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 case class NewStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 case class OldStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 

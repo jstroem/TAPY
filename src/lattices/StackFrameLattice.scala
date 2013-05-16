@@ -7,12 +7,12 @@ object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
 
   /* Getters */
   
-  def getRegisterValue(el: StackFrameLattice.Elt, register: Int): ValueLattice.Elt =
+  def getRegisterValue(el: Elt, register: Int): ValueLattice.Elt =
     get(el, register)
 
   /* Updaters */
     
-  def updateRegisterValue(el: StackFrameLattice.Elt, register: Int, value: ValueLattice.Elt): StackFrameLattice.Elt =
+  def updateRegisterValue(el: Elt, register: Int, value: ValueLattice.Elt): Elt =
     update(el, register, value)
 
 }
