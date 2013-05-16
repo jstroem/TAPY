@@ -99,8 +99,9 @@ object ScopeChainPowerLattice extends PowerSubSetLattice[List[ObjectLabel]]()
 object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainPowerLattice) {
   
   /* Getters */  
-  def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt =
+  def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt = {
     ObjectPropertiesLattice.getProperty(getProperties(el), property)
+  }
   
   def getProperties(el: Elt): ObjectPropertiesLattice.Elt = {
     val (objectProperties, _) = el
@@ -117,11 +118,24 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
     (getProperties(el), scopeChain)
   }
   
-  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt =
+  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt = {
     (ObjectPropertiesLattice.setProperty(getProperties(el), property, value), getScopeChain(el))
-  
+  }
 
   /* Updaters */
-  def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt =
+  def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
     (ObjectPropertiesLattice.updatePropertyValue(getProperties(el), property, value), getScopeChain(el))
+  }
+
+  def updatePropertyAbsent(el: Elt, property: String, absent: AbsentLattice.Elt): Elt = {
+    (ObjectPropertiesLattice.updatePropertyAbsent(getProperties(el), property, absent), getScopeChain(el))
+  }
+
+  def updatePropertyModified(el: Elt, property: String, modified: ModifiedLattice.Elt): Elt = {
+    (ObjectPropertiesLattice.updatePropertyModified(getProperties(el), property, modified), getScopeChain(el))
+  }
+
+  def updatePropertyGlobal(el: Elt, property: String, global: GlobalLattice.Elt): Elt = {
+    (ObjectPropertiesLattice.updatePropertyGlobal(getProperties(el), property, global), getScopeChain(el))
+  }
 }
