@@ -694,6 +694,31 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   // the property entry for the variable in the current variable object should indicate that
   // it is a global variable.
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
+    // get current abstract value stored for globalnode.variable
+    val varObjectLabels = ExecutionContextLattice.getVariableObjects(this.executionContexts)
+
+     val variableValue = varObjectLabels.foldLeft (ValueLattice.bottom) ({(acc, varObjLabel) =>
+       val varObj = HeapLattice.getObject(this.heap, varObjLabel)
+       val tmpVal = ObjectPropertyLattice.getValue(ObjectLattice.getProperty(varObj, node.variable))
+       ValueLattice.leastUpperBound(acc, tmpVal)
+     })
+
+    //bind bottom X global for node.varibale in this scope
+
+
+
+    //bind variableValue in globalscope
+    val getLast = {(l: List[ObjectLabel]) => l.last}
+    val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
+
+    //module really should be the outer most variable object in all cases
+    if (varGlobalObjLabels.size != 1)
+      throw new NotImplementedException()
+
+    val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
+    val newGlobalVarObj = ObjectLattice.updatePropertyValue(globalVarObject, node.variable, variableValue)
+    val newHeap = HeapLattice.updateHeap(AnalysisLattice.getHeap(node, solution), varGlobalObjLabels.head, newGlobalVarObj)
+
     solution
   }
 }
