@@ -523,16 +523,19 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     //bind bottom X global for node.varibale in this scope
 
+
+
     //bind variableValue in globalscope
-    val getLast = {(l: List[Any]) => l.last}
+    val getLast = {(l: List[ObjectLabel]) => l.last}
     val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
 
     //module really should be the outer most variable object in all cases
     if (varGlobalObjLabels.size != 1)
       throw new NotImplementedException()
 
-//    val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
-
+    val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
+    val newGlobalVarObj = ObjectLattice.updatePropertyValue(globalVarObject, node.variable, variableValue)
+    val newHeap = HeapLattice.updateHeap(AnalysisLattice.getHeap(node, solution), varGlobalObjLabels.head, newGlobalVarObj)
 
     solution
   }
