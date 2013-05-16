@@ -378,41 +378,47 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         // TypeError: Potentially trying to call a non-object
         throw new NotImplementedException()
         
-      } else if (!ValueLattice.elementIsOnlyObjectLabels[CallableObjectLabel](function)) {
-        // TypeError: Potentially trying to call a non-function object
+      } else if (!ValueLattice.elementIsOnlyObjectLabels[ClassObjectLabel](function) && !ValueLattice.elementIsOnlyObjectLabels[CallableObjectLabel](function)) {
+        // TypeError: Potentially trying to call a non-class or non-function object
         throw new NotImplementedException()
         
-      } else {
+      } else if (ValueLattice.elementIsOnlyObjectLabels[ClassObjectLabel](function)) {
+        // TODO: Handle class
+        val objLabels = ValueLattice.getObjectLabels(function)
+        println(objLabels)
+        throw new NotImplementedException()
+        
+      } else if (ValueLattice.elementIsOnlyObjectLabels[CallableObjectLabel](function)) {
         // Update the call graph accordingly
         val objLabels = ValueLattice.getObjectLabels(function)
-        val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) = objLabels.foldLeft((solution,this.callGraph)) {(acc, objLabel) =>
+        return objLabels.foldLeft(solution) {(acc, objLabel) =>
           val (accSolution, accCallGraph) = acc
 
           val obj = HeapLattice.getObject(this.heap, objLabel)
           
-          val (newSolution, callGraph) : (Elt,CallGraphLattice.Elt) =
-            if (objLabel.isInstanceOf[HeapObjectLabel]) {
-              handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[HeapObjectLabel], obj, accSolution)
-              
-            } else if (objLabel.isInstanceOf[FunctionObjectLabel]) {
-              handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, accSolution)
-              
-            } else {
-              // Does not occur: elements has been checked to be CallableObjectLabels
-              throw new InternalError()
-            }
-          
-          (newSolution,CallGraphLattice.leastUpperBound(callGraph, accCallGraph))
+          if (objLabel.isInstanceOf[HeapObjectLabel]) {
+            handleObjectCall(node, afterCallNode, objLabel.asInstanceOf[HeapObjectLabel], obj, acc)
+            
+          } else if (objLabel.isInstanceOf[FunctionObjectLabel]) {
+            handleFunctionObjectCall(node, afterCallNode, objLabel.asInstanceOf[FunctionObjectLabel], obj, acc)
+            
+          } else {
+            // Does not occur: elements has been checked to be CallableObjectLabels
+            throw new InternalError()
+          }
         }
         
-        return AnalysisLattice.setCallGraph(newSolution, callGraph)
+      } else {
+        throw new InternalError()
       }
     } catch {
-      case e: NotImplementedException => AnalysisLattice.setState(solution, node, StateLattice.bottom)
+      case e: NotImplementedException =>
+        e.printStackTrace()
+        AnalysisLattice.setState(solution, node, StateLattice.bottom)
     }
   }
   
-  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: HeapObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
+  def handleObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: HeapObjectLabel, obj: ObjectLattice.Elt, solution: Elt): Elt = {
     // Check if this is the object of a function
     val call = ObjectLattice.getProperty(obj, "__call__")
     val callValue = ObjectPropertyLattice.getValue(call)
@@ -427,13 +433,11 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       
     } else {
       val callObjLabels = ValueLattice.getObjectLabels(callValue)
-      callObjLabels.foldLeft((solution,CallGraphLattice.bottom)) {(acc, callObjLabel) =>
-        val (accSolution, accCallGraph) = acc
+      callObjLabels.foldLeft(solution) {(acc, callObjLabel) =>
         val callObj = HeapLattice.getObject(this.heap, callObjLabel)
         
         if (callObjLabel.isInstanceOf[FunctionObjectLabel]) {
-            val (newSolution, callGraph) = handleFunctionObjectCall(callNode, afterCallNode, callObjLabel.asInstanceOf[FunctionObjectLabel], callObj, accSolution)
-            (newSolution,CallGraphLattice.leastUpperBound(callGraph, accCallGraph))
+            handleFunctionObjectCall(callNode, afterCallNode, callObjLabel.asInstanceOf[FunctionObjectLabel], callObj, acc)
           
         } else {
           // TypeError: Trying to call a non-function object
@@ -444,14 +448,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
   
-  def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): (Elt,CallGraphLattice.Elt) = {
+  def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, objLabel: FunctionObjectLabel, obj: ObjectLattice.Elt, solution: Elt): Elt = {
     val callGraph = Set[(Any, Node, Any, Node)]((null, callNode, null, objLabel.entryNode), (null, objLabel.exitNode, null, afterCallNode))
     var functionScopeObject = HeapLattice.getObject(this.heap, objLabel.scope)
 
     functionScopeObject = handleFunctionArguments(callNode, functionScopeObject, objLabel.entryNode.funcDef.getInternalArgs(), objLabel.declNode.defaultArgRegs)  
     val newSolution = AnalysisLattice.updateHeap(solution, callNode, objLabel.scope, functionScopeObject)
 
-    (newSolution,callGraph)
+    AnalysisLattice.setCallGraph(newSolution, AnalysisLattice.getCallGraph(newSolution) ++ callGraph)
   }
 
   //Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming

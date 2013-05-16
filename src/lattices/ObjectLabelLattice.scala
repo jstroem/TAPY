@@ -30,6 +30,7 @@ case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: Funct
 case class HeapObjectLabel(label: String, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
 	override def toString() = s"Heap Object $label"
 }
+case class ClassInstanceObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 case class NewStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 case class OldStyleObjectLabel(id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id)
 

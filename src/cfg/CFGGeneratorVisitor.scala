@@ -962,8 +962,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       if (assignFromRegister >= 0)
         new ControlFlowGraph(new WritePropertyNode(lookupRegister, node.getInternalAttr(), assignFromRegister))
       else
-        CFGMagicMethodsNormalization.insertGetAttribute(
-          new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister))
+        new ControlFlowGraph(new ReadPropertyNode(lookupRegister, node.getInternalAttr(), readRegister))
     this.lastExpressionRegister = if (assignFromRegister >= 0) lastExpressionRegister else readRegister
     
     return lookupCfg.append(attributeCfg)
