@@ -55,21 +55,36 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
 object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.Elt](ObjectPropertyLattice) {
   
   /* Getters */
-  
   def getProperty(el: Elt, property: String) = get(el, property)
   
   /* Setters */
-  
   def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt = {
     update(el, property, value)
   }
   
   /* Updaters */
-  
   def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
-    val oldValue = getProperty(el, property)
-    val newValue = ObjectPropertyLattice.setValue(oldValue, value)
-    update(el, property, newValue)
+    val currProperty = getProperty(el, property)
+    val newProperty = ObjectPropertyLattice.setValue(currProperty, value)
+    update(el, property, newProperty)
+  }
+
+  def updatePropertyAbsent(el: Elt, property: String, absent: AbsentLattice.Elt): Elt = {
+    val currProperty = getProperty(el, property)
+    val newProperty = ObjectPropertyLattice.setAbsent(currProperty, absent)
+    update(el, property, newProperty)
+  }
+
+  def updatePropertyModified(el: Elt, property: String, modified: ModifiedLattice.Elt): Elt = {
+    val currProperty = getProperty(el, property)
+    val newProperty = ObjectPropertyLattice.setModified(currProperty, modified)
+    update(el, property, newProperty)
+  }
+
+  def updatePropertyGlobal(el: Elt, property: String, global: GlobalLattice.Elt): Elt = {
+    val currProperty = getProperty(el, property)
+    val newProperty = ObjectPropertyLattice.setGlobal(currProperty, global)
+    update(el, property, newProperty)
   }
 }
 
