@@ -6,6 +6,11 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
   
   /* Getters */
   
+  def isModified(el: ObjectPropertyLattice.Elt): Boolean = {
+    val (_, (_, modified)) = el
+    modified == ModifiedLattice.top
+  }
+  
   def getValue(el: ObjectPropertyLattice.Elt): ValueLattice.Elt = {
     val (value, _) = el
     value
@@ -22,13 +27,16 @@ object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.
   
   /* Getters */
   
-  def getProperty(el: Elt, property: String) = get(el, property)
+  def getProperty(el: Elt, property: String) =
+    get(el, property)
+  
+  def getPropertyValue(el: Elt, property: String) =
+    ObjectPropertyLattice.getValue(getProperty(el, property))
   
   /* Setters */
   
-  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt = {
+  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt =
     update(el, property, value)
-  }
   
   /* Updaters */
   
@@ -47,6 +55,9 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   
   def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt =
     ObjectPropertiesLattice.getProperty(getProperties(el), property)
+  
+  def getPropertyValue(el: Elt, property: String): ValueLattice.Elt =
+    ObjectPropertiesLattice.getPropertyValue(getProperties(el), property)
   
   def getProperties(el: Elt): ObjectPropertiesLattice.Elt = {
     val (objectProperties, _) = el

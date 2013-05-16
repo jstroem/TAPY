@@ -56,7 +56,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode =>
           // The class body are evaluated at declaration time, so we need to connect it (contrary to functions)
-          val classDeclNode = new ClassDeclNode(node, node.exitNode)
+          val classDeclNode = new ClassDeclNode(node, node.exitNode, namesToList(node.classDef.getInternalBases().toList))
           val afterClassDeclNode = new NoOpNode("After-class-decl")
           acc.append(classDeclNode).append(afterClassDeclNode).insert(stmCfg, classDeclNode, afterClassDeclNode)
           
@@ -169,8 +169,8 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
     println("visitClassDef")
     
     val exitNode = new ExitNode(node.getInternalName())
-    val entryNode = new ClassEntryNode(node.getInternalName(), exitNode, node)
-
+    val entryNode = new ClassEntryNode(node.getInternalName(), exitNode, namesToList(node.getInternalBases().toList), node)
+    
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     return bodyCfg.append(exitNode)
   }
