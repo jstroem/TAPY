@@ -46,6 +46,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         case node: ReadVariableNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleReadVariableNode(node, join)}
         case node: WriteVariableNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleWriteVariableNode(node, join)}
         
+        // case node: ReadVariableNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleReadVariableNode(node, join)}
+        case node: WritePropertyNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleWritePropertyNode(node, join)}
+        
         case node: CompareOpNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleCompareOpNode(node, join)}
         case node: BinOpNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleBinOpNode(node, join)}
         case node: UnOpNode => {(solution) => val join = joinPredecessors(node, solution); init(node, join); handleUnOpNode(node, join)}
@@ -116,6 +119,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def writePropertyValueOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, value: ValueLattice.Elt, solution: Elt): Elt = {
     val oldObject = AnalysisLattice.getHeapObject(node, objectLabel, solution)
     val newObject = writePropertyValueOnObject(oldObject, property, value)
+    AnalysisLattice.updateHeap(solution, node, objectLabel, newObject)
+  }
+  
+  def writePropertyOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, objectElt: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
+    val oldObject = AnalysisLattice.getHeapObject(node, objectLabel, solution)
+    val newObject = writePropertyOnObject(oldObject, property, objectElt)
     AnalysisLattice.updateHeap(solution, node, objectLabel, newObject)
   }
   
@@ -209,6 +218,27 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
     writePropertyValueOnVariableObjects(node, node.variable, value, solution)
+  }
+  
+  /* Properties */
+  
+  def handleWritePropertyNode(node: WritePropertyNode, solution: Elt): Elt = {
+    val base = StackFrameLattice.getRegisterValue(this.stackFrame, node.baseReg)
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
+    
+    if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
+      throw new NotImplementedException("Trying to write a property on something that is not an object.")
+      
+    } else {
+      ValueLattice.getObjectLabels(base).foldLeft(solution) {(acc, label) =>
+        label match {
+          case label: NewStyleClassObjectLabel => println("Newstyle class"); solution
+          case label: OldStyleClassObjectLabel => println("Newstyle class"); solution
+          case _ =>
+            throw new NotImplementedException("Write property nody ")
+        }
+      }
+    }
   }
   
   /* Operators */
@@ -332,17 +362,18 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleUnboundMethodDeclNode(node: FunctionDeclNode, variableObjectLabel: ObjectLabel, solution: Elt): Elt = {
-    solution
-    /*
     val name = node.entry.funcDef.getInternalName()
     
     // Create labels
     val scopeLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
-    val methodLabel = UnboundMethodObjectLabel(node, node.entry, node.exit, scopeLabel)
-    val wrapperLabel = WrapperObjectLabel(methodLabel)
+    val functionLabel = FunctionObjectLabel(node, node.entry, node.exit, scopeLabel)
+    val wrapperLabel = WrapperObjectLabel(functionLabel)
+    val methodLabel = UnboundMethodObjectLabel(functionLabel)
     
     // Create value lattice elements
     val scopeValue = ValueLattice.setObjectLabels(Set(scopeLabel))
+    val functionValue = ValueLattice.setObjectLabels(Set(functionLabel))
+    val wrapperValue = ValueLattice.setObjectLabels(Set(wrapperLabel))
     val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
     
     // Generate scope-object scope chain
@@ -350,15 +381,18 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     // Create objects
     val scopeObject = ObjectLattice.setScopeChain(scopeChain)
-    val methodObject = ObjectLattice.updatePropertyValue("*scope*", scopeValue)
+    val functionObject = ObjectLattice.updatePropertyValues(Set(("__call__", wrapperValue), ("*scope*", scopeValue)))
+    val wrapperObject = ObjectLattice.updatePropertyValue("__call__", wrapperValue)
+    val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
     
     // Update the lattice
     var result = AnalysisLattice.updateHeap(solution, node, scopeLabel, scopeObject)
+    result = AnalysisLattice.updateHeap(result, node, functionLabel, functionObject)
+    result = AnalysisLattice.updateHeap(result, node, wrapperLabel, wrapperObject)
     result = AnalysisLattice.updateHeap(result, node, methodLabel, methodObject)
 
     // Add the function name to the current object variables, such that it can be referenced
     writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, methodValue, result)
-    */
   }
   
   def isDefinatelyNewStyleClassObject(node: Node, baseNames: List[String], solution: Elt): Boolean = {
