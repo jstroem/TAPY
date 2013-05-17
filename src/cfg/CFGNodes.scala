@@ -144,8 +144,12 @@ case class AfterCallNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends N
 }
 
 // Raise error; Raise value
-case class RaiseNode(valueReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"raise ${reg(valueReg)}\t(RaiseNode)"
+// If a raiseNode happens without any valueReg its a reRaise and should not change anything to the Trace etc.
+case class RaiseNode(valueReg: Option[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = valueReg match {
+    case Some(valueReg) => s"raise ${reg(valueReg)}\t(RaiseNode)"
+    case None => s"raise\t(RaiseNode)"
+  }
 }
 
 // Except an exception; except [(]types[)] [as result]: 

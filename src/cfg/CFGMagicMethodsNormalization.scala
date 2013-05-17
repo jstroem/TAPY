@@ -10,6 +10,7 @@ import org.python.antlr.base._
 import scala.collection.JavaConversions._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.io._
+import tapy.constants
 
 object CFGMagicMethodsNormalization {
   def insertGetAttribute(node: ReadPropertyNode): ControlFlowGraph = {
@@ -28,7 +29,7 @@ object CFGMagicMethodsNormalization {
     val exceptThenNode2 = new ConstantStringNode(CFGGeneratorVisitor.nextRegister(), node.property)
     val exceptThenNode3 = new CallNode(exceptThenNode1.resultReg, List(exceptThenNode2.resultReg))
     val exceptThenNode4 = new AfterCallNode(node.resultReg)
-    val exceptElseNode = new RaiseNode(-1) // TODO
+    val exceptElseNode = new RaiseNode(Some(constants.StackConstants.EXCEPTION)) // TODO
     
     val result = new ControlFlowGraph(tryHasAttrNode)
       .append(tryIfNode)

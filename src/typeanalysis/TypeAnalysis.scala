@@ -8,12 +8,17 @@ import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
 import tapy.exceptions._
+import tapy.constants
 import scala.collection.JavaConversions._
 
 object BuiltIn {
   val objectLabel = BuiltInClassObjectLabel("object")
-  val objectValue = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, ValueLattice.setObjectLabels(Set(objectLabel)))
   val objectElt = ObjectLattice.bottom
+
+  val objectValue = ValueLattice.setObjectLabels(Set(objectLabel))
+  val noneValue = ValueLattice.setNone(ValueLattice.bottom, NoneLattice.top)
+  val falseValue = ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.Concrete(false))
+  val trueValue = ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.Concrete(true))
 }
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
@@ -160,7 +165,11 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     // Create the main module
     val moduleObjectLabel = ModuleScopeObjectLabel("__main__")
-    val moduleObject = ObjectLattice.setProperty(ObjectLattice.bottom, "object", BuiltIn.objectValue)
+    var moduleObject = ObjectLattice.updatePropertyValues(Set(("object", BuiltIn.objectValue),
+                                                              ("False", BuiltIn.falseValue),
+                                                              ("True", BuiltIn.trueValue),
+                                                              ("None", BuiltIn.noneValue)))
+    //val moduleObject = ObjectLattice.setProperty(ObjectLattice.bottom, "object", BuiltIn.objectValue)
     
     var result = AnalysisLattice.updateHeap(solution, node, BuiltIn.objectLabel, BuiltIn.objectElt)
     result = AnalysisLattice.updateHeap(result, node, moduleObjectLabel, moduleObject)
@@ -782,51 +791,46 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
   def handleReturnNode(node: ReturnNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
-    val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
-    AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
+    val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
+    AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.leastUpperBound(value, oldValue))
   }
 
-  // Global node declares that the variable should be used as a global variable.
-  // It is possible to have some value assigned to the variable before this declaration
-  // this value should then be moved to the global variable scope, and
-  // the property entry for the variable in the current variable object should indicate that
-  // it is a global variable.
+  //TODO, can we use strong updates??
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
     // ObjectProperty representing a global variable
     val bottomGlobalProperty = ObjectPropertyLattice.setGlobal(ObjectPropertyLattice.bottom, GlobalLattice.Global())
 
     // get current abstract value stored for globalnode.variable
     val variableObjectLabels = ExecutionContextLattice.getVariableObjects(this.executionContexts)
-
     val variableProperty = variableObjectLabels.foldLeft (ObjectPropertyLattice.bottom) ({(acc, varObjLabel) =>
        val varObj = HeapLattice.getObject(this.heap, varObjLabel)
        val tmpVal = ObjectLattice.getProperty(varObj, node.variable)
        ObjectPropertyLattice.leastUpperBound(acc, tmpVal)
      })
 
-    //bind bottom X global for node.varibale in this scope
+    if (bottomGlobalProperty != variableProperty) {
+      //bind node.varibale to {bottom x Global} in this scope
+      val updated_solution = writePropertyOnVariableObjects(node, node.variable, bottomGlobalProperty, solution)
 
+      //bind variableValue in globalscope
+      val getLast = {(l: List[ObjectLabel]) => l.last}
+      val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
 
+      //module really should be the outer most variable object in all cases
+      if (varGlobalObjLabels.size != 1)
+        throw new NotImplementedException("handle global er utilfreds")
 
-    // //bind variableValue in globalscope
-    // val getLast = {(l: List[ObjectLabel]) => l.last}
-    // val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
-
-    // //module really should be the outer most variable object in all cases
-    // if (varGlobalObjLabels.size != 1)
-    //   throw new NotImplementedException()
-
-    // val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
-    // val newGlobalVarObj = ObjectLattice.updatePropertyValue(globalVarObject, node.variable, variableValue)
-    // val newHeap = HeapLattice.updateHeap(AnalysisLattice.getHeap(node, solution), varGlobalObjLabels.head, newGlobalVarObj)
-
-    solution
+      return writePropertyOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, variableProperty, updated_solution)
+    }
+    else {  // if the variableProperty is already bottom, the job is done
+      return solution
+    }
   }
 }
 
