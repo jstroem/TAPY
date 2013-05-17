@@ -1,4 +1,12 @@
-class C():
-	x = 10
+class C(object):
+	def __init__(self):
+		pass
 
-# c = C()
+def f():
+	if (True):
+		local = 10
+	else:
+		local = 10.0
+	return local
+
+C.f = f

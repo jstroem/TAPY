@@ -14,4 +14,4 @@ def bar():
 def baz():
 	return x
 
-z = foo()
+# z = foo()
