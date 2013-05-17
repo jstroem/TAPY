@@ -42,20 +42,20 @@ object Main {
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
       val cfg = ast.accept(CFGGeneratorVisitor).exportToFile(dir + fname)
-      val cfgMin = cfg.minify()
+      var cfgMin = cfg.minify()
+      cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
       
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
       val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin).run()
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
 
-
       println("\n----------\n")
-      if (cfgMin.exitNodes.size > 0){
-        println("Pretty priting Heap for one Cfg Exit node \""+file+"\"")
+      if (cfgMin.exitNodes.size > 0) {
+        println("Pretty printing heap for the CFG exit node of \"" + file + "\"")
         HeapLattice.exportToFile(AnalysisLattice.getHeap(cfgMin.exitNodes.head, solution), dir + fname)
       } else {
-        println("No exitNode therefore no printing of heap\n")
+        println("CFG has no exit node; nothing to print.\n")
       }
     } catch {
       case e: Exception => e.printStackTrace()

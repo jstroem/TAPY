@@ -7,7 +7,15 @@ import tapy.dfa._
  */
 object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, new ProductLattice(ModifiedLattice, GlobalLattice))) {
   
-  /* Getters */  
+  /* Getters */
+  
+  def isModified(el: ObjectPropertyLattice.Elt): Boolean = {
+    val (_, (_, (modified, _))) = el
+    modified == ModifiedLattice.top
+  }
+  
+  /* Getters */
+
   def getValue(el: Elt): ValueLattice.Elt = {
     val (value, _) = el
     value
@@ -29,6 +37,7 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
   }
   
   /* Setters */
+  
   def setValue(el: Elt, value: ValueLattice.Elt): ObjectPropertyLattice.Elt = {
     (value, el._2)
   }
@@ -55,14 +64,20 @@ object ObjectPropertyLattice extends ProductLattice(ValueLattice, new ProductLat
 object ObjectPropertiesLattice extends MapLattice[String, ObjectPropertyLattice.Elt](ObjectPropertyLattice) {
   
   /* Getters */
-  def getProperty(el: Elt, property: String) = get(el, property)
   
+  def getProperty(el: Elt, property: String) =
+    get(el, property)
+  
+  def getPropertyValue(el: Elt, property: String) =
+    ObjectPropertyLattice.getValue(getProperty(el, property))
+    
   /* Setters */
-  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt = {
+    
+  def setProperty(el: Elt, property: String, value: ObjectPropertyLattice.Elt): Elt =
     update(el, property, value)
-  }
   
   /* Updaters */
+
   def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
     val currProperty = getProperty(el, property)
     val newProperty = ObjectPropertyLattice.setValue(currProperty, value)
@@ -98,10 +113,14 @@ object ScopeChainPowerLattice extends PowerSubSetLattice[List[ObjectLabel]]()
  */
 object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainPowerLattice) {
   
-  /* Getters */  
+  /* Getters */
+  
   def getProperty(el: Elt, property: String): ObjectPropertyLattice.Elt = {
     ObjectPropertiesLattice.getProperty(getProperties(el), property)
   }
+  
+  def getPropertyValue(el: Elt, property: String): ValueLattice.Elt =
+    ObjectPropertiesLattice.getPropertyValue(getProperties(el), property)
   
   def getProperties(el: Elt): ObjectPropertiesLattice.Elt = {
     val (objectProperties, _) = el
@@ -114,7 +133,8 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   }
   
   /* Setters */
-  def setScopeChain(el: Elt, scopeChain: ScopeChainPowerLattice.Elt): Elt = {
+  
+  def setScopeChain(scopeChain: ScopeChainPowerLattice.Elt, el: Elt = bottom): Elt = {
     (getProperties(el), scopeChain)
   }
   
@@ -123,19 +143,22 @@ object ObjectLattice extends ProductLattice(ObjectPropertiesLattice, ScopeChainP
   }
 
   /* Updaters */
-  def updatePropertyValue(el: Elt, property: String, value: ValueLattice.Elt): Elt = {
+  
+  def updatePropertyValue(property: String, value: ValueLattice.Elt, el: Elt = bottom): Elt =
     (ObjectPropertiesLattice.updatePropertyValue(getProperties(el), property, value), getScopeChain(el))
-  }
+  
+  def updatePropertyValues(pairs: Set[(String, ValueLattice.Elt)], el: Elt = bottom): Elt =
+    pairs.foldLeft(el) {(acc, pair) =>
+      val (property, value) = pair
+      (ObjectPropertiesLattice.updatePropertyValue(getProperties(acc), property, value), getScopeChain(acc))
+    }
 
-  def updatePropertyAbsent(el: Elt, property: String, absent: AbsentLattice.Elt): Elt = {
+  def updatePropertyAbsent(el: Elt, property: String, absent: AbsentLattice.Elt): Elt =
     (ObjectPropertiesLattice.updatePropertyAbsent(getProperties(el), property, absent), getScopeChain(el))
-  }
 
-  def updatePropertyModified(el: Elt, property: String, modified: ModifiedLattice.Elt): Elt = {
+  def updatePropertyModified(el: Elt, property: String, modified: ModifiedLattice.Elt): Elt =
     (ObjectPropertiesLattice.updatePropertyModified(getProperties(el), property, modified), getScopeChain(el))
-  }
 
-  def updatePropertyGlobal(el: Elt, property: String, global: GlobalLattice.Elt): Elt = {
+  def updatePropertyGlobal(el: Elt, property: String, global: GlobalLattice.Elt): Elt =
     (ObjectPropertiesLattice.updatePropertyGlobal(getProperties(el), property, global), getScopeChain(el))
-  }
 }

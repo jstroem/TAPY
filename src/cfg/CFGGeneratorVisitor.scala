@@ -56,13 +56,13 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode =>
           // The class body are evaluated at declaration time, so we need to connect it (contrary to functions)
-          val classDeclNode = new ClassDeclNode(node, node.exitNode)
+          val classDeclNode = new ClassDeclNode(node, stmCfg.exitNodes.head.asInstanceOf[ExitNode], namesToList(node.classDef.getInternalBases().toList))
           val afterClassDeclNode = new NoOpNode("After-class-decl")
-          acc.append(classDeclNode).append(afterClassDeclNode).insert(stmCfg, classDeclNode, afterClassDeclNode)
+          acc.append(classDeclNode).append(stmCfg)
           
         case node: FunctionEntryNode =>
           val (defaultArgCfg, defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
-          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, node.exitNode, defaultArgRegs))
+          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, stmCfg.exitNodes.head.asInstanceOf[ExitNode], defaultArgRegs))
           
         case node: BreakNode =>
           acc.append(stmCfg).setExitNodes(Set()) // !
@@ -147,9 +147,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitFunctionDef(node: FunctionDef): ControlFlowGraph = {
     println("visitFunctionDef")
     
-    val exitNode = new ExitNode(node.getInternalName())
-    val entryNode = new FunctionEntryNode(node.getInternalName(), exitNode, node)
-
+    val entryNode = FunctionEntryNode(node.getInternalName(), node)
+    val exitNode = ExitNode(node.getInternalName(), entryNode)
+    
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     
     // Insert explicit return None node
@@ -168,9 +168,9 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
   override def visitClassDef(node: ClassDef): ControlFlowGraph = {
     println("visitClassDef")
     
-    val exitNode = new ExitNode(node.getInternalName())
-    val entryNode = new ClassEntryNode(node.getInternalName(), exitNode, node)
-
+    val entryNode = ClassEntryNode(node.getInternalName(), namesToList(node.getInternalBases().toList), node)
+    val exitNode = ExitNode(node.getInternalName(), entryNode)
+    
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     return bodyCfg.append(exitNode)
   }
