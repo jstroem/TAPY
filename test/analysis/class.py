@@ -9,4 +9,4 @@ def f():
 		local = 10.0
 	return local
 
-x = f()
+C.f = f
