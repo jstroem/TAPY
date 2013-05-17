@@ -1,10 +1,8 @@
-class C(object):
-	x = 10
-	y = None
+if (True):
+	class C():
+		pass
+else:
+	class C(object):
+		pass
 
-	def foo(self, x):
-		self.x = x
-
-a = C()
-y = a.x
-y = 20
+x = C()

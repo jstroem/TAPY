@@ -18,7 +18,7 @@ case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEnt
   override def toString() = s"New Style Class Object ${entryNode.classDef.getInternalName()}"
 }
 case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
-  override def toString() = s"Old Style Class Object ${entryNode.toString()}"
+  override def toString() = s"Old Style Class Object ${entryNode.classDef.getInternalName()}"
 }
 case class WrapperObjectLabel(label: FunctionObjectLabel) extends CallableObjectLabel() {
   override def toString() = s"Function Wrapper Object ${label.entryNode.funcDef.getInternalName()}"

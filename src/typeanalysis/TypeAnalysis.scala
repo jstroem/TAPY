@@ -624,6 +624,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
     val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
     
+    // Clear the return register
+    val tmp = AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.bottom)
+    
     try {
       val function: ValueLattice.Elt = StackFrameLattice.getRegisterValue(this.stackFrame, node.functionReg)
       
@@ -636,7 +639,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         throw new NotImplementedException()
         
       } else {
-        ValueLattice.getObjectLabels(function).foldLeft(solution) {(acc, label) =>
+        ValueLattice.getObjectLabels(function).foldLeft(tmp) {(acc, label) =>
           val obj = HeapLattice.getObject(this.heap, label)
           
           label match {
@@ -659,7 +662,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     } catch {
       case e: NotImplementedException =>
         e.printStackTrace()
-        AnalysisLattice.setState(solution, node, StateLattice.bottom)
+        AnalysisLattice.setState(tmp, node, StateLattice.bottom)
     }
   }
   
@@ -673,10 +676,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     
     val instanceValue = ValueLattice.setObjectLabels(Set(instanceLabel))
     
-    val tmp = ObjectLattice.getProperties(classObj) match {
+    var tmp = AnalysisLattice.updateHeap(solution, callNode, instanceLabel, ObjectLattice.setProperty(ObjectLattice.bottom, "__class__", ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, ValueLattice.setObjectLabels(Set(classLabel)))))
+    
+    tmp = ObjectLattice.getProperties(classObj) match {
       case ObjectPropertiesLattice.Top() => throw new NotImplementedException()
       case ObjectPropertiesLattice.Concrete(classProperties) =>
-        classProperties.foldLeft(solution) {(acc, entry) =>
+        classProperties.foldLeft(tmp) {(acc, entry) =>
           val (property, propertyElt) = entry
           val value = ObjectPropertyLattice.getValue(propertyElt)
           
