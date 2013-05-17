@@ -13,8 +13,12 @@ import scala.collection.JavaConversions._
 
 object BuiltIn {
   val objectLabel = BuiltInClassObjectLabel("object")
-  val objectValue = ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, ValueLattice.setObjectLabels(Set(objectLabel)))
   val objectElt = ObjectLattice.bottom
+
+  val objectValue = ValueLattice.setObjectLabels(Set(objectLabel))
+  val noneValue = ValueLattice.setNone(ValueLattice.bottom, NoneLattice.top)
+  val falseValue = ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.Concrete(false))
+  val trueValue = ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.Concrete(true))
 }
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
@@ -161,7 +165,11 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     // Create the main module
     val moduleObjectLabel = ModuleScopeObjectLabel("__main__")
-    val moduleObject = ObjectLattice.setProperty(ObjectLattice.bottom, "object", BuiltIn.objectValue)
+    var moduleObject = ObjectLattice.updatePropertyValues(Set(("object", BuiltIn.objectValue),
+                                                              ("False", BuiltIn.falseValue),
+                                                              ("True", BuiltIn.trueValue),
+                                                              ("None", BuiltIn.noneValue)))
+    //val moduleObject = ObjectLattice.setProperty(ObjectLattice.bottom, "object", BuiltIn.objectValue)
     
     var result = AnalysisLattice.updateHeap(solution, node, BuiltIn.objectLabel, BuiltIn.objectElt)
     result = AnalysisLattice.updateHeap(result, node, moduleObjectLabel, moduleObject)
