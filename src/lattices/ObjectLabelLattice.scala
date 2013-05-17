@@ -28,8 +28,8 @@ case class WrapperObjectLabel(label: FunctionObjectLabel, id: UUID = UUID.random
 case class UnboundMethodObjectLabel(functionLabel: FunctionObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
   override def toString() = s"Unbound Method Object ${functionLabel.entryNode.funcDef.getInternalName()}"
 }
-case class BoundMethodObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, scopeLabel: FunctionScopeObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
-  override def toString() = s"Bound Method Object ${entryNode.toString()}"
+case class BoundMethodObjectLabel(instance: ObjectLabel, functionLabel: FunctionObjectLabel, id: UUID = UUID.randomUUID()) extends CallableObjectLabel(id) {
+  override def toString() = s"Bound Method Object ${functionLabel.entryNode.funcDef.getInternalName()}"
 }
 case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, id: UUID = UUID.randomUUID()) extends ObjectLabel(id) {
   override def toString() = s"Function/Method Scope Object ${entryNode.toString()}"

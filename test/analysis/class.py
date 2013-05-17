@@ -1,12 +1,10 @@
 class C(object):
-	def __init__(self):
-		pass
+	x = 10
+	y = None
 
-def f():
-	if (True):
-		local = 10
-	else:
-		local = 10.0
-	return local
+	def foo(self, x):
+		self.x = x
 
-C.f = f
+while (True):
+	C()
+	# a.foo(10.0)
