@@ -20,3 +20,12 @@ object BoolOp extends Enumeration {
   //  and  or
   val AND, OR = Value
 }
+
+object StackConstants extends Enumeration {
+	type StackConstants = Int
+
+	val RETURN = -1
+	val EXCEPTION = -2
+	val TRACE = -3
+	val EXCEPTION_TYPE = -4
+}

@@ -401,13 +401,54 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitWith(node: With): ControlFlowGraph = {
     println("visitWith")
-    return null
+    var initCfg = node.getInternalContext_expr().accept(this)
+    val objectReg = lastExpressionRegister
+    val exitFuncReg = nextRegister()
+    val enterFuncReg = nextRegister()
+    val enterResReg = nextRegister()
+    initCfg = initCfg.append(new ReadPropertyNode(objectReg, "__exit__",exitFuncReg))
+                     .append(new ReadPropertyNode(objectReg, "__enter__",enterFuncReg))
+                     .append(new CallNode(enterFuncReg, List()))
+                     .append(new AfterCallNode(enterResReg))
+
+    //If there is a 'as' assign into this result
+    if (node.getInternalOptional_vars() != null){
+      lastExpressionRegister = enterResReg
+      initCfg = initCfg.append(visitAssign(List(node.getInternalOptional_vars())))
+    }
+
+    var bodyCfg = generateCFGOfStatementList(new NoOpNode("For-body entry"), node.getInternalBody())
+
+    //Create except cfg
+    val exitResReg = nextRegister()
+    val ifExitResNode = new IfNode(exitResReg) 
+    val exceptHandlerCfg = new ControlFlowGraph(new ExceptNode(List(), List()))
+                            .append(new CallNode(exitFuncReg, List(constants.StackConstants.EXCEPTION_TYPE, constants.StackConstants.EXCEPTION, constants.StackConstants.TRACE)))
+                            .append(new AfterCallNode(exitResReg))
+                            .append(ifExitResNode)
+                            .append(new RaiseNode(None)) //If the ifExit should go to the next except
+                            
+    val NoneReg = nextRegister()
+    val normalExit = new ControlFlowGraph(new ConstantNoneNode(NoneReg))
+                              .append(new CallNode(enterFuncReg, List(NoneReg, NoneReg, NoneReg)))
+                              .append(new AfterCallNode(nextRegister()))
+
+    val exitNode = new NoOpNode("After with")
+
+
+    bodyCfg = bodyCfg.connectExcept(exceptHandlerCfg)
+                     .append(normalExit)
+                     .append(exitNode)
+                     .connect(ifExitResNode, exitNode) //If the ifCheck returns true the exitNode is reached.
+
+
+    return initCfg.append(bodyCfg)
   }
 
   override def visitRaise(node: Raise): ControlFlowGraph = {
     println("visitRaise")
     val cfg = node.getInternalType().accept(this)
-    return cfg.append(new RaiseNode(lastExpressionRegister))
+    return cfg.append(new RaiseNode(Some(lastExpressionRegister)))
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
@@ -512,7 +553,7 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
                                                                             .append(testCfg)
                                                                             .append(ifTestNode)
                                                                             .append(assertCfg)
-                                                                            .append(new RaiseNode(assertionErrorReg))
+                                                                            .append(new RaiseNode(Some(assertionErrorReg)))
                                                                             .append(exitNode)
                                                                             .connect(ifDebugNode,exitNode)
                                                                             .connect(ifTestNode,exitNode)

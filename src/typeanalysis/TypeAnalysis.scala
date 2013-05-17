@@ -8,6 +8,7 @@ import tapy.dfa.MonotoneFrameworkTypes._
 import tapy.cfg._
 import tapy.lattices._
 import tapy.exceptions._
+import tapy.constants
 import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
@@ -492,14 +493,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
+    val value = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
   def handleReturnNode(node: ReturnNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
-    val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, -2)
-    AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
+    val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
+    AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.leastUpperBound(value, oldValue))
   }
 
   // Global node declares that the variable should be used as a global variable.
