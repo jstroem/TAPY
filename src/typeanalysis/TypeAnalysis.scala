@@ -91,6 +91,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     return cfg.getSuccessors(node) ++ CallGraphLattice.getSuccessors(this.callGraph, node)
   }
   
+  var i = 0
+  def pp(node: Node, solution: Elt): Unit = {
+    HeapLattice.exportToFile(AnalysisLattice.getHeap(node, solution), "solution-" + (i % 2))
+    i = i + 1
+  }
+  
   def joinPredecessors(node: Node, solution: Elt): Elt = {
     val predecessors = cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessors(this.callGraph, node)
     val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
@@ -121,35 +127,30 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     ObjectPropertyLattice.getValue(findPropertyInScope(node, property, solution))
   }
   
-  def writePropertyValueOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, value: ValueLattice.Elt, solution: Elt): Elt = {
+  def writePropertyValueOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
+    writePropertyOnObjectLabelToHeap(node, property, objectLabel, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution, strong)
+  
+  def writePropertyOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, objectElt: ObjectPropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
     val oldObject = AnalysisLattice.getHeapObject(node, objectLabel, solution)
-    val newObject = writePropertyValueOnObject(oldObject, property, value)
+    val newObject = writePropertyOnObject(oldObject, property, objectElt, strong)
     AnalysisLattice.updateHeap(solution, node, objectLabel, newObject)
   }
   
-  def writePropertyOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, objectElt: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
-    val oldObject = AnalysisLattice.getHeapObject(node, objectLabel, solution)
-    val newObject = writePropertyOnObject(oldObject, property, objectElt)
-    AnalysisLattice.updateHeap(solution, node, objectLabel, newObject)
-  }
+  def writePropertyValueOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
+    writePropertyOnVariableObjects(node, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution, strong)
   
-  def writePropertyValueOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt): Elt =
-    writePropertyOnVariableObjects(node, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), solution)
-  
-  def writePropertyOnVariableObjects(node: Node, property: String, value: ObjectPropertyLattice.Elt, solution: Elt): Elt = {
+  def writePropertyOnVariableObjects(node: Node, property: String, objectElt: ObjectPropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
     val variableObjectLabels = AnalysisLattice.getVariableObjects(solution, node)
     variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
-      val currentVariableObject = HeapLattice.getObject(AnalysisLattice.getHeap(node, solution), variableObjectLabel)
-      val newVariableObject = writePropertyOnObject(currentVariableObject, property, value)
-      AnalysisLattice.updateHeap(acc, node, variableObjectLabel, newVariableObject)
+      writePropertyOnObjectLabelToHeap(node, property, variableObjectLabel, objectElt, solution, strong)
     }
   }
   
-  def writePropertyValueOnObject(obj: ObjectLattice.Elt, property: String, value: ValueLattice.Elt): ObjectLattice.Elt =
-    writePropertyOnObject(obj, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value))
+  def writePropertyValueOnObject(obj: ObjectLattice.Elt, property: String, value: ValueLattice.Elt, strong: Boolean = false): ObjectLattice.Elt =
+    writePropertyOnObject(obj, property, ObjectPropertyLattice.setValue(ObjectPropertyLattice.bottom, value), strong)
   
-  def writePropertyOnObject(obj: ObjectLattice.Elt, property: String, value: ObjectPropertyLattice.Elt): ObjectLattice.Elt = {
-    val currentPropertyValue = ObjectLattice.getProperty(obj, property)
+  def writePropertyOnObject(obj: ObjectLattice.Elt, property: String, value: ObjectPropertyLattice.Elt, strong: Boolean = false): ObjectLattice.Elt = {
+    val currentPropertyValue = if (strong) ObjectPropertyLattice.bottom else ObjectLattice.getProperty(obj, property)
     val newPropertyValue = ObjectPropertyLattice.leastUpperBound(value, currentPropertyValue)
     ObjectLattice.setProperty(obj, property, newPropertyValue)
   }
@@ -157,7 +158,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Built in objects */
   
   def builtInObjectOverwritten(node: Node, solution: Elt): Boolean = {
-    findPropertyInScope(node, "object", solution) != BuiltIn.objectValue
+    findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue
   }
   
   /* Misc */
@@ -169,7 +170,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
                                                               ("False", BuiltIn.falseValue),
                                                               ("True", BuiltIn.trueValue),
                                                               ("None", BuiltIn.noneValue)))
-    //val moduleObject = ObjectLattice.setProperty(ObjectLattice.bottom, "object", BuiltIn.objectValue)
     
     var result = AnalysisLattice.updateHeap(solution, node, BuiltIn.objectLabel, BuiltIn.objectElt)
     result = AnalysisLattice.updateHeap(result, node, moduleObjectLabel, moduleObject)
@@ -226,7 +226,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
-    writePropertyValueOnVariableObjects(node, node.variable, value, solution)
+    writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
   }
   
   /* Properties */
@@ -623,7 +623,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
     val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
-    println("Call")
+    
     try {
       val function: ValueLattice.Elt = StackFrameLattice.getRegisterValue(this.stackFrame, node.functionReg)
       
@@ -651,7 +651,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
               }
               
             case _ =>
-              println(label)
               throw new NotImplementedException("Trying to call a non-callable object")
           }
         }
@@ -667,8 +666,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleClassObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, classLabel: ClassObjectLabel, classObj: ObjectLattice.Elt, solution: Elt): Elt = {
     // Construct the object
     val instanceLabel = classLabel match {
-      case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel()
-      case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel()
+      case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel(callNode)
+      case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel(callNode)
       case label => throw new InternalError()
     }
     
@@ -690,7 +689,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
           ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
             valueLabel match {
               case valueLabel: UnboundMethodObjectLabel =>
-                println("unbound method")
                 val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
                 
                 val methodLabel = BoundMethodObjectLabel(instanceLabel, valueLabel.functionLabel)
@@ -701,7 +699,6 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
                 writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
                 
               case valueLabel =>
-                println(valueLabel)
                 throw new NotImplementedException()
             }
           }
@@ -714,17 +711,14 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val init = ObjectLattice.getPropertyValue(classObj, "__init__")
     if (init == ValueLattice.bottom) {
       // __init__ is not defined
-      AnalysisLattice.updateStackFrame(tmp, callNode, -2, instanceValue)
+      AnalysisLattice.updateStackFrame(tmp, callNode, constants.StackConstants.RETURN, instanceValue)
       
     } else if (ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](init)) {
       // __init__ is defined
       ValueLattice.getObjectLabels(init).foldLeft(solution) {(acc, initLabel) =>
         initLabel match {
           case initLabel: BoundMethodObjectLabel =>
-            println("BOUND MTH CALL TO INIT")
-            // val tmp = handleFunctionArguments(callNode.argRegs, callNode, initLabel.functionLabel, solution)
-            // AnalysisLattice.setCallGraph(acc, AnalysisLattice.getCallGraph(acc) + ((null, callNode, null, initLabel.functionLabel.entryNode)) + ((null, initLabel.functionLabel.exitNode, null, afterCallNode)))
-            acc
+            throw new NotImplementedException("Should call __init__")
             
           case _ =>
             throw new NotImplementedException("TypeError: Trying to call a non-function object")
