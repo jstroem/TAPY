@@ -1,21 +1,12 @@
-x = object
-
-class A(object):
-	pass
-
-class A1(x):
-	pass
-
-class B(A):
-	x = 10
-
+class C(object):
 	def __init__(self):
-		x = 20
+		pass
 
-	def setX(self, x):
-		self.x = x
+def f():
+	if (True):
+		local = 10
+	else:
+		local = 10.0
+	return local
 
-	def getX(self):
-		return self.x
-
-b = B()
+x = f()

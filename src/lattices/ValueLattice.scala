@@ -104,7 +104,7 @@ extends ProductLattice(
     if (long != LongLattice.bottom) result = result + setLong(bottom, long)
     if (complex != ComplexLattice.bottom) result = result + setComplex(bottom, complex)
     if (string != StringLattice.bottom) result = result + setString(bottom, string)
-    if (objectLabels != ObjectLabelLattice.bottom) result = result + setObjectLabels(bottom, objectLabels)
+    if (objectLabels != ObjectLabelLattice.bottom) result = result + setObjectLabels(objectLabels)
     result
   }
 
@@ -333,7 +333,7 @@ extends ProductLattice(
     ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
   }
 
-  def setObjectLabels(v: Elt, objectLabels: ObjectLabelLattice.Elt): Elt = {
+  def setObjectLabels(objectLabels: ObjectLabelLattice.Elt, v: Elt = bottom): Elt = {
     val (undefined, none, boolean, integer, float, long, complex, string, _) = ValueLattice.unpackElement(v)
     ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
   }
