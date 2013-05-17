@@ -729,11 +729,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.updateStackFrame(solution, node, -2, ValueLattice.leastUpperBound(value, oldValue))
   }
 
-  // Global node declares that the variable should be used as a global variable.
-  // It is possible to have some value assigned to the variable before this declaration
-  // this value should then be moved to the global variable scope, and
-  // the property entry for the variable in the current variable object should indicate that
-  // it is a global variable.
+  //TODO, can we use strong updates??
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
     // ObjectProperty representing a global variable
     val bottomGlobalProperty = ObjectPropertyLattice.setGlobal(ObjectPropertyLattice.bottom, GlobalLattice.Global())
@@ -748,31 +744,21 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     if (bottomGlobalProperty != variableProperty) {
       //bind node.varibale to {bottom x Global} in this scope
+      val updated_solution = writePropertyOnVariableObjects(node, node.variable, bottomGlobalProperty, solution)
 
-      writePropertyOnObject
+      //bind variableValue in globalscope
+      val getLast = {(l: List[ObjectLabel]) => l.last}
+      val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
 
-    // //bind variableValue in globalscope
-    // val getLast = {(l: List[ObjectLabel]) => l.last}
-    // val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts).map(getLast)
+      //module really should be the outer most variable object in all cases
+      if (varGlobalObjLabels.size != 1)
+        throw new NotImplementedException("handle global er utilfreds")
 
-    // //module really should be the outer most variable object in all cases
-    // if (varGlobalObjLabels.size != 1)
-    //   throw new NotImplementedException()
-
-    // val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
-    // val newGlobalVarObj = ObjectLattice.updatePropertyValue(globalVarObject, node.variable, variableValue)
-    // val newHeap = HeapLattice.updateHeap(AnalysisLattice.getHeap(node, solution), varGlobalObjLabels.head, newGlobalVarObj)
-
+      return writePropertyOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, variableProperty, updated_solution)
     }
     else {  // if the variableProperty is already bottom, the job is done
-
-
+      return solution
     }
-
-
-
-
-    solution
   }
 }
 
