@@ -10,24 +10,28 @@ extends ProductLattice(
   new ProductLattice(
     NoneLattice, 
     new ProductLattice(
-      BooleanLattice, 
+      NotImplementedLattice, 
       new ProductLattice(
-        IntegerLattice, 
+        EllipsisLattice, 
         new ProductLattice(
-          FloatLattice, 
+          BooleanLattice, 
           new ProductLattice(
-            LongLattice, 
+            IntegerLattice, 
             new ProductLattice(
-              ComplexLattice, 
+              FloatLattice, 
               new ProductLattice(
-                StringLattice,
-                ObjectLabelLattice)))))))) {
+                LongLattice, 
+                new ProductLattice(
+                  ComplexLattice, 
+                  new ProductLattice(
+                    StringLattice,
+                    ObjectLabelLattice)))))))))) {
   
   /* Element utility functions */
 
   def toString(el: Elt) : String = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
-    s"(%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(undefined, none, boolean, integer, float, long, ComplexLattice.toString(complex), string, ObjectLabelLattice.toString(objectLabels))
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    s"(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, ComplexLattice.toString(complex), string, ObjectLabelLattice.toString(objectLabels))
   }
 
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
@@ -38,6 +42,10 @@ extends ProductLattice(
       setBoolean(bottom, ObjectLabelLattice.elementCompare(op, getObjectLabels(left), getObjectLabels(right)))
     else if (elementIsOnlyNone(left) && elementIsOnlyNone(right))
       setBoolean(bottom, NoneLattice.elementCompare(op, getNone(left), getNone(right)))
+    else if (elementIsOnlyNotImplemented(left) && elementIsOnlyNotImplemented(right))
+      setBoolean(bottom, NotImplementedLattice.elementCompare(op, getNotImplemented(left), getNotImplemented(right)))
+    else if (elementIsOnlyEllipsis(left) && elementIsOnlyEllipsis(right))
+      setBoolean(bottom, EllipsisLattice.elementCompare(op, getEllipsis(left), getEllipsis(right)))
     else if (elementIsUniqueConcreteNumber(left) && elementIsUniqueConcreteNumber(right)) {
       val (leftCommon,rightCommon) = elementsToCommonType(left,right)
       if (elementIsOnlyInteger(leftCommon) && elementIsOnlyInteger(rightCommon))
@@ -95,9 +103,11 @@ extends ProductLattice(
   
   def splitElement(el: Elt): Set[Elt] = {
     var result = Set[Elt]()
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
     if (undefined != UndefinedLattice.bottom) result = result + setUndefined(bottom, undefined)
     if (none != NoneLattice.bottom) result = result + setNone(bottom, none)
+    if (notImplemented != NotImplementedLattice.bottom) result = result + setNotImplemented(bottom, notImplemented)
+    if (ellipsis != EllipsisLattice.bottom) result = result + setEllipsis(bottom, ellipsis)
     if (boolean != BooleanLattice.bottom) result = result + setBoolean(bottom, boolean)
     if (integer != IntegerLattice.bottom) result = result + setInteger(bottom, integer)
     if (float != FloatLattice.bottom) result = result + setFloat(bottom, float)
@@ -113,58 +123,80 @@ extends ProductLattice(
     */
   
   def elementIsOnlyNone(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none != NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom &&
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+  }
+
+  def elementIsOnlyNotImplemented(el: Elt): Boolean = {
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented != NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom &&
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+  }
+
+  def elementIsOnlyEllipsis(el: Elt): Boolean = {
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis != EllipsisLattice.bottom &&
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
   
   def elementIsOnlyNumber(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom) && (
-        boolean != BooleanLattice.bottom || integer != IntegerLattice.bottom || float != FloatLattice.bottom || long != LongLattice.bottom || complex != ComplexLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+     (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+      string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom) && (
+      boolean != BooleanLattice.bottom || integer != IntegerLattice.bottom || float != FloatLattice.bottom || long != LongLattice.bottom || complex != ComplexLattice.bottom)
   }
 
   def elementIsOnlyBoolean(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom &&
+     boolean != BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyInteger(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer != IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom &&
+     boolean == BooleanLattice.bottom && integer != IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom &&
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyFloat(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float != FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom &&
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float != FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyLong(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long != LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long != LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyComplex(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex != ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyString(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string != StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string != StringLattice.bottom && objectLabels == ObjectLabelLattice.bottom)
   }
 
   def elementIsOnlyObjectLabels[T <: AnyRef: Manifest](el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
-    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom &&
-        float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) &&
-        (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && manifest[T].erasure.isInstance(objectLabel)})
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) && (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && manifest[T].erasure.isInstance(objectLabel)})
   }
 
   /**
@@ -176,7 +208,7 @@ extends ProductLattice(
   }
 
   def elementIsUniqueConcreteNumber(el: Elt): Boolean = {
-    val (_, _, boolean, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
+    val (_, _,_,_, boolean, integer, float, long, complex, _, _) = ValueLattice.unpackElement(el)
     if (elementIsOnlyNumber(el))
       if (integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom) //boolean check
         boolean match {
@@ -221,9 +253,11 @@ extends ProductLattice(
   }
 
   def elementIsUniqueObjectLabel(el: Elt): Boolean = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(el)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
     return (undefined == UndefinedLattice.bottom &&
             none == NoneLattice.bottom &&
+            notImplemented == NotImplementedLattice.bottom &&
+            ellipsis == EllipsisLattice.bottom &&
             boolean == BooleanLattice.bottom &&
             string == StringLattice.bottom &&
             objectLabels.size == 1 &&
@@ -238,49 +272,50 @@ extends ProductLattice(
     */
   
   def lubElement(v: Elt, elt: UndefinedLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setUndefined(v, UndefinedLattice.leastUpperBound(undefined, elt))
+    setUndefined(v, UndefinedLattice.leastUpperBound(getUndefined(v), elt))
   }
   
   def lubElement(v: Elt, elt: NoneLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setNone(v, NoneLattice.leastUpperBound(none, elt))
+    setNone(v, NoneLattice.leastUpperBound(getNone(v), elt))
+  }
+
+  def lubElement(v: Elt, elt: NotImplementedLattice.Elt): Elt = {
+    setNotImplemented(v, NotImplementedLattice.leastUpperBound(getNotImplemented(v), elt))
+  }
+
+
+  def lubElement(v: Elt, elt: EllipsisLattice.Elt): Elt = {
+    setEllipsis(v, EllipsisLattice.leastUpperBound(getEllipsis(v), elt))
   }
   
   def lubElement(v: Elt, elt: Boolean): Elt = lubElement(v, BooleanLattice.Concrete(elt))
   def lubElement(v: Elt, elt: BooleanLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setBoolean(v, BooleanLattice.leastUpperBound(boolean, elt))
+    setBoolean(v, BooleanLattice.leastUpperBound(getBoolean(v), elt))
   }
   
   def lubElement(v: Elt, elt: Int): Elt = lubElement(v, IntegerLattice.Concrete(elt))
   def lubElement(v: Elt, elt: IntegerLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setInteger(v, IntegerLattice.leastUpperBound(integer, elt))
+    setInteger(v, IntegerLattice.leastUpperBound(getInteger(v), elt))
   }
   
   def lubElement(v: Elt, elt: Double): Elt = lubElement(v, FloatLattice.Concrete(elt))
   def lubElement(v: Elt, elt: FloatLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setFloat(v, FloatLattice.leastUpperBound(float, elt))
+    setFloat(v, FloatLattice.leastUpperBound(getFloat(v), elt))
   }
   
   def lubElement(v: Elt, elt: java.math.BigInteger): Elt = lubElement(v, LongLattice.Concrete(elt))
   def lubElement(v: Elt, elt: LongLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setLong(v, LongLattice.leastUpperBound(long, elt))
+    setLong(v, LongLattice.leastUpperBound(getLong(v), elt))
   }
   
   def lubElement(v: Elt, real: Double, imag: Double): Elt = lubElement(v, (FloatLattice.Concrete(real), FloatLattice.Concrete(imag)))
   def lubElement(v: Elt, elt: ComplexLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    setComplex(v, ComplexLattice.leastUpperBound(complex, elt))
+    setComplex(v, ComplexLattice.leastUpperBound(getComplex(v), elt))
   }
   
   def lubElement(t: Elt, el: String): Elt = lubElement(t, StringLattice.Concrete(el))
   def lubElement(t: Elt, el: StringLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(t)
-    setString(t, StringLattice.leastUpperBound(string, el))
+    setString(t, StringLattice.leastUpperBound(getString(t), el))
   }
 
   /**
@@ -288,94 +323,119 @@ extends ProductLattice(
     */
   
   def setUndefined(v: Elt, undefined: UndefinedLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (_, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setNone(v: Elt, none: NoneLattice.Elt): Elt = {
-    val (undefined, _, boolean, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v) 
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, _, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
+  }
+
+  def setNotImplemented(v: Elt, notImplemented: NotImplementedLattice.Elt): Elt = {
+    val (undefined, none, _, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
+  }
+
+  def setEllipsis(v: Elt, ellipsis: EllipsisLattice.Elt): Elt = {
+    val (undefined, none, notImplemented, _, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setBoolean(v: Elt, elt: Boolean): Elt = setBoolean(v, BooleanLattice.Concrete(elt))
   def setBoolean(v: Elt, boolean: BooleanLattice.Elt): Elt = {
-    val (undefined, none, _, integer, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, _, integer, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setInteger(v: Elt, elt: Int): Elt = setInteger(v, IntegerLattice.Concrete(elt))
   def setInteger(v: Elt, integer: IntegerLattice.Elt): Elt = {
-    val (undefined, none, boolean, _, float, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, _, float, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setFloat(v: Elt, elt: Double): Elt = setFloat(v, FloatLattice.Concrete(elt))
   def setFloat(v: Elt, float: FloatLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, _, long, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, _, long, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setLong(v: Elt, elt: java.math.BigInteger): Elt = setLong(v, LongLattice.Concrete(elt))
   def setLong(v: Elt, long: LongLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, _, complex, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, _, complex, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setComplex(v: Elt, real: Double, imag: Double): Elt = setComplex(v, (FloatLattice.Concrete(real), FloatLattice.Concrete(imag)))
   def setComplex(v: Elt, complex: ComplexLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, _, string, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, _, string, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
   
   def setString(v: Elt, elt: String): Elt = setString(v, StringLattice.Concrete(elt))
   def setString(v: Elt, string: StringLattice.Elt): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, _, objectLabels) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, _, objectLabels) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
 
   def setObjectLabels(objectLabels: ObjectLabelLattice.Elt, v: Elt = bottom): Elt = {
-    val (undefined, none, boolean, integer, float, long, complex, string, _) = ValueLattice.unpackElement(v)
-    ValueLattice.packElement(undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, _) = unpackElement(v)
+    ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
 
   /* Getters */
+  def getUndefined(v: Elt) : UndefinedLattice.Elt = {
+    val (undefined, _, _, _, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    undefined
+  }
+
   def getNone(v: Elt) : NoneLattice.Elt = {
-    val (_, none, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    val (_, none, _, _, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
     none
   }
 
+  def getNotImplemented(v: Elt) : NotImplementedLattice.Elt = {
+    val (_, _, notImplemented, _, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    notImplemented
+  }
+
+  def getEllipsis(v: Elt) : EllipsisLattice.Elt = {
+    val (_, _, _, ellipsis, _, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    ellipsis
+  }
+
   def getBoolean(v: Elt): BooleanLattice.Elt = {
-    val (_, _, boolean, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, boolean, _, _, _, _, _, _) = ValueLattice.unpackElement(v)
     boolean
   }
 
   def getInteger(v: Elt): IntegerLattice.Elt = {
-    val (_, _, _, integer, _, _, _, _, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, integer, _, _, _, _, _) = ValueLattice.unpackElement(v)
     integer
   }
 
   def getFloat(v: Elt): FloatLattice.Elt = {
-    val (_, _, _, _, float, _, _, _, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, _, float, _, _, _, _) = ValueLattice.unpackElement(v)
     float
   }
 
   def getLong(v: Elt): LongLattice.Elt = {
-    val (_, _, _, _, _, long, _, _, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, _, _, long, _, _, _) = ValueLattice.unpackElement(v)
     long
   }
 
   def getComplex(v: Elt): ComplexLattice.Elt = {
-    val (_, _, _, _, _, _, complex, _, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, _, _, _, complex, _, _) = ValueLattice.unpackElement(v)
     complex
   }
 
   def getString(v: Elt): StringLattice.Elt = {
-    val (_, _, _, _, _, _, _, string, _) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, _, _, _, _, string, _) = ValueLattice.unpackElement(v)
     string
   }
   
   def getObjectLabels(v: Elt): ObjectLabelLattice.Elt = {
-    val (_, _, _, _, _, _, _, _, objectLabels) = ValueLattice.unpackElement(v)
+    val (_, _, _, _, _, _, _, _, _, _, objectLabels) = ValueLattice.unpackElement(v)
     objectLabels
   }
   
@@ -383,6 +443,8 @@ extends ProductLattice(
 
   def packElement(undefined: UndefinedLattice.Elt = UndefinedLattice.bottom, 
                   none: NoneLattice.Elt = NoneLattice.bottom, 
+                  notImplemented: NotImplementedLattice.Elt = NotImplementedLattice.bottom, 
+                  ellipsis: EllipsisLattice.Elt = EllipsisLattice.bottom, 
                   boolean: BooleanLattice.Elt = BooleanLattice.bottom, 
                   integer: IntegerLattice.Elt = IntegerLattice.bottom, 
                   float: FloatLattice.Elt = FloatLattice.bottom, 
@@ -390,11 +452,11 @@ extends ProductLattice(
                   complex: ComplexLattice.Elt = ComplexLattice.bottom, 
                   string: StringLattice.Elt = StringLattice.bottom, 
                   objectLabels: ObjectLabelLattice.Elt = ObjectLabelLattice.bottom): Elt = {
-    return (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, objectLabels))))))))
+    return (undefined, (none, (notImplemented, (ellipsis, (boolean, (integer, (float, (long, (complex, (string, objectLabels))))))))))
   }
 
-  def unpackElement(el: Elt): (UndefinedLattice.Elt, NoneLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, ObjectLabelLattice.Elt) = {
-    val (undefined, (none, (boolean, (integer, (float, (long, (complex, (string, objectLabels)))))))) = el
-    return (undefined, none, boolean, integer, float, long, complex, string, objectLabels)
+  def unpackElement(el: Elt): (UndefinedLattice.Elt, NoneLattice.Elt, NotImplementedLattice.Elt, EllipsisLattice.Elt, BooleanLattice.Elt, IntegerLattice.Elt, FloatLattice.Elt, LongLattice.Elt, ComplexLattice.Elt, StringLattice.Elt, ObjectLabelLattice.Elt) = {
+    val (undefined, (none, (notImplemented, (ellipsis, (boolean, (integer, (float, (long, (complex, (string, objectLabels)))))))))) = el
+    return (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
 }
