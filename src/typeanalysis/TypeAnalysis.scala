@@ -706,16 +706,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     // get current abstract value stored for globalnode.variable
     val variableObjectLabels = ExecutionContextLattice.getVariableObjects(this.executionContexts)
-
     val variableProperty = variableObjectLabels.foldLeft (ObjectPropertyLattice.bottom) ({(acc, varObjLabel) =>
        val varObj = HeapLattice.getObject(this.heap, varObjLabel)
        val tmpVal = ObjectLattice.getProperty(varObj, node.variable)
        ObjectPropertyLattice.leastUpperBound(acc, tmpVal)
      })
 
-    //bind bottom X global for node.varibale in this scope
+    if (bottomGlobalProperty != variableProperty) {
+      //bind node.varibale to {bottom x Global} in this scope
 
-
+      writePropertyOnObject
 
     // //bind variableValue in globalscope
     // val getLast = {(l: List[ObjectLabel]) => l.last}
@@ -728,6 +728,15 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     // val globalVarObject = HeapLattice.getObject(this.heap, varGlobalObjLabels.head)
     // val newGlobalVarObj = ObjectLattice.updatePropertyValue(globalVarObject, node.variable, variableValue)
     // val newHeap = HeapLattice.updateHeap(AnalysisLattice.getHeap(node, solution), varGlobalObjLabels.head, newGlobalVarObj)
+
+    }
+    else {  // if the variableProperty is already bottom, the job is done
+
+
+    }
+
+
+
 
     solution
   }
