@@ -1,5 +1,6 @@
 package tapy.lattices
 
+import java.util.UUID
 import tapy.export._
 import tapy.dfa._
 import tapy.cfg._
@@ -29,36 +30,39 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   /* Dot export */
   def generateGraphvizGraph(el: Elt) : GraphvizExporter.Graph = {
     val emptyPair : (List[GraphvizExporter.Node],List[GraphvizExporter.Edge]) = (List(),List())
-
+    
     val (nodeList,edgeList) = el match {
-      case Concrete(map: Map[ObjectLabel, ObjectLattice.Elt]) => {map.foldLeft(emptyPair)((acc,pair) => {
-        val (accNodes,accEdges) = acc
-        val (objectLabel,objectElement) = pair
-
-        val objectProperties = ObjectLattice.getProperties(objectElement)
-        val nodeName = GraphvizExporter.escape(objectLabel.toString())
-        val (nodeLabel,edges) = objectProperties match {
-          case ObjectPropertiesLattice.Concrete(objectMap: Map[String,ObjectPropertyLattice.Elt]) => {
-            objectMap.foldLeft((nodeName,List()) : (String,List[GraphvizExporter.Edge]))((accPair,pair) => {
-              var (nodeName,edges) = accPair
-              val (propertyName,objectProperty) = pair
-              val valueElement = ObjectPropertyLattice.getValue(objectProperty)
-
-              val escapedPropertyName = GraphvizExporter.escape(propertyName)
-
-              nodeName += ("|{%s|<%s> %s}".format(escapedPropertyName, escapedPropertyName, GraphvizExporter.escape(ValueLattice.toString(valueElement))))
-
-              val objectLabels = ValueLattice.getObjectLabels(valueElement)
-              edges = ValueLattice.getObjectLabels(valueElement).foldLeft(edges)((edges, toObjectLabel) => {
-                GraphvizExporter.Edge(GraphvizExporter.MultiNodeId(List(objectLabel.getIdString(),escapedPropertyName)),GraphvizExporter.SingleNodeId(toObjectLabel.getIdString())) :: edges
+      case Concrete(map: Map[ObjectLabel, ObjectLattice.Elt]) => {
+        val labelIds = map.map({ case (k,v) => (k, UUID.randomUUID().toString())})
+        
+        map.foldLeft(emptyPair)((acc,pair) => {
+          val (accNodes,accEdges) = acc
+          val (objectLabel,objectElement) = pair
+  
+          val objectProperties = ObjectLattice.getProperties(objectElement)
+          val nodeName = GraphvizExporter.escape(objectLabel.toString())
+          val (nodeLabel,edges) = objectProperties match {
+            case ObjectPropertiesLattice.Concrete(objectMap: Map[String,ObjectPropertyLattice.Elt]) => {
+              objectMap.foldLeft((nodeName,List()) : (String,List[GraphvizExporter.Edge]))((accPair,pair) => {
+                var (nodeName,edges) = accPair
+                val (propertyName,objectProperty) = pair
+                val valueElement = ObjectPropertyLattice.getValue(objectProperty)
+  
+                val escapedPropertyName = GraphvizExporter.escape(propertyName)
+  
+                nodeName += ("|{%s|<%s> %s}".format(escapedPropertyName, escapedPropertyName, GraphvizExporter.escape(ValueLattice.toString(valueElement))))
+  
+                val objectLabels = ValueLattice.getObjectLabels(valueElement)
+                edges = ValueLattice.getObjectLabels(valueElement).foldLeft(edges)((edges, toObjectLabel) => {
+                  GraphvizExporter.Edge(GraphvizExporter.MultiNodeId(List(labelIds.getOrElse(objectLabel, ""),escapedPropertyName)),GraphvizExporter.SingleNodeId(labelIds.getOrElse(toObjectLabel, ""))) :: edges
+                })
+                (nodeName,edges)
               })
-              (nodeName,edges)
-            })
+            }
+            case _ => (nodeName,List())
           }
-          case _ => (nodeName,List())
-        }
-        (GraphvizExporter.Node("{"+nodeLabel+"}",GraphvizExporter.SingleNodeId(objectLabel.getIdString())) :: accNodes, edges ::: accEdges)
-      })
+          (GraphvizExporter.Node("{"+nodeLabel+"}",GraphvizExporter.SingleNodeId(labelIds.getOrElse(objectLabel, ""))) :: accNodes, edges ::: accEdges)
+        })
       }
       case _ => emptyPair
     }

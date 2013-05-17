@@ -5,6 +5,6 @@ class C(object):
 	def foo(self, x):
 		self.x = x
 
-while (True):
-	C()
-	# a.foo(10.0)
+a = C()
+y = a.x
+y = 20
