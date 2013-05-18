@@ -12,7 +12,10 @@ object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
 
   /* Updaters */
     
-  def updateRegisterValue(el: Elt, register: Int, value: ValueLattice.Elt): Elt =
-    update(el, register, value)
-
+  def updateRegisterValue(el: Elt, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt = {
+    if (strong)
+      update(el, register, value)
+    else
+      update(el, register, ValueLattice.leastUpperBound(value, getRegisterValue(el, register)))
+  }
 }

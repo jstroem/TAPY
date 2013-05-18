@@ -33,8 +33,8 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
 	  
 	/* Updaters */
 	  
-	def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt): Elt =
-	  (getHeap(el), StackLattice.updateStackFrame(getStack(el), register, value))
+	def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt =
+	  (getHeap(el), StackLattice.updateStackFrame(getStack(el), register, value, strong))
 	
 	def updateHeap(el: Elt, label: ObjectLabel, obj: ObjectLattice.Elt): Elt =
 	  (HeapLattice.updateHeap(getHeap(el), label, obj), getStack(el))

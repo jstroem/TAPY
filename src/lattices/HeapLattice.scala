@@ -9,6 +9,7 @@ import java.io._
 object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLattice) {
   
   /* Getters */
+  
   def getObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =
     get(el, label)
   
@@ -18,7 +19,8 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   def getObjects(el: Elt, labels: Set[ObjectLabel]): Set[ObjectLattice.Elt] =
     labels.foldLeft(Set[ObjectLattice.Elt]()) {(acc, label) => acc + getObject(el, label)}
   
-  /* Updaters */  
+  /* Updaters */
+  
   def updateHeap(el: Elt, label: ObjectLabel, obj: ObjectLattice.Elt): Elt =
     update(el, label, obj)
 
@@ -42,11 +44,11 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
           val objectProperties = ObjectLattice.getProperties(objectElement)
           val nodeName = GraphvizExporter.escape(objectLabel.toString())
           val (nodeLabel,edges) = objectProperties match {
-            case ObjectPropertiesLattice.Concrete(objectMap: Map[String,ObjectPropertyLattice.Elt]) => {
+            case PropertiesLattice.Concrete(objectMap: Map[String, PropertyLattice.Elt]) => {
               objectMap.foldLeft((nodeName,List()) : (String,List[GraphvizExporter.Edge]))((accPair,pair) => {
                 var (nodeName,edges) = accPair
                 val (propertyName,objectProperty) = pair
-                val valueElement = ObjectPropertyLattice.getValue(objectProperty)
+                val valueElement = PropertyLattice.getValue(objectProperty)
   
                 val escapedPropertyName = GraphvizExporter.escape(propertyName)
   

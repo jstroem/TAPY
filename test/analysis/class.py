@@ -1,10 +1,12 @@
 class C(object):
-	x = 10
-	y = None
-
-	def foo(self, x):
+	def __init__(self, x):
 		self.x = x
 
-a = C()
-y = a.x
-y = 20
+	def setX(self, y):
+		self.x = y
+
+	def getX(self):
+		return self.x
+
+c = C(10)
+x = c.getX()

@@ -24,6 +24,6 @@ object StackLattice extends ProductLattice(StackFrameLattice, ExecutionContextLa
   def setExecutionContext(el: Elt, executionContexts: ExecutionContextLattice.Elt): Elt =
     (getStackFrame(el), executionContexts)
   
-  def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt): Elt =
-    (StackFrameLattice.updateRegisterValue(getStackFrame(el), register, value), getExecutionContext(el))
+  def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt =
+    (StackFrameLattice.updateRegisterValue(getStackFrame(el), register, value, strong), getExecutionContext(el))
 }

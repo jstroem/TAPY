@@ -6,9 +6,25 @@ import tapy.constants
 import org.python.antlr.ast.cmpopType
 import org.python.antlr.ast.operatorType
 import org.python.antlr.ast.unaryopType
+import tapy.lattices._
 
 abstract class Node(id: UUID) {
   protected def reg(r: Int) = s"<$r>"
+  
+  def getState(el: AnalysisLattice.Elt): StateLattice.Elt = AnalysisLattice.getState(this, el)
+  def getHeap(el: AnalysisLattice.Elt): HeapLattice.Elt = AnalysisLattice.getHeap(this, el)
+  def getObject(el: AnalysisLattice.Elt, label: ObjectLabel): ObjectLattice.Elt = AnalysisLattice.getHeapObject(this, label, el)
+  def getProperty(el: AnalysisLattice.Elt, label: ObjectLabel, property: String): PropertyLattice.Elt = ObjectLattice.getProperty(getObject(el, label), property)
+  def getPropertyValue(el: AnalysisLattice.Elt, label: ObjectLabel, property: String): ValueLattice.Elt = PropertyLattice.getValue(getProperty(el, label, property))
+  def getStack(el: AnalysisLattice.Elt): StackLattice.Elt = AnalysisLattice.getStack(this, el)
+  def getStackFrame(el: AnalysisLattice.Elt): StackFrameLattice.Elt = AnalysisLattice.getStackFrame(this, el)
+  def getExecutionContexts(el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(el))
+  def getVariableObjects(el: AnalysisLattice.Elt): Set[ObjectLabel] = StateLattice.getVariableObjects(getState(el))
+  
+  def updateHeap(el: AnalysisLattice.Elt, label: ObjectLabel, obj: ObjectLattice.Elt): AnalysisLattice.Elt = AnalysisLattice.updateHeap(el, this, label, obj)
+  def updateHeap(el: AnalysisLattice.Elt, pairs: Set[(ObjectLabel, ObjectLattice.Elt)]): AnalysisLattice.Elt = AnalysisLattice.updateHeap(el, this, pairs)
+  def updateStackFrame(el: AnalysisLattice.Elt, register: Int, value: ValueLattice.Elt, strong: Boolean = false): AnalysisLattice.Elt = AnalysisLattice.updateStackFrame(el, this, register, value, strong)
+  def updateStackFrames(el: AnalysisLattice.Elt, pairs: Set[(Int, ValueLattice.Elt)], strong: Boolean = false): AnalysisLattice.Elt = AnalysisLattice.updateStackFrames(el, this, pairs, strong)
 }
 
 // Class and function declaration

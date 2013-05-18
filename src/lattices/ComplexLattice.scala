@@ -33,15 +33,15 @@ object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (FloatLattice.Concrete(left),FloatLattice.Concrete(right)) => op match {
       case unaryopType.Invert => throw new UnaryException("Complex elements cannot do unaryop.Invert", op)
-      case unaryopType.Not => if (left == 0 && right == 0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
-      case unaryopType.UAdd => ValueLattice.setComplex(ValueLattice.bottom, el)
-      case unaryopType.USub => ValueLattice.setComplex(ValueLattice.bottom, (FloatLattice.Concrete(-left),FloatLattice.Concrete(-right)))
+      case unaryopType.Not => ValueLattice.setBoolean(left == 0 && right == 0)
+      case unaryopType.UAdd => ValueLattice.setComplexElt(el)
+      case unaryopType.USub => ValueLattice.setComplexElt((FloatLattice.Concrete(-left),FloatLattice.Concrete(-right)))
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
     case _ => op match {
       case unaryopType.Invert => throw new UnaryException("Complex elements cannot do unaryop.Invert", op)
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
-      case unaryopType.USub | unaryopType.UAdd => ValueLattice.setComplex(ValueLattice.bottom, ComplexLattice.top)
+      case unaryopType.Not => ValueLattice.setBooleanElt(BooleanLattice.top)
+      case unaryopType.USub | unaryopType.UAdd => ValueLattice.setComplexElt(ComplexLattice.top)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
@@ -51,8 +51,8 @@ object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
       case ((FloatLattice.Concrete(r1), FloatLattice.Concrete(i1)), ((FloatLattice.Concrete(r2), FloatLattice.Concrete(i2)))) =>
         op match {
           case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setComplex(ValueLattice.bottom, r1 + r2, i1 + i2)
-          case operatorType.Sub => ValueLattice.setComplex(ValueLattice.bottom, r1 - r2, i1 - i2)
+          case operatorType.Add => ValueLattice.setComplex(r1 + r2, i1 + i2)
+          case operatorType.Sub => ValueLattice.setComplex(r1 - r2, i1 - i2)
           case operatorType.Mult => throw new NotImplementedException()
           case operatorType.Div => throw new NotImplementedException()
           case operatorType.Mod => throw new NotImplementedException()
