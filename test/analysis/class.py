@@ -10,5 +10,3 @@ class C(object):
 
 c = C(10)
 x = c.getX()
-c.setX(10.0)
-y = c.getX()

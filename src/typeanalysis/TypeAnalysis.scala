@@ -226,9 +226,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
-    println(node.variable)
     val value = findPropertyValueInScope(node, node.variable, solution)
-    println(value)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
