@@ -624,8 +624,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
     val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
     
-    // Clear the return register
-    val tmp = AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.bottom)
+    // Clear the return registers
+    var tmp = AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.bottom, true)
+    tmp = AnalysisLattice.updateStackFrame(tmp, node, constants.StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom, true)
     
     try {
       val function: ValueLattice.Elt = StackFrameLattice.getRegisterValue(this.stackFrame, node.functionReg)
@@ -669,8 +670,8 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   def handleClassObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, classLabel: ClassObjectLabel, classObj: ObjectLattice.Elt, solution: Elt): Elt = {
     // Construct the object
     val instanceLabel = classLabel match {
-      case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel(callNode)
-      case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel(callNode)
+      case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel(label, callNode)
+      case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel(label, callNode)
       case label => throw new InternalError()
     }
     
@@ -713,19 +714,23 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         throw new InternalError()
     }
     
-    val init = ObjectLattice.getPropertyValue(classObj, "__init__")
+    val instanceObj = AnalysisLattice.getHeapObject(callNode, instanceLabel, tmp)
+    
+    val init = ObjectLattice.getPropertyValue(instanceObj, "__init__")
     if (init == ValueLattice.bottom) {
       // __init__ is not defined
-      AnalysisLattice.updateStackFrame(tmp, callNode, constants.StackConstants.RETURN, instanceValue)
+      AnalysisLattice.updateStackFrame(tmp, callNode, constants.StackConstants.RETURN_CONSTRUCTOR, instanceValue)
       
     } else if (ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](init)) {
       // __init__ is defined
-      ValueLattice.getObjectLabels(init).foldLeft(solution) {(acc, initLabel) =>
+      ValueLattice.getObjectLabels(init).foldLeft(tmp) {(acc, initLabel) =>
         initLabel match {
           case initLabel: BoundMethodObjectLabel =>
-            throw new NotImplementedException("Should call __init__")
+            tmp = handleFunctionArguments(callNode, initLabel.functionLabel, tmp, Some(ValueLattice.setObjectLabels(Set(initLabel.instance))))
+            tmp = AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, initLabel.functionLabel.entryNode)) + ((null, initLabel.functionLabel.exitNode, null, afterCallNode)))
+            AnalysisLattice.updateStackFrame(tmp, callNode, constants.StackConstants.RETURN_CONSTRUCTOR, instanceValue)
             
-          case _ =>
+          case initLabel =>
             throw new NotImplementedException("TypeError: Trying to call a non-function object")
         }
       }
@@ -736,17 +741,17 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {
-    val tmp = handleFunctionArguments(callNode.argRegs, callNode, functionLabel, solution)
+    val tmp = handleFunctionArguments(callNode, functionLabel, solution)
     AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, functionLabel.entryNode)) + ((null, functionLabel.exitNode, null, afterCallNode)))
   }
   
   def handleBoundMethodObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, methodLabel: BoundMethodObjectLabel, solution: Elt): Elt = {
-    val tmp = handleFunctionArguments(callNode.argRegs, callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
+    val tmp = handleFunctionArguments(callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
     AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, methodLabel.functionLabel.entryNode)) + ((null, methodLabel.functionLabel.exitNode, null, afterCallNode)))
   }
   
   /* Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming */
-  def handleFunctionArguments(argRegs: List[Int], callNode: CallNode, functionLabel: FunctionObjectLabel, solution: Elt, receiver: Option[ValueLattice.Elt] = None): Elt = {
+  def handleFunctionArguments(callNode: CallNode, functionLabel: FunctionObjectLabel, solution: Elt, receiver: Option[ValueLattice.Elt] = None): Elt = {
     var functionScopeObject = HeapLattice.getObject(this.heap, functionLabel.scopeLabel)
     
     if (callNode.keywordRegs.size > 0)
@@ -763,16 +768,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     })
 
     // If the argument size is not equal an exception should potentially be rasied
-    if (args.size - functionLabel.declNode.defaultArgRegs.size > argRegs.size + receiver.size) {
+    if (args.size - functionLabel.declNode.defaultArgRegs.size > callNode.argRegs.size + receiver.size) {
      throw new NotImplementedException("List of registers given as arguments to function is smaller than required argument length")
     }
 
     val argsWithoutReceiver = if (receiver.size == 1) args.tail else args // Remove "self"
     val argRegPairs = argsWithoutReceiver.zipWithIndex.map({case (arg,idx) => 
-      if (argRegs.size > idx) {
-        (arg, argRegs(idx))
+      if (callNode.argRegs.size > idx) {
+        (arg, callNode.argRegs(idx))
       } else {
-        (arg, functionLabel.declNode.defaultArgRegs(idx - argRegs.size))
+        (arg, functionLabel.declNode.defaultArgRegs(idx - callNode.argRegs.size))
       }
     })
 
@@ -789,14 +794,26 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.updateHeap(solution, callNode, functionLabel.scopeLabel, functionScopeObject)
   }
   
+  /**
+   * handleAfterCallNode must remember to clear the return registers:
+   * Otherwise, x = A(), where A.__init__ creates an object of type B(), would
+   * result in x being either an object of type A or B.
+   */
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
-    AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+    val valueConstructor = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN_CONSTRUCTOR)
+    
+    var tmp = AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.bottom, true)
+    tmp = AnalysisLattice.updateStackFrame(tmp, node, constants.StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom, true)
+    
+    AnalysisLattice.updateStackFrame(tmp, node, node.resultReg, ValueLattice.leastUpperBound(value, valueConstructor))
   }
   
   def handleReturnNode(node: ReturnNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.resultReg)
     val oldValue = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
+    println("--return--")
+    println(value)
     AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.leastUpperBound(value, oldValue))
   }
 

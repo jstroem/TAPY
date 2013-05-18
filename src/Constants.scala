@@ -25,7 +25,8 @@ object StackConstants extends Enumeration {
 	type StackConstants = Int
 
 	val RETURN = -1
-	val EXCEPTION = -2
-	val TRACE = -3
-	val EXCEPTION_TYPE = -4
+	val RETURN_CONSTRUCTOR = -2
+	val EXCEPTION = -3
+	val TRACE = -4
+	val EXCEPTION_TYPE = -5
 }

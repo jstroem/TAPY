@@ -35,11 +35,11 @@ case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: Funct
 case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
 	override def toString() = s"Function Object ${entryNode.funcDef.getInternalName()}"
 }
-case class NewStyleInstanceObjectLabel(allocationSite: CallNode) extends CallableObjectLabel() {
+case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
   override def toString() = s"New Style Instance Object"
 }
-case class OldStyleInstanceObjectLabel(allocationSite: CallNode) extends CallableObjectLabel() {
-  override def toString() = s"New Style Instance Object"
+case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
+  override def toString() = s"Old Style Instance Object"
 }
 case class BuiltInClassObjectLabel(name: String) extends ObjectLabel() {
   override def toString() = s"Built In Class Object $name"

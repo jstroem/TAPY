@@ -1,8 +1,12 @@
-if (True):
-	class C():
-		pass
-else:
-	class C(object):
-		pass
+class A():
+	pass
 
-x = C()
+class C(object):
+	def __init__(self):
+		self.a = A()
+
+	def getA(self):
+		return self.a
+
+c = C()
+a = c.a

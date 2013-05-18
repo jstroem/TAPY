@@ -78,10 +78,8 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
     
   /* Updaters */
   
-  def updateStackFrame(el: AnalysisLattice.Elt, node: Node, register: Int, value: ValueLattice.Elt): AnalysisLattice.Elt = {
-    val oldValue = StackFrameLattice.getRegisterValue(getStackFrame(node, el), register)
-    setState(el, node, StateLattice.updateStackFrame(getState(node, el), register, ValueLattice.leastUpperBound(value, oldValue)))
-  }
+  def updateStackFrame(el: AnalysisLattice.Elt, node: Node, register: Int, value: ValueLattice.Elt, strong: Boolean = false): AnalysisLattice.Elt =
+    setState(el, node, StateLattice.updateStackFrame(getState(node, el), register, value, strong))
   
   def updateHeap(el: AnalysisLattice.Elt, node: Node, label: ObjectLabel, obj: ObjectLattice.Elt): AnalysisLattice.Elt =
     setState(el, node, StateLattice.updateHeap(getState(node, el), label, obj))
