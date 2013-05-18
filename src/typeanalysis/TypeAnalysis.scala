@@ -97,10 +97,16 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     i = i + 1
   }
   
+  /**
+   * Note that joinPredecessors does not join the state from __init__-ExitNodes to
+   * their AfterCallNodes. This is handled by handleAfterCallNode().
+   */
   def joinPredecessors(node: Node, solution: Elt): Elt = {
-    val predecessors = cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessors(this.callGraph, node)
-    val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+    val predecessors = cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(this.callGraph, node)
+    
+    var state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
       StateLattice.leastUpperBound(acc, AnalysisLattice.getState(pred, solution)))
+    
     AnalysisLattice.setState(solution, node, state)
   }
 
@@ -220,7 +226,9 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
+    println(node.variable)
     val value = findPropertyValueInScope(node, node.variable, solution)
+    println(value)
     AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
   }
   
@@ -232,19 +240,23 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Properties */
   
   def handleReadPropertyNode(node: ReadPropertyNode, solution: Elt): Elt = {
-    val base = StackFrameLattice.getRegisterValue(this.stackFrame, node.baseReg)
-    
-    if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
-      throw new NotImplementedException("Trying to access property on a non-object")
+    try {
+      val base = StackFrameLattice.getRegisterValue(this.stackFrame, node.baseReg)
       
-    } else {
-      val value = ValueLattice.getObjectLabels(base).foldLeft(ValueLattice.bottom) {(acc, baseLabel) =>
-        val baseObject = AnalysisLattice.getHeapObject(node, baseLabel, solution)
-        val basePropertyValue = ObjectLattice.getPropertyValue(baseObject, node.property)
-        ValueLattice.leastUpperBound(basePropertyValue, acc)
+      if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
+        throw new NotImplementedException("Trying to access property on a non-object")
+        
+      } else {
+        val value = ValueLattice.getObjectLabels(base).foldLeft(ValueLattice.bottom) {(acc, baseLabel) =>
+          val baseObject = AnalysisLattice.getHeapObject(node, baseLabel, solution)
+          val basePropertyValue = ObjectLattice.getPropertyValue(baseObject, node.property)
+          ValueLattice.leastUpperBound(basePropertyValue, acc)
+        }
+        
+        AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
       }
-      
-      AnalysisLattice.updateStackFrame(solution, node, node.resultReg, value)
+    } catch {
+      case e: NotImplementedException => AnalysisLattice.setState(solution, node)
     }
   }
   
@@ -258,36 +270,31 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         
       } else {
         ValueLattice.getObjectLabels(base).foldLeft(solution) {(acc, baseLabel) =>
-          baseLabel match {
-            case baseLabel: NewStyleClassObjectLabel =>
-              // If value is a function, we must wrap that function in a unbound method...
-              // First we write all the non-object values
-              val tmp = writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, ValueLattice.setObjectLabels(Set(), value), acc)
-              
-              // Second we write all the object values
-              ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
-                valueLabel match {
-                  case valueLabel: FunctionObjectLabel =>
-                    val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
-                    
-                    val methodLabel = UnboundMethodObjectLabel(valueLabel)
-                    val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
-                    val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
-                    
-                    val tmp = AnalysisLattice.updateHeap(acc, node, methodLabel, methodObject)
-                    writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, methodValue, tmp)
-                    
-                  case valueLabel =>
-                    throw new NotImplementedException()
-                }
+          if (baseLabel.isInstanceOf[NewStyleClassObjectLabel] || baseLabel.isInstanceOf[OldStyleClassObjectLabel]) {
+            // If value is a function, we must wrap that function in a unbound method...
+            // First we write all the non-object values
+            val tmp = writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, ValueLattice.setObjectLabels(Set(), value), acc)
+            
+            // Second we write all the object values
+            ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
+              valueLabel match {
+                case valueLabel: FunctionObjectLabel =>
+                  val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
+                  
+                  val methodLabel = UnboundMethodObjectLabel(valueLabel)
+                  val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
+                  val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
+                  
+                  val tmp = AnalysisLattice.updateHeap(acc, node, methodLabel, methodObject)
+                  writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, methodValue, tmp)
+                  
+                case valueLabel =>
+                  throw new NotImplementedException()
               }
-              
-            case baseLabel: OldStyleClassObjectLabel =>
-              // If value is a function, we must wrap that function in a unbound method...
-              writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
-              
-            case baseLabel =>
-              writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
+            }
+            
+          } else {
+            writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
           }
         }
       }
@@ -727,7 +734,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
         initLabel match {
           case initLabel: BoundMethodObjectLabel =>
             tmp = handleFunctionArguments(callNode, initLabel.functionLabel, tmp, Some(ValueLattice.setObjectLabels(Set(initLabel.instance))))
-            tmp = AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, initLabel.functionLabel.entryNode)) + ((null, initLabel.functionLabel.exitNode, null, afterCallNode)))
+            tmp = AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, initLabel.functionLabel.entryNode, false), (null, initLabel.functionLabel.exitNode, null, afterCallNode, false)))
             AnalysisLattice.updateStackFrame(tmp, callNode, constants.StackConstants.RETURN_CONSTRUCTOR, instanceValue)
             
           case initLabel =>
@@ -742,12 +749,12 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {
     val tmp = handleFunctionArguments(callNode, functionLabel, solution)
-    AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, functionLabel.entryNode)) + ((null, functionLabel.exitNode, null, afterCallNode)))
+    AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, functionLabel.entryNode, true), (null, functionLabel.exitNode, null, afterCallNode, true)))
   }
   
   def handleBoundMethodObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, methodLabel: BoundMethodObjectLabel, solution: Elt): Elt = {
     val tmp = handleFunctionArguments(callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
-    AnalysisLattice.setCallGraph(tmp, AnalysisLattice.getCallGraph(tmp) + ((null, callNode, null, methodLabel.functionLabel.entryNode)) + ((null, methodLabel.functionLabel.exitNode, null, afterCallNode)))
+    AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, methodLabel.functionLabel.entryNode, true), (null, methodLabel.functionLabel.exitNode, null, afterCallNode, true)))
   }
   
   /* Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming */
@@ -795,18 +802,42 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   }
   
   /**
+   * joinPredecessors() does not join constructor call edges, so we do that here!
+   * 
    * handleAfterCallNode must remember to clear the return registers:
    * Otherwise, x = A(), where A.__init__ creates an object of type B(), would
    * result in x being either an object of type A or B.
    */
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
-    val valueConstructor = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN_CONSTRUCTOR)
-    
-    var tmp = AnalysisLattice.updateStackFrame(solution, node, constants.StackConstants.RETURN, ValueLattice.bottom, true)
-    tmp = AnalysisLattice.updateStackFrame(tmp, node, constants.StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom, true)
-    
-    AnalysisLattice.updateStackFrame(tmp, node, node.resultReg, ValueLattice.leastUpperBound(value, valueConstructor))
+    try {
+      // Join constructor call edges!
+      val state = CallGraphLattice.getConstructorCallPredecessors(this.callGraph, node).foldLeft(StateLattice.bottom) {(acc, pred) =>
+        // Check that __init__ returns None
+        val initReturnValue = StackFrameLattice.getRegisterValue(AnalysisLattice.getStackFrame(pred, solution), constants.StackConstants.RETURN)
+        if (!ValueLattice.elementIsOnlyNone(initReturnValue)) {
+          throw new TypeError("__init__() should return None (actual: " + initReturnValue + ")")
+        }
+        
+        // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
+        val predState = StateLattice.updateStackFrame(AnalysisLattice.getState(pred, solution), constants.StackConstants.RETURN, ValueLattice.bottom, true)
+        StateLattice.leastUpperBound(acc, predState)
+      }
+      
+      var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(AnalysisLattice.getState(node, solution), state))
+      
+      // Get the returned values and store them
+      val value = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN)
+      val valueConstructor = StackFrameLattice.getRegisterValue(this.stackFrame, constants.StackConstants.RETURN_CONSTRUCTOR)
+      
+      tmp = AnalysisLattice.updateStackFrame(tmp, node, node.resultReg, ValueLattice.leastUpperBound(value, valueConstructor))
+      
+      // Clear the return registers:
+      tmp = AnalysisLattice.updateStackFrame(tmp, node, constants.StackConstants.RETURN, ValueLattice.bottom, true)
+      AnalysisLattice.updateStackFrame(tmp, node, constants.StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom, true)
+      
+    } catch {
+      case e: TypeError => AnalysisLattice.setState(solution, node)
+    }
   }
   
   def handleReturnNode(node: ReturnNode, solution: Elt): Elt = {
@@ -847,4 +878,3 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     }
   }
 }
-

@@ -19,3 +19,9 @@ class UnaryException(message: String, op: unaryopType, nestedException: Throwabl
 	def this(message: String,op: unaryopType) = this(message, op, null)
 	def this(op: unaryopType, nestedException : Throwable) = this("", op, nestedException)
 }
+
+class TypeError(message: String, nestedException: Throwable) extends Exception(message, nestedException) {
+  def this() = this("", null)
+  def this(message: String) = this(message, null)
+  def this(nestedException : Throwable) = this("", nestedException)
+}

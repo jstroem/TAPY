@@ -1,11 +1,14 @@
-class A():
-	pass
-
 class C(object):
-	def __init__(self):
-		self.a = A()
+	def __init__(self, x):
+		self.x = x
 
-	def getA(self):
-		return self.a
+	def setX(self, y):
+		self.x = y
 
-c = C()
+	def getX(self):
+		return self.x
+
+c = C(10)
+x = c.getX()
+c.setX(10.0)
+y = c.getX()
