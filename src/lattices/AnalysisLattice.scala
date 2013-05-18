@@ -43,8 +43,20 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def updateStackFrame(el: Elt, node: Node, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt =
     setState(el, node, StateLattice.updateStackFrame(getState(node, el), register, value, strong))
   
+  def updateStackFrames(el: Elt, node: Node, pairs: Set[(Int, ValueLattice.Elt)], strong: Boolean = false): Elt =
+    pairs.foldLeft(el) {(acc, pair) =>
+      val (register, value) = pair
+      updateStackFrame(el, node, register, value, strong)
+    }
+  
   def updateHeap(el: Elt, node: Node, label: ObjectLabel, obj: ObjectLattice.Elt): Elt =
     setState(el, node, StateLattice.updateHeap(getState(node, el), label, obj))
+  
+  def updateHeap(el: Elt, node: Node, pairs: Set[(ObjectLabel, ObjectLattice.Elt)]): Elt =
+    pairs.foldLeft(el) {(acc, pair) =>
+      val (label, obj) = pair
+      setState(el, node, StateLattice.updateHeap(getState(node, el), label, obj))
+    }
   
   def updateCallGraph(el: Elt, callGraph: CallGraphLattice.Elt): Elt =
     (getProgramState(el), CallGraphLattice.leastUpperBound(getCallGraph(el), callGraph))

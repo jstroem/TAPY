@@ -9,6 +9,7 @@ import java.io._
 object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLattice) {
   
   /* Getters */
+  
   def getObject(el: Elt, label: ObjectLabel): ObjectLattice.Elt =
     get(el, label)
   
@@ -18,7 +19,8 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   def getObjects(el: Elt, labels: Set[ObjectLabel]): Set[ObjectLattice.Elt] =
     labels.foldLeft(Set[ObjectLattice.Elt]()) {(acc, label) => acc + getObject(el, label)}
   
-  /* Updaters */  
+  /* Updaters */
+  
   def updateHeap(el: Elt, label: ObjectLabel, obj: ObjectLattice.Elt): Elt =
     update(el, label, obj)
 
