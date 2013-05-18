@@ -83,15 +83,15 @@ object BooleanLattice extends Lattice[BooleanElt] {
 
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (Concrete(b)) => op match {
-      case unaryopType.Invert => if (b) ValueLattice.setInteger(ValueLattice.bottom, -2) else ValueLattice.setInteger(ValueLattice.bottom, -1)
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, !b)
-      case unaryopType.UAdd => if (b) ValueLattice.setInteger(ValueLattice.bottom, 1) else ValueLattice.setInteger(ValueLattice.bottom, 0)
-      case unaryopType.USub => if (b) ValueLattice.setInteger(ValueLattice.bottom, -1) else ValueLattice.setInteger(ValueLattice.bottom, 0)
+      case unaryopType.Invert => ValueLattice.setInteger(if (b) -2 else -1)
+      case unaryopType.Not => ValueLattice.setBoolean(!b)
+      case unaryopType.UAdd => ValueLattice.setInteger(if (b) 1 else 0)
+      case unaryopType.USub => ValueLattice.setInteger(if (b) -1 else 0)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
     case _ => op match {
-      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setInteger(ValueLattice.bottom, IntegerLattice.top)
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setIntegerElt(IntegerLattice.top)
+      case unaryopType.Not => ValueLattice.setBooleanElt(BooleanLattice.top)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
@@ -104,17 +104,17 @@ object BooleanLattice extends Lattice[BooleanElt] {
         
         op match {
           case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setInteger(ValueLattice.bottom, i1 + i2)
-          case operatorType.Sub => ValueLattice.setInteger(ValueLattice.bottom, i1 - i2)
-          case operatorType.Mult => ValueLattice.setInteger(ValueLattice.bottom, i1 * i2)
-          case operatorType.Div => ValueLattice.setInteger(ValueLattice.bottom, i1 / i2)
-          case operatorType.Mod => ValueLattice.setInteger(ValueLattice.bottom, i1 % i2)
-          case operatorType.Pow => ValueLattice.setInteger(ValueLattice.bottom, i1 ^ i2)
+          case operatorType.Add => ValueLattice.setInteger(i1 + i2)
+          case operatorType.Sub => ValueLattice.setInteger(i1 - i2)
+          case operatorType.Mult => ValueLattice.setInteger(i1 * i2)
+          case operatorType.Div => ValueLattice.setInteger(i1 / i2)
+          case operatorType.Mod => ValueLattice.setInteger(i1 % i2)
+          case operatorType.Pow => ValueLattice.setInteger(i1 ^ i2)
           case operatorType.LShift => throw new NotImplementedException()
           case operatorType.RShift => throw new NotImplementedException()
-          case operatorType.BitOr => ValueLattice.setInteger(ValueLattice.bottom, i1 | i2)
+          case operatorType.BitOr => ValueLattice.setInteger(i1 | i2)
           case operatorType.BitXor => throw new NotImplementedException()
-          case operatorType.BitAnd => ValueLattice.setInteger(ValueLattice.bottom, i1 & i2)
+          case operatorType.BitAnd => ValueLattice.setInteger(i1 & i2)
           case operatorType.FloorDiv => throw new NotImplementedException()
         }
         

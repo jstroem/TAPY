@@ -36,7 +36,7 @@ object NoneLattice extends Lattice[NoneElt] {
 
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (None()) => op match {
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, true)
+      case unaryopType.Not => ValueLattice.setBoolean(true)
       case unaryopType.UAdd | unaryopType.USub | unaryopType.Invert => throw new UnaryException("NoneType elements cannot do unaryop.Invert", op)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }

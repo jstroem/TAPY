@@ -77,15 +77,15 @@ object FloatLattice extends Lattice[FloatElt] {
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (Concrete(f)) => op match {
       case unaryopType.Invert => throw new UnaryException("Float elements cannot do unaryop.Invert", op)
-      case unaryopType.Not => if (f == 0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
-      case unaryopType.UAdd => ValueLattice.setFloat(ValueLattice.bottom, f)
-      case unaryopType.USub => ValueLattice.setFloat(ValueLattice.bottom, -f)
+      case unaryopType.Not => ValueLattice.setBoolean(f == 0)
+      case unaryopType.UAdd => ValueLattice.setFloat(f)
+      case unaryopType.USub => ValueLattice.setFloat(-f)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
     case _ => op match {
       case unaryopType.Invert => throw new UnaryException("Float elements cannot do unaryop.Invert", op)
-      case unaryopType.UAdd | unaryopType.USub => ValueLattice.setFloat(ValueLattice.bottom, top)
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.UAdd | unaryopType.USub => ValueLattice.setFloatElt(top)
+      case unaryopType.Not => ValueLattice.setBooleanElt(BooleanLattice.top)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
@@ -95,11 +95,11 @@ object FloatLattice extends Lattice[FloatElt] {
       case (Concrete(f1), Concrete(f2)) =>
         op match {
           case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setFloat(ValueLattice.bottom, f1 + f2)
-          case operatorType.Sub => ValueLattice.setFloat(ValueLattice.bottom, f1 - f2)
-          case operatorType.Mult => ValueLattice.setFloat(ValueLattice.bottom, f1 * f2)
-          case operatorType.Div => ValueLattice.setFloat(ValueLattice.bottom, f1 / f2)
-          case operatorType.Mod => ValueLattice.setFloat(ValueLattice.bottom, f1 % f2)
+          case operatorType.Add => ValueLattice.setFloat(f1 + f2)
+          case operatorType.Sub => ValueLattice.setFloat(f1 - f2)
+          case operatorType.Mult => ValueLattice.setFloat(f1 * f2)
+          case operatorType.Div => ValueLattice.setFloat(f1 / f2)
+          case operatorType.Mod => ValueLattice.setFloat(f1 % f2)
           case operatorType.Pow => throw new NotImplementedException()
           case operatorType.LShift => throw new NotImplementedException()
           case operatorType.RShift => throw new NotImplementedException()

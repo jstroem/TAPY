@@ -73,7 +73,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def setCallGraph(el: AnalysisLattice.Elt, callGraph: CallGraphLattice.Elt): AnalysisLattice.Elt =
     (getProgramState(el), callGraph)
   
-  def setExecutionContexts(el: AnalysisLattice.Elt, node: Node, executionContexts: ExecutionContextLattice.Elt): AnalysisLattice.Elt =
+  def setExecutionContexts(el: AnalysisLattice.Elt, node: Node, executionContexts: ExecutionContextLattice.Elt = ExecutionContextLattice.bottom): AnalysisLattice.Elt =
     (ProgramStateLattice.setExecutionContext(getProgramState(el), node, executionContexts), getCallGraph(el))
     
   /* Updaters */

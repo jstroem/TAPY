@@ -42,11 +42,11 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
           val objectProperties = ObjectLattice.getProperties(objectElement)
           val nodeName = GraphvizExporter.escape(objectLabel.toString())
           val (nodeLabel,edges) = objectProperties match {
-            case ObjectPropertiesLattice.Concrete(objectMap: Map[String,ObjectPropertyLattice.Elt]) => {
+            case PropertiesLattice.Concrete(objectMap: Map[String, PropertyLattice.Elt]) => {
               objectMap.foldLeft((nodeName,List()) : (String,List[GraphvizExporter.Edge]))((accPair,pair) => {
                 var (nodeName,edges) = accPair
                 val (propertyName,objectProperty) = pair
-                val valueElement = ObjectPropertyLattice.getValue(objectProperty)
+                val valueElement = PropertyLattice.getValue(objectProperty)
   
                 val escapedPropertyName = GraphvizExporter.escape(propertyName)
   

@@ -76,15 +76,15 @@ object LongLattice extends Lattice[LongElt] {
 
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (Concrete(l)) => op match {
-      case unaryopType.Invert => ValueLattice.setLong(ValueLattice.bottom, l.not())
-      case unaryopType.Not => if (l.compareTo(new BigInteger("0"))==0) ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
-      case unaryopType.UAdd => ValueLattice.setLong(ValueLattice.bottom, l)
-      case unaryopType.USub => ValueLattice.setLong(ValueLattice.bottom, l.negate())
+      case unaryopType.Invert => ValueLattice.setLong(l.not())
+      case unaryopType.Not => if (l.compareTo(new BigInteger("0"))==0) ValueLattice.setBoolean(true) else ValueLattice.setBoolean(false)
+      case unaryopType.UAdd => ValueLattice.setLong(l)
+      case unaryopType.USub => ValueLattice.setLong(l.negate())
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
     case _ => op match {
-      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setLong(ValueLattice.bottom, LongLattice.top)
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.Invert | unaryopType.UAdd | unaryopType.USub => ValueLattice.setLongElt(LongLattice.top)
+      case unaryopType.Not => ValueLattice.setBooleanElt(BooleanLattice.top)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
   }
@@ -94,17 +94,17 @@ object LongLattice extends Lattice[LongElt] {
       case (Concrete(l1), Concrete(l2)) =>
         op match {
           case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setLong(ValueLattice.bottom, l1.add(l2))
-          case operatorType.Sub => ValueLattice.setLong(ValueLattice.bottom, l1.subtract(l2))
-          case operatorType.Mult => ValueLattice.setLong(ValueLattice.bottom, l1.multiply(l2))
-          case operatorType.Div => ValueLattice.setLong(ValueLattice.bottom, l1.divide(l2))
-          case operatorType.Mod => ValueLattice.setLong(ValueLattice.bottom, l1.mod(l2))
-          case operatorType.Pow => ValueLattice.setLong(ValueLattice.bottom, l1.pow(l2.intValue()))
-          case operatorType.LShift => ValueLattice.setLong(ValueLattice.bottom, l1.shiftLeft(l2.intValue()))
-          case operatorType.RShift => ValueLattice.setLong(ValueLattice.bottom, l1.shiftRight(l2.intValue()))
-          case operatorType.BitOr => ValueLattice.setLong(ValueLattice.bottom, l1.or(l2))
-          case operatorType.BitXor => ValueLattice.setLong(ValueLattice.bottom, l1.xor(l2))
-          case operatorType.BitAnd => ValueLattice.setLong(ValueLattice.bottom, l1.and(l2))
+          case operatorType.Add => ValueLattice.setLong(l1.add(l2))
+          case operatorType.Sub => ValueLattice.setLong(l1.subtract(l2))
+          case operatorType.Mult => ValueLattice.setLong(l1.multiply(l2))
+          case operatorType.Div => ValueLattice.setLong(l1.divide(l2))
+          case operatorType.Mod => ValueLattice.setLong(l1.mod(l2))
+          case operatorType.Pow => ValueLattice.setLong(l1.pow(l2.intValue()))
+          case operatorType.LShift => ValueLattice.setLong(l1.shiftLeft(l2.intValue()))
+          case operatorType.RShift => ValueLattice.setLong(l1.shiftRight(l2.intValue()))
+          case operatorType.BitOr => ValueLattice.setLong(l1.or(l2))
+          case operatorType.BitXor => ValueLattice.setLong(l1.xor(l2))
+          case operatorType.BitAnd => ValueLattice.setLong(l1.and(l2))
           case operatorType.FloorDiv => throw new NotImplementedException()
         }
         

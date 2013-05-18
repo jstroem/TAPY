@@ -79,13 +79,13 @@ object StringLattice extends Lattice[StringElt] {
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
     case (Concrete(str)) => op match {
       case unaryopType.Invert => throw new UnaryException("String elements cannot do this unary op", op)
-      case unaryopType.Not => if (str == "") ValueLattice.setBoolean(ValueLattice.bottom, true) else ValueLattice.setBoolean(ValueLattice.bottom, false)
+      case unaryopType.Not => ValueLattice.setBoolean(str == "")
       case unaryopType.UAdd => throw new UnaryException("String elements cannot do this unary op", op)
       case unaryopType.USub => throw new UnaryException("String elements cannot do this unary op", op)
       case _ => throw new InternalErrorException("unaryopType was undefined")
     }
     case _ => op match {
-      case unaryopType.Not => ValueLattice.setBoolean(ValueLattice.bottom, BooleanLattice.top)
+      case unaryopType.Not => ValueLattice.setBooleanElt(BooleanLattice.top)
       case unaryopType.UAdd | unaryopType.USub | unaryopType.Invert => throw new UnaryException("String elements cannot do unaryop.Invert", op)
       case _ => throw new InternalErrorException("unaryopType was undefined") 
     }
@@ -96,7 +96,7 @@ object StringLattice extends Lattice[StringElt] {
       case (Concrete(s1), Concrete(s2)) =>
         op match {
           case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setString(ValueLattice.bottom, s1 + s2)
+          case operatorType.Add => ValueLattice.setString(s1 + s2)
           case operatorType.Sub => throw new NotImplementedException()
           case operatorType.Mult => throw new NotImplementedException()
           case operatorType.Div => throw new NotImplementedException()

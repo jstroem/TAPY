@@ -9,4 +9,3 @@ class C(object):
 		return self.a
 
 c = C()
-a = c.a
