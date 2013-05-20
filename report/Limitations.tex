@@ -6,22 +6,14 @@ The size of an integer in Python depends on the system your on. If your running 
 \subsection{Language functionality}
 Python is a general purpose programming language and quite popular, it has been developed and extended and holds a lot of functionality, some of these functionalities is not used that often. In our analysis we have decided to exclude some of these language functionalities;
 
-\myparagraph{With statements}
-With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used alot when working with IO such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.\ We have desided not to add this to our CFG for now, since it dosen't limit our functionallity.
-
-\begin{listing}[H]
-	\begin{minted}[linenos]{python}
-with open('file.txt') as fh:
-	print fh.read()
-	\end{minted}
-	\caption{With example reading a file}\label{code:withExample}
-\end{listing}
-
 \begin{itemize}
 	\item Lambda expressions
 	\item Generator expressions
 	\item Yield expressions
 \end{itemize}
+
+\subsubsection{Function decorators}
+In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this is when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
 
 \subsection{Magic methods}
 Python uses magic methods to give the developer flexibility to do operation overloading on custom classes. These methods makes simple operations such as binary and unary operations hard to emulate in the control flow graph since its not just one operation but could potentially be a method-call with side-effects. \\

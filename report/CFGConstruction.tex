@@ -1,5 +1,6 @@
 \chapter{Control Flow Graph construction}
 
+\subsection{CFG construction for For and While loops}
 In this section we give examples of how we inductively generate the control flow graph of some essential language features. During this we will present the control flow graph nodes that we use, together with their semantics. \\
 In Python, both for and while loops has an else branch, which is executed if the loop terminates normally (i.e. not using \inlinecode{break}).
 
@@ -45,8 +46,23 @@ To simulate the evaluation sequence of such a for loop in our control flow graph
 	\label{fig:whileCfg}
 	\vspace{-10pt}
 \end{wrapfigure}
-For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}. \\
-$CFG_{cond}$ is the control flow graph that results from the condition. If the condition is the boolean \inlinecode{True}, $CFG_{cond}$ will be the control flow graph consisting of a single node, namely \textit{ConstantBooleanNode}. Inspired from TAJS, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register ($reg_{cond}$ in figure \ref{fig:callCfg}) together with the actual constant value, \inlinecode{True} in this case. \\
+For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
+
+\subsection{CFG cunstruction of With statements}
+With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used alot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+with open('file.txt') as fh:
+	print fh.read()
+	\end{minted}
+	\caption{With example reading a file}\label{code:withExample}
+\end{listing}
+
+The formal description of the With statement can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.5, the hightlights is that if there is an \inlinecode{as} part of your with statement the result of the method call to \inlinecode{\_\_enter\_\_} assigned to the variable in the with statement. If there is raised an exception during the execution of the body of the With statement it is passed as arguments to the method call \inlinecode{\_\_exit\_\_}, if the result of that call returns something which truth value is \inlinecode{True} the with statement just evaluates normally, If a truth value of \inlinecode{False} is returned the exception isn't caught. If no exceptions happens during execution the \inlinecode{\_\_exit\_\_} method is called, after the body of the With statement, where \inlinecode{None} is passed as arguments.
+
+\subsection{CFG construction of function and method calls}
+\textit{CFG$_{\textit{cond}}$} is the control flow graph that results from the condition. If the condition is the boolean \inlinecode{True}, \textit{CFG$_{\textit{cond}}$} will be the control flow graph consisting of a single node, namely \textit{ConstantBooleanNode}. Inspired from TAJS, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register (\textit{reg$_{\textit{cond}}$} in figure \ref{fig:callCfg}) together with the actual constant value, \inlinecode{True} in this case. \\
 The other nodes \textit{ConstantIntNode}, \textit{ConstantFloatNode}, \textit{ConstantLongNode}, \textit{ConstantComplexNode}, \textit{ConstantStringNode}, \textit{ConstantNoneNode}, \textit{NewListNode}, \textit{NewDictionaryNode} and \textit{NewTupleNode} work in a similar way to \textit{ConstantBooleanNode}. \\
 The motivation for introducing registers is that a single expression as e.g. \inlinecode{s1.addGrade('math', 10)} is evaluated in several steps. \\
 First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the control flow graph using \textit{ReadPropertyNode}, which holds a result register, a base register, i.e. the register where to find the object, and the name of the property to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}. \\
@@ -104,8 +120,8 @@ finally:
 	\caption{A try-except-else-finally example after convertion}\label{code:tryExceptAfter}
 \end{listing}
 
-Inductively, CFG's for the statement lists <\inlinecode{try-stms}> ($CFG_{try}$), <\inlinecode{except-foo-stms}> ($CFG_{except-foo}$), <\inlinecode{except-stms}> ($CFG_{except}$), <\inlinecode{else-stms}> ($CFG_{else}$), and <\inlinecode{finally-stms}> are created. \\
-The CFG for the finally block is then cloned into three duplicates ($CFG_{finally-normal}$, $CFG_{finally-handled-exc}$, $CFG_{finally- unhandled-exc}$). The purpose is to have one finally block for each of the following cases: 
+Inductively, CFG's for the statement lists <\inlinecode{try-stms}> (\textit{CFG$_{\textit{try}}$}), <\inlinecode{except-foo-stms}> (\textit{CFG$_{\textit{except-foo}}$}), <\inlinecode{except-stms}> (\textit{CFG$_{\textit{except}}$}), <\inlinecode{else-stms}> (\textit{CFG$_{\textit{else}}$}), and <\inlinecode{finally-stms}> are created. \\
+The CFG for the finally block is then cloned into three duplicates (\textit{CFG$_{\textit{finally-normal}}$}, \textit{CFG$_{\textit{finally-handled-exc}}$}, \textit{CFG$_{\textit{finally-unhandled-exc}}$}). The purpose is to have one finally block for each of the following cases: 
 
 \begin{enumerate}
   \item when no exceptions occur during the try block,
@@ -114,13 +130,13 @@ The CFG for the finally block is then cloned into three duplicates ($CFG_{finall
 the try block and no except blocks handles this particular exception, b) an except block catches an exception raised by the try block, but then raises a new exception on its own.
 \end{enumerate}
 
-In particular, it is important that the finally block for handling case (3), i.e. $CFG_{finally-unhandled-exc}$, is not connected to the exit node of the try-except-else-finally block. Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception). \\
+In particular, it is important that the finally block for handling case (3), i.e. \textit{CFG$_{\textit{finally-unhandled-exc}}$}, is not connected to the exit node of the try-except-else-finally block. Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception). \\
 In the following sections we present the way we generate the CFG of a try-except-else-finally block.
 
 \subsection{The try block}
-Each node in $CFG_{try}$ (that does not already have an outgoing exception edge) is connected using an exception edge to the entry node of the first except block (*), in this case the entry node of $CFG_{except-foo}$. We do not add exception edges to nodes that already have an exception edges, because this would be a loss of information: the control flow always goes to the nearest enclosing except block in case of exceptions. \\
+Each node in \textit{CFG$_{\textit{try}}$} (that does not already have an outgoing exception edge) is connected using an exception edge to the entry node of the first except block (*), in this case the entry node of \textit{CFG$_{\textit{except-foo}}$}. We do not add exception edges to nodes that already have an exception edges, because this would be a loss of information: the control flow always goes to the nearest enclosing except block in case of exceptions. \\
 The above models that if an exception occurs during evaluation of one of the statements in a try block, then the control flow will proceed from the first except block. \\
-If there is no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifially $CFG_{finally-unhandled-exc}$). However, we don't add any exception edges here; these will be added inductively because of (*) in case there are any surrounding except or finally blocks.
+If there is no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifially \textit{CFG$_{\textit{finally-unhandled-exc}}$}). However, we don't add any exception edges here; these will be added inductively because of (*) in case there are any surrounding except or finally blocks.
 
 \begin{wrapfigure}{r}{0.5\textwidth}
 	\vspace{-20pt}
@@ -133,12 +149,12 @@ If there is no except blocks, each node should instead be connected using an exc
 	\vspace{-10pt}
 \end{wrapfigure}
 \subsection{The except block}
-The entry node of each except block is connected using an exception edge to the entry node of the next except block (except for the last block, of course). Thus we make an exception edge from the entry node of $CFG_{except-foo}$ to the entry node of $CFG_{except}$. \\
+The entry node of each except block is connected using an exception edge to the entry node of the next except block (except for the last block, of course). Thus we make an exception edge from the entry node of \textit{CFG$_{\textit{except-foo}}$} to the entry node of \textit{CFG$_{\textit{except}}$}. \\
 We do this because the first except block might not catch the exception (because of the type restrictions), in which the control flow proceeds at the next except block. \\
-Furthermore, each node inside the except block should be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifically $CFG_{finally-unhandled-exc}$). As above, this is handled inductively. \\
-Finally, if an except block actually catches the exception, and no exceptions occur inside that except block, the control flow proceeds to the surrounding finally block (in this case, $CFG_{finally-handled-exc}$). 
+Furthermore, each node inside the except block should be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifically \textit{CFG$_{\textit{finally-unhandled-exc}}$}). As above, this is handled inductively. \\
+Finally, if an except block actually catches the exception, and no exceptions occur inside that except block, the control flow proceeds to the surrounding finally block (in this case, \textit{CFG$_{\textit{finally-handled-exc}}$}). 
 
 \subsection{The else block}
-If no exceptions occur, the else block should be evaluated. Thus we add a normal flow edge from the exit node of $CFG_{try}$ to the entry node of $CFG_{else}$.\\
-Since exceptions may result from evaluating the statements in the else block, each node in $CFG_{else}$ should also be connected to the entry node of the nearest surrounding except or finally block (again, $CFG_{finally-unhandled-exc}$). \\
-In case the evaluation of the statements in the else block does not raise any exceptions, the control flow proceeds either to the exit node of the whole try-except-else block, or in case there is a surrounding finally block, to the entry node of $CFG_{finally-normal}$.
+If no exceptions occur, the else block should be evaluated. Thus we add a normal flow edge from the exit node of \textit{CFG$_{\textit{try}}$} to the entry node of \textit{CFG$_{\textit{else}}$}.\\
+Since exceptions may result from evaluating the statements in the else block, each node in \textit{CFG$_{\textit{else}}$} should also be connected to the entry node of the nearest surrounding except or finally block (again, \textit{CFG$_{\textit{finally-unhandled-exc}}$}). \\
+In case the evaluation of the statements in the else block does not raise any exceptions, the control flow proceeds either to the exit node of the whole try-except-else block, or in case there is a surrounding finally block, to the entry node of \textit{CFG$_{\textit{finally-normal}}$}.
