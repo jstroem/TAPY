@@ -1,6 +1,8 @@
 \chapter{Control Flow Graph construction}
+\ref{chap:CFGConstruction}
 
-\subsection{CFG construction for For and While loops}
+\section{CFG construction for For and While loops}
+\ref{sec:CFGConstructionLoops}
 In this section we give examples of how we inductively generate the control flow graph of some essential language features. During this we will present the control flow graph nodes that we use, together with their semantics. \\
 In Python, both for and while loops has an else branch, which is executed if the loop terminates normally (i.e. not using \inlinecode{break}).
 
@@ -48,7 +50,7 @@ To simulate the evaluation sequence of such a for loop in our control flow graph
 \end{wrapfigure}
 For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
 
-\subsection{CFG cunstruction of With statements}
+\section{CFG cunstruction of With statements}
 With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used alot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
 
 \begin{listing}[H]
@@ -61,7 +63,7 @@ with open('file.txt') as fh:
 
 The formal description of the With statement can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.5, the hightlights is that if there is an \inlinecode{as} part of your with statement the result of the method call to \inlinecode{\_\_enter\_\_} assigned to the variable in the with statement. If there is raised an exception during the execution of the body of the With statement it is passed as arguments to the method call \inlinecode{\_\_exit\_\_}, if the result of that call returns something which truth value is \inlinecode{True} the with statement just evaluates normally, If a truth value of \inlinecode{False} is returned the exception isn't caught. If no exceptions happens during execution the \inlinecode{\_\_exit\_\_} method is called, after the body of the With statement, where \inlinecode{None} is passed as arguments.
 
-\subsection{CFG construction of function and method calls}
+\section{CFG construction of function and method calls}
 \textit{CFG$_{\textit{cond}}$} is the control flow graph that results from the condition. If the condition is the boolean \inlinecode{True}, \textit{CFG$_{\textit{cond}}$} will be the control flow graph consisting of a single node, namely \textit{ConstantBooleanNode}. Inspired from TAJS, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register (\textit{reg$_{\textit{cond}}$} in figure \ref{fig:callCfg}) together with the actual constant value, \inlinecode{True} in this case. \\
 The other nodes \textit{ConstantIntNode}, \textit{ConstantFloatNode}, \textit{ConstantLongNode}, \textit{ConstantComplexNode}, \textit{ConstantStringNode}, \textit{ConstantNoneNode}, \textit{NewListNode}, \textit{NewDictionaryNode} and \textit{NewTupleNode} work in a similar way to \textit{ConstantBooleanNode}. \\
 The motivation for introducing registers is that a single expression as e.g. \inlinecode{s1.addGrade('math', 10)} is evaluated in several steps. \\
