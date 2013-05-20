@@ -25,6 +25,7 @@ object BuiltIn {
 class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] {
   type Elt = AnalysisLattice.Elt
   
+  def Utils = TypeAnalysis
   def bottom = AnalysisLattice.bottom
   
   var callGraph: CallGraphLattice.Elt = null
@@ -111,61 +112,10 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     AnalysisLattice.setState(solution, node, state)
   }
 
-  /**
-    * Utility functions
-    */
-  
-  def findPropertyInScope(node: Node, property: String, solution: Elt): PropertyLattice.Elt = {
-    val chains = ExecutionContextLattice.getVariableObjectsOnScopeChains(this.executionContexts)
-    
-    // TODO: What if the property is only found in one of the chains? Should add result to also be undefined...
-    chains.foldLeft(PropertyLattice.bottom) {(acc, chain) =>
-      val value = chain.foldLeft(PropertyLattice.bottom) {(acc, objectLabel) =>
-        if (acc != PropertyLattice.bottom)
-          acc
-        else
-          node.getProperty(solution, objectLabel, property)
-      }
-      PropertyLattice.leastUpperBound(value, acc)
-    }
-  }
-  
-  def findPropertyValueInScope(node: Node, property: String, solution: Elt): ValueLattice.Elt = {
-    PropertyLattice.getValue(findPropertyInScope(node, property, solution))
-  }
-  
-  def writePropertyValueOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
-    writePropertyOnObjectLabelToHeap(node, property, objectLabel, PropertyLattice.setValue(value), solution, strong)
-  
-  def writePropertyOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, objectElt: PropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
-    val oldObject = node.getObject(solution, objectLabel)
-    val newObject = writePropertyOnObject(oldObject, property, objectElt, strong)
-    node.updateHeap(solution, objectLabel, newObject)
-  }
-  
-  def writePropertyValueOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
-    writePropertyOnVariableObjects(node, property, PropertyLattice.setValue(value), solution, strong)
-  
-  def writePropertyOnVariableObjects(node: Node, property: String, objectElt: PropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
-    val variableObjectLabels = node.getVariableObjects(solution)
-    variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
-      writePropertyOnObjectLabelToHeap(node, property, variableObjectLabel, objectElt, solution, strong)
-    }
-  }
-  
-  def writePropertyValueOnObject(obj: ObjectLattice.Elt, property: String, value: ValueLattice.Elt, strong: Boolean = false): ObjectLattice.Elt =
-    writePropertyOnObject(obj, property, PropertyLattice.setValue(value), strong)
-  
-  def writePropertyOnObject(obj: ObjectLattice.Elt, property: String, value: PropertyLattice.Elt, strong: Boolean = false): ObjectLattice.Elt = {
-    val currentPropertyValue = if (strong) PropertyLattice.bottom else ObjectLattice.getProperty(obj, property)
-    val newPropertyValue = PropertyLattice.leastUpperBound(value, currentPropertyValue)
-    ObjectLattice.setProperty(property, newPropertyValue, obj)
-  }
-  
   /* Built in objects */
   
   def builtInObjectOverwritten(node: Node, solution: Elt): Boolean = {
-    findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue
+    Utils.findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue
   }
   
   /* Misc */
@@ -225,13 +175,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
-    val value = findPropertyValueInScope(node, node.variable, solution)
+    val value = Utils.findPropertyValueInScope(node, node.variable, solution, true)
     node.updateStackFrame(solution, node.resultReg, value)
   }
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(this.stackFrame, node.valueReg)
-    writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
+    Utils.writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
   }
   
   /* Properties */
@@ -269,7 +219,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
           if (baseLabel.isInstanceOf[NewStyleClassObjectLabel] || baseLabel.isInstanceOf[OldStyleClassObjectLabel]) {
             // If value is a function, we must wrap that function in a unbound method...
             // First we write all the non-object values
-            val tmp = writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, ValueLattice.setObjectLabels(Set(), value), acc)
+            val tmp = Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, ValueLattice.setObjectLabels(Set(), value), acc)
             
             // Second we write all the object values
             ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
@@ -282,7 +232,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
                   val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
                   
                   val tmp = node.updateHeap(acc, methodLabel, methodObject)
-                  writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, methodValue, tmp)
+                  Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, methodValue, tmp)
                   
                 case valueLabel =>
                   throw new NotImplementedException()
@@ -290,7 +240,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
             }
             
           } else {
-            writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
+            Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
           }
         }
       }
@@ -414,7 +364,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val result = node.updateHeap(solution, Set((scopeLabel, scopeObject), (functionLabel, functionObject), (wrapperLabel, wrapperObject)))
 
     // Add the function name to the current object variables, such that it can be referenced
-    writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, functionValue, result)
+    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, functionValue, result)
   }
   
   def handleUnboundMethodDeclNode(node: FunctionDeclNode, variableObjectLabel: ObjectLabel, solution: Elt): Elt = {
@@ -445,7 +395,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     val result = node.updateHeap(solution, Set((scopeLabel, scopeObject), (functionLabel, functionObject), (wrapperLabel, wrapperObject), (methodLabel, methodObject)))
 
     // Add the function name to the current object variables, such that it can be referenced
-    writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, methodValue, result)
+    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, methodValue, result)
   }
   
   def isDefinatelyNewStyleClassObject(node: Node, baseNames: List[String], solution: Elt): Boolean = {
@@ -456,7 +406,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
             true
             
           else {
-            val property = findPropertyInScope(node, baseName, solution)
+            val property = Utils.findPropertyInScope(node, baseName, solution)
             val value = PropertyLattice.getValue(property)
             val labels = ValueLattice.getObjectLabels(value)
             
@@ -498,7 +448,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
             false
           
           else {
-            val property = findPropertyInScope(node, baseName, solution)
+            val property = Utils.findPropertyInScope(node, baseName, solution)
             val value = PropertyLattice.getValue(property)
             val labels = ValueLattice.getObjectLabels(value)
             
@@ -542,19 +492,19 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       val classObjectValue = ValueLattice.setObjectLabels(Set(newStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, newStyleClassObjectLabel, classObject)
-      writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
       
     } else if (isDefinatelyOldStyleClassObject(node, node.bases, solution)) {
       val classObjectValue = ValueLattice.setObjectLabels(Set(oldStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, oldStyleClassObjectLabel, classObject)
-      writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
       
     } else {
       val classObjectValue = ValueLattice.setObjectLabels(Set(newStyleClassObjectLabel, oldStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, Set((newStyleClassObjectLabel, classObject), (oldStyleClassObjectLabel, classObject)))
-      writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
     }
   }
   
@@ -685,7 +635,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
           // First we write all the non-object values.
           // Note! Don't write propertyElt to the acc: a local may be declared to be global in the class,
           // but it will not be global for its instances!
-          val tmp = writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, ValueLattice.setObjectLabels(Set(), value), acc)
+          val tmp = Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, ValueLattice.setObjectLabels(Set(), value), acc)
           
           // Second we write all the object values
           ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
@@ -698,7 +648,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
                 val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
                 
                 val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
-                writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
+                Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
                 
               case valueLabel =>
                 throw new NotImplementedException()
@@ -778,13 +728,13 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
     })
 
     functionScopeObject = receiver match {
-      case Some(receiver) => writePropertyValueOnObject(functionScopeObject, args(0), receiver)
+      case Some(receiver) => Utils.writePropertyValueOnObject(functionScopeObject, args(0), receiver)
       case None => functionScopeObject
     }
     
     functionScopeObject = argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
-      writePropertyValueOnObject(acc, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
+      Utils.writePropertyValueOnObject(acc, argName, StackFrameLattice.getRegisterValue(this.stackFrame, reg))
     }
     
     callNode.updateHeap(solution, functionLabel.scopeLabel, functionScopeObject)
@@ -849,7 +799,7 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
 
     if (bottomGlobalProperty != variableProperty) {
       //bind node.varibale to {bottom x Global} in this scope
-      val updated_solution = writePropertyOnVariableObjects(node, node.variable, bottomGlobalProperty, solution)
+      val updated_solution = Utils.writePropertyOnVariableObjects(node, node.variable, bottomGlobalProperty, solution)
 
       //bind variableValue in globalscope
       val getLast = {(l: List[ObjectLabel]) => l.last}
@@ -859,10 +809,78 @@ class TypeAnalysis(cfg: ControlFlowGraph) extends Analysis[AnalysisLattice.Elt] 
       if (varGlobalObjLabels.size != 1)
         throw new NotImplementedException("handle global er utilfreds")
 
-      return writePropertyOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, variableProperty, updated_solution)
+      return Utils.writePropertyOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, variableProperty, updated_solution)
     }
     else {  // if the variableProperty is already bottom, the job is done
       return solution
     }
+  }
+}
+
+object TypeAnalysis {
+  type Elt = AnalysisLattice.Elt
+  
+  def findPropertyValueInScope(node: Node, property: String, solution: Elt, print: Boolean = false): ValueLattice.Elt = findPropertyValueInScope(property, node.getState(solution), print)
+  def findPropertyValueInScope(property: String, state: StateLattice.Elt, print: Boolean): ValueLattice.Elt =
+    PropertyLattice.getValue(findPropertyInScope(property, state, print))
+  
+  def findPropertyInScope(node: Node, property: String, solution: Elt): PropertyLattice.Elt = findPropertyInScope(property, node.getState(solution))
+  def findPropertyInScope(property: String, state: StateLattice.Elt, print: Boolean = false): PropertyLattice.Elt = {
+    val chains = ExecutionContextLattice.getVariableObjectsOnScopeChains(StackLattice.getExecutionContext(StateLattice.getStack(state)))
+    
+    // TODO: What if the property is only found in one of the chains? Should add result to also be undefined...
+    chains.foldLeft(PropertyLattice.bottom) {(acc, chain) =>
+      val value = chain.foldLeft(PropertyLattice.bottom) {(acc, objectLabel) =>
+        if (print)
+          try {
+            objectLabel match {
+              case objectLabel: NewStyleClassObjectLabel =>
+                println("--- MRO of " + objectLabel.entryNode.classDef.getInternalName() + "---")
+                ClassMRO.linearize(objectLabel, state).foldLeft() {(acc, chain) =>
+                  chain.foldLeft() {(acc, label) =>
+                    label match {
+                      case label: BuiltInClassObjectLabel => println(label.name)
+                      case label: NewStyleClassObjectLabel => println(label.entryNode.classDef.getInternalName())
+                    }
+                  }}
+              case _ =>
+            }
+          } catch { case e: Exception => e.printStackTrace()}
+        
+        if (acc != PropertyLattice.bottom)
+          acc
+        else
+          ObjectLattice.getProperty(StateLattice.getHeapObject(state, objectLabel), property)
+      }
+      PropertyLattice.leastUpperBound(value, acc)
+    }
+  }
+  
+  def writePropertyValueOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
+    writePropertyOnObjectLabelToHeap(node, property, objectLabel, PropertyLattice.setValue(value), solution, strong)
+  
+  def writePropertyOnObjectLabelToHeap(node: Node, property: String, objectLabel: ObjectLabel, objectElt: PropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
+    val oldObject = node.getObject(solution, objectLabel)
+    val newObject = writePropertyOnObject(oldObject, property, objectElt, strong)
+    node.updateHeap(solution, objectLabel, newObject)
+  }
+  
+  def writePropertyValueOnVariableObjects(node: Node, property: String, value: ValueLattice.Elt, solution: Elt, strong: Boolean = false): Elt =
+    writePropertyOnVariableObjects(node, property, PropertyLattice.setValue(value), solution, strong)
+  
+  def writePropertyOnVariableObjects(node: Node, property: String, objectElt: PropertyLattice.Elt, solution: Elt, strong: Boolean = false): Elt = {
+    val variableObjectLabels = node.getVariableObjects(solution)
+    variableObjectLabels.foldLeft(solution) {(acc, variableObjectLabel) =>
+      writePropertyOnObjectLabelToHeap(node, property, variableObjectLabel, objectElt, solution, strong)
+    }
+  }
+  
+  def writePropertyValueOnObject(obj: ObjectLattice.Elt, property: String, value: ValueLattice.Elt, strong: Boolean = false): ObjectLattice.Elt =
+    writePropertyOnObject(obj, property, PropertyLattice.setValue(value), strong)
+  
+  def writePropertyOnObject(obj: ObjectLattice.Elt, property: String, value: PropertyLattice.Elt, strong: Boolean = false): ObjectLattice.Elt = {
+    val currentPropertyValue = if (strong) PropertyLattice.bottom else ObjectLattice.getProperty(obj, property)
+    val newPropertyValue = PropertyLattice.leastUpperBound(value, currentPropertyValue)
+    ObjectLattice.setProperty(property, newPropertyValue, obj)
   }
 }
