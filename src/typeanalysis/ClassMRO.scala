@@ -15,10 +15,6 @@ import scala.collection.JavaConversions._
 object ClassMRO {
   def Utils = TypeAnalysis
   
-  val debugEntry = true
-  val debugIntermediate = true
-  val debugResult = true
-  
   def mro(label: ObjectLabel, state: StateLattice.Elt): Set[List[ObjectLabel]] =
     linearize(label, state)
     
@@ -31,19 +27,16 @@ object ClassMRO {
       case NewStyleClassObjectLabel(_, entryNode, _, bases) => (entryNode.classDef.getInternalName(), bases)
     }
     
-    println()
-    if (debugEntry) println(indent + "linearize " + name)
-    if (debugIntermediate) println(indent + "bases: " + bases)
+    println(indent + "linearize " + name)
     
     // Lookup base object labels
-    val powerLabels: List[Set[ObjectLabel]] = bases.map{(baseName) =>
+    val labels = bases.map{(baseName) =>
       val value = Utils.findPropertyValueInScope(baseName, state, false)
       
       if (value == BuiltIn.objectValue) {
         Set[ObjectLabel](BuiltIn.objectLabel)
         
       } else if (!ValueLattice.elementIsOnlyObjectLabels[NewStyleClassObjectLabel](value)) {
-        if (debugIntermediate) println(indent + "TypeError " + value)
         throw new TypeError("Potentially inheriting from a non-class (" + baseName + ")")
         
       } else {
@@ -51,53 +44,38 @@ object ClassMRO {
       }
     }
     
-    if (debugIntermediate) println(indent + "powerLabels: " + ppListOfSets(powerLabels))
-    
-    // Compute linearizations L[B1], ..., L[BN]. Since Bi may point to several labels,
-    // the result of L[Bi] is a list of sets.
-    val powerLinearizations = powerLabels.map{(labels) =>
-      labels.foldLeft(Set[List[ObjectLabel]]()) {(acc, label) =>
-        acc ++ linearize(label, state, indent + "    ") }
+    val linearizations = labels.foldLeft(Map[ObjectLabel, Set[List[ObjectLabel]]]()) {(acc, labels) =>
+      labels.foldLeft(acc) {(acc, label) =>
+        if (acc.contains(label)) acc else acc + (label -> linearize(label, state, indent + "    "))
+      }
     }
     
-    val combinations = combine(powerLinearizations, indent + "    ")
-    
-    println()
-    println(indent + "combinations of powerLinearizations:")
-    println(indent + "   " + ppListOfSetsOfLists(powerLinearizations))
-    println(indent + "is:")
-    println(indent + "   " +  ppSetOfListsOfLists(combinations))
-    
-    // Compute merge(L[B1] ... L[BN])
-    val lst = combine(powerLabels.map((labels) => labels.map((label) => List(label))), indent + "    ").foldLeft(Set[List[ObjectLabel]]()) {(acc, lst) =>
-      acc + lst.flatten
+    val labelCombinations = combineListOfSets(labels)
+    val result = labelCombinations.foldLeft(Set[List[ObjectLabel]]()) {(acc, labelCombination) =>
+      prepare(labelCombination, labelCombination, linearizations).foldLeft(acc) {(acc, input) =>
+        acc ++ merge(input, state, indent + "    ")
+      }
     }
     
-    println()
-    println(indent + "lst: " + ppSetOfLists(lst))
+    println(indent + "result: " + ppSetOfLists(if (result.isEmpty) Set(List(classLabel)) else result.map((list) => classLabel :: list)))
     
-    val input = combinations.foldLeft(Set[List[List[ObjectLabel]]]()) {(acc, list) =>
-      lst.foldLeft(acc) {(acc, appendList) => acc + (list :+ appendList)}
-    }
-    
-    println()
-    println(indent + "input: " + ppSetOfListsOfLists(input))
-    
-    val result = input.foldLeft(Set[List[ObjectLabel]]()) {(acc, linearization) =>
-      acc ++ merge(linearization, state, indent + "    ")
-    }
-    
-    if (result.isEmpty) {
-      if (debugResult) println(indent + "return: " + ppSetOfLists(Set(List(classLabel))))
-      
+    if (result.isEmpty)
       Set(List(classLabel))
-    } else {
-      if (debugResult) println(indent + "return: " + ppSetOfLists(result.map((mro) => classLabel :: mro)))
-      
-      result.map((mro) => classLabel :: mro)
-    }
+    else
+      result.map((list) => classLabel :: list)
   }
   
+  def prepare(labelCombination: List[ObjectLabel], originalLabelCombination: List[ObjectLabel], linearizationMap: Map[ObjectLabel, Set[List[ObjectLabel]]]): Set[List[List[ObjectLabel]]] = {
+    labelCombination match {
+      case Nil => Set(List(originalLabelCombination))
+      case label :: remaining =>
+        val linearizations = linearizationMap.getOrElse(label, Set())
+        val remainingLinearizations = prepare(remaining, originalLabelCombination, linearizationMap)
+        linearizations.foldLeft(Set[List[List[ObjectLabel]]]()) {(acc, linearization) =>
+          acc ++ remainingLinearizations.map((linearizationList) => linearization :: linearizationList)
+        }
+    }
+  }
   /**
    * Merge: take the head of the first list, i.e L[B1][0]; if this
    * head is not in the tail of any of the other lists, then add it
@@ -109,13 +87,13 @@ object ClassMRO {
    * refuse to create the class C and will raise an exception.
    */
   def merge(labels: List[List[ObjectLabel]], state: StateLattice.Elt, indent: String = ""): Set[List[ObjectLabel]] = {
-    if (debugEntry) println(indent + "merge: " + ppListOfLists(labels))
+    println(indent + "merge: " + ppListOfLists(labels))
     
     if (labels.isEmpty) {
       Set()
       
     } else {
-      findGoodHead(labels) match {
+      findGoodHead(labels, labels) match {
         case None => throw new TypeError("Bad MRO")
         case Some(label) =>
           val newLabels = removeFromListOfLists(label, labels)
@@ -125,84 +103,43 @@ object ClassMRO {
     }
   }
   
-  def mergeAux(before: List[List[ObjectLabel]], current: List[ObjectLabel], after: List[List[ObjectLabel]], state: StateLattice.Elt, indent: String = ""): Set[List[ObjectLabel]] = {
-    if (debugEntry) println(indent + "merge: " + ppListOfLists(before) + " - " + ppList(current) + " - " + ppListOfLists(after))
-    
-    findGoodHead(current :: after) match {
-      case None => throw new TypeError("Bad MRO")
-      case Some(label) =>
-        val newCurrentTail = removeFromList(current.head, current.tail)
-        val newAfter = removeFromListOfLists(current.head, after)
-        
-        val result =
-          if (newCurrentTail.isEmpty) {
-            if (newAfter.isEmpty) {
-              Set()
-              
-            } else {
-              mergeAux(before, newAfter.head, newAfter.tail, state, indent + "    ")
-            }
-            
-          } else {
-            mergeAux(before, newCurrentTail, newAfter, state, indent + "    ")
-          }
-        
-        if (result.isEmpty) {
-          println(indent + "result: " + ppSetOfLists(Set(List(current.head))))
-          Set(List(current.head))
-          
-        } else {
-          println(indent + "result: " + ppSetOfLists(result.map((list) => current.head :: list)))
-          result.map((list) => current.head :: list)
-        }
-    }
-  }
-  
-  def findGoodHead(lists: List[List[ObjectLabel]]): Option[ObjectLabel] = {
+  def findGoodHead(lists: List[List[ObjectLabel]], originalLists: List[List[ObjectLabel]]): Option[ObjectLabel] = {
     lists match {
       case Nil => None
       case head :: tail =>
         val candidate = head.head
-        val good = tail.foldLeft(true) {(acc, tailList) => if (tailList.contains(candidate)) false else acc }
+        val good = originalLists.foldLeft(true) {(acc, list) => if (list.tail.contains(candidate)) false else acc }
         if (good)
           Some(candidate)
         else
-          findGoodHead(tail)
+          findGoodHead(tail, originalLists)
     }
   }
   
-  def removeFromList(label: ObjectLabel, list: List[ObjectLabel]): List[ObjectLabel] = {
+  def removeFromList(label: ObjectLabel, list: List[ObjectLabel]): List[ObjectLabel] =
     list.filter((otherLabel) => label != otherLabel)
-  }
   
   def removeFromListOfLists(label: ObjectLabel, listOfLists: List[List[ObjectLabel]]): List[List[ObjectLabel]] = {
     listOfLists.foldRight(List[List[ObjectLabel]]()) {(list, acc) =>
-      val newList = list.filter((otherLabel) => label != otherLabel)
+      val newList = removeFromList(label, list)
       if (newList.isEmpty) acc else newList :: acc
     }
   }
   
-  def combine(powerLinearizations: List[Set[List[ObjectLabel]]], indent: String = ""): Set[List[List[ObjectLabel]]] = {
-    if (debugEntry) println(indent + "possibleLinearizations: " + ppListOfSetsOfLists(powerLinearizations))
-    
-    powerLinearizations match {
+  def combineListOfSets(list: List[Set[ObjectLabel]], indent: String = ""): Set[List[ObjectLabel]] = {
+    list match {
       case Nil => Set()
-      case linearizations :: remaining =>
-        // if (debugIntermediate) println(indent + "linearizations: " + linearizations)
-        // if (debugIntermediate) println(indent + "remaining: " + remaining)
-        
-        val acc = linearizations.map((linearization) => linearization :: List())
-        val subLinearizations = combine(remaining, indent + "    ")
-        val result = subLinearizations.foldLeft(acc) {(acc, subLinearization) =>
-          acc.map((linearization) => linearization ++ subLinearization)
+      case set :: remaining =>
+        if (remaining == Nil)
+          set.map((label) => List(label))
+        else {
+          val tmp = combineListOfSets(remaining)
+          set.foldLeft(Set[List[ObjectLabel]]()) {(acc, setLabel) =>
+            tmp.foldLeft(acc) {(acc, tmpList) =>
+              acc + (setLabel :: tmpList)
+            }
+          }
         }
-        
-        //val result = linearizations.foldLeft(Set[List[List[ObjectLabel]]]()) {(acc, linearization) =>
-          //subLinearizations.map((chain) => linearization :: chain) }
-        
-        if (debugResult) println(indent + "result: " + ppSetOfListsOfLists(result))
-        
-        result
     }
   }
   

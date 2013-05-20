@@ -1,7 +1,7 @@
-class G(object):
+class F(object):
 	pass
 
-class F(object):
+class G(object):
 	pass
 
 if (True):
@@ -9,20 +9,17 @@ if (True):
 else:
 	GF = G
 
-class E(GF):
-	object
+class E(object):
+	pass
 
-#class E(object):
-#	pass
+class D(object):
+	pass
 
-#class D(object):
-#	pass
+class C(D,GF):
+	x = y
 
-#class C(D,GF):
-#	pass
+class B(D,E):
+	pass
 
-#class B(D,E):
-#	pass
-
-#class A(B,C):
-#	x = y # should return A B C D E F O
+class A(B,C):
+	x = y # should return A B C D E F O
