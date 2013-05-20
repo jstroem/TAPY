@@ -1,31 +1,34 @@
 \chapter{Complete node reference}
 
-FunctionDeclNode \tab{\inlinecode{def f(...):}} \\
-ClassDeclNode 	\tab{\inlinecode{class c(...):}} \\
-ClassEntryNode\\
-FunctionEntryNode\\
-ExitNode\\
-ConstantBooleanNode\\
-ConstantIntNode\\
-ConstantFloatNode\\
-ConstantLongNode\\
-ConstantComplexNode\\
-ConstantStringNode\\
-ConstantNoneNode \tab{\inlinecode{None}} \\
-ReadVariableNode \tab{\inlinecode{x}} \\
-ReadPropertyNode \tab{\inlinecode{$reg_{obj}$.property}} \\
-ReadIndexableNode \tab{\inlinecode{$reg_{obj}$[$reg_{index}$]}} \\
-WriteVariableNode \tab{\inlinecode{x = value}} \\
-WritePropertyNode \tab{\inlinecode{$reg_{obj}$.property = value}} \\
-WriteIndexableNode \tab{\inlinecode{$reg_{obj}$[$reg_{index}$] = value}} \\
-DelVariableNode \tab{\inlinecode{del x}} \\
-DelPropertyNode \tab{\inlinecode{del $reg_{obj}$.property}} \\
-DelIndexableNode \tab{\inlinecode{del $reg_{obj}$[$reg_{index}$]}} \\
-NoOpNode \\ 
-CallNode \tab{\inlinecode{$reg_{function}$($reg_1$, ..., $reg_n$)}} \\
-ReturnNode \tab{\inlinecode{return $reg_{value}$}} \\
-CompareOpNode \tab{\inlinecode{$reg_{left}$ $op_{comp}$ $reg_{right}$}} \\
-BinOpNode \tab{\inlinecode{$reg_{left}$ $op_{binop}$ $reg_{right}$}} \\
-IfNode \tab{\inlinecode{if $reg_{cond}$, while $reg_{cond}$:}} \\
-RaiseNode \tab{\inlinecode{raise $reg_{exception}$}} \\
-ExceptNode \tab{\inlinecode{except ($type_1$, ..., $type_n$):}}
+\begin{description}
+	\item[FunctionDeclNode \inlinecode{def f(...):}] Used when a function is defined, the node holds references to the function entry node and the exit node. The registers of all the default arguments is also kept in this node.
+	\item[ClassDeclNode \inlinecode{class c(...):}]  
+	\item[ClassEntryNode]
+	\item[FunctionEntryNode] 
+	\item[ExitNode] 
+	\item[ConstantBooleanNode] Used when boolean values are created. Since \inlinecode{False} and \inlinecode{True} is not keywords in Python but just variables. The node is only used when CFG rewrites. \todo{This is related to issue \#1 once this is removed the ConstantBooleanNode can be removed}
+	\item[ConstantIntNode] Introduces integers from the AST into the CFG.
+	\item[ConstantFloatNode] Introduces floats from the AST into the CFG.
+	\item[ConstantLongNode] Introduces longs from the AST into the CFG.
+	\item[ConstantComplexNode] Introduces complex numbers from the AST into the CFG.
+	\item[ConstantStringNode] Introduces strings from the AST into the CFG.
+	\item[ConstantNoneNode] \inlinecode{None} is not a keyword in Python but just variables, so the Node is only introduced when certain CFG constructions is created. An example would be when declaring a function here a hardcoded return node is put in the end with the value of a \textit{ConstantNoneNode}.
+	\item[ReadVariableNode \inlinecode{x}] Introduced when reading variables.
+	\item[ReadPropertyNode \inlinecode{reg$_{\inlinecode{obj}}$.property}] Introduced when reading a property on an object.
+	\item[ReadIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when reading a indexable attribute on an object.
+	\item[WriteVariableNode \inlinecode{x = value}] Introduced when writing to variables
+	\item[WritePropertyNode \inlinecode{reg$_{\inlinecode{obj}}$.property = value}] Introduced when writing to a property on an object.
+	\item[WriteIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when writing a indexable attribute on an object.
+	\item[DelVariableNode \inlinecode{del x}] Introduced when deleting a variable from the current scope.
+	\item[DelVariableNode \inlinecode{del reg$_{\inlinecode{obj}}$.property}] Introduced when deleting a property on an object.
+	\item[DelIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when deleting a indexable attribute on an object.
+	\item[NoOpNode \inlinecode{pass}] Introduced when \inlinecode{pass} is parsed in the AST. The \textit{NoOpNode} is also used when constructing the CFG as fill. Since the \textit{NoOpNode} dosen't do anything in the further analysis a minifier is created to remove these nodes from the CFG.
+	\item[CallNode \inlinecode{reg$_{\inlinecode{function}}$(reg$_{\inlinecode{1}}$, ..., reg$_{\inlinecode{n}}$)}] Used when a function call happens. The node contains the function register and the lists of all the arguments.
+	\item[AfterCallNode] Introduced after each CallNode and holds the register of the result.
+	\item[ReturnNode \inlinecode{return reg$_{\inlinecode{value}}$}] Introduced whenever there is a \inlinecode{return} statement in the AST. 
+	\item[CompareOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{comp}$ reg$_\inlinecode{right}$}] Introduced when there is made compare expressions is created in the AST.
+	\item[BinOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{binop}$ reg$_\inlinecode{right}$}] Introduced when there is made binary operation expressions is created in the AST.
+	\item[IfNode \inlinecode{if reg$_\inlinecode{cond}$:}] Introduced when making \inlinecode{if} statements in the code. IfNodes is also introduced in other CFG constructions such as \inlinecode{while} statements and \inlinecode{binary} expressions.
+	\item[RaiseNode \inlinecode{raise reg$_\inlinecode{exception}$}] Introduced when exceptions is thrown in the AST. The node can hold the register containing the exception. If the register isn't set its a re-raise exception.
+	\item[ExceptNode \inlinecode{except (type$_\inlinecode{1}$, ..., type$_\inlinecode{n}$)}:] Introduced when exceptions is cought after a \inlinecode{try} statement in the AST.
+\end{description}

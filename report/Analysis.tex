@@ -4,10 +4,11 @@ Inspired by TAJS we have a lattice for abstract values, $Value$, from which we b
 \subsection{Abstract Values}
 The concrete lattices follows below.
 \begin{eqnarray*}
-Value =& Undefined \times None \times Boolean \times Integer \\
-       & \times Float \times Long \times Complex \times String \times P(ObjectLabel)
+Value =& Undefined \times None \times NotImplemented \times Ellipsis \\
+	   & \times Boolean \times Integer \times Float \times Long \\
+       & \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
-The value lattice is used to tell the value of a temporary variable (see the lattice Stack), and a property on an object (see the lattice Object). The $Undefined$ and $None$ lattices both contains two nodes, Top and bottom. In Python when a function does not return a value, it is the constant None\cite{pyref.constants} which is returned, e.g.:
+The value lattice is used to tell the value of a temporary variable (see the lattice Stack), and a property on an object (see the lattice Object). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$ lattices all contains two nodes, Top and bottom. In Python when a function does not return a value, it is the constant None\cite{pyref.constants} which is returned, e.g.:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): 
@@ -36,7 +37,7 @@ State = Heap \times Stack
 \end{equation*}
 In the following sections the $Heap$ and $Stack$ lattice will be described, but first it is necessary to look at the $Object$ lattice:
 \begin{equation*}
-Object = (PropertyName \rightarrow Value) \times P(ObjectLabel^{*})
+Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*})
 \end{equation*}
 Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects.
 As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so
@@ -53,9 +54,9 @@ To achieve this we made several different subclasses to the object label object,
 \subsection{The Stack}
 The $Stack$ lattice is defined as:
 \begin{equation*}
-Stack = (TempVar \rightarrow Value) \times P(ObjectLabel^{*} \times ObjectLabel)
+Stack = (TempVar \rightarrow Value) \times P(ObjectLabel^{*})
 \end{equation*}
-For each temporary variable, i.e. register, we specify the value of that particular temporary variable. The power set $P(ObjectLabel^{*} \times ObjectLabel)$ specifies the scope chain ($ObjectLabel^{*}$) and variable object ($ObjectLabel$). The variable object determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
+For each temporary variable, i.e. register, we specify the value of that particular temporary variable. The power set $P(ObjectLabel^{*})$ specifies the scope chain ($ObjectLabel^{*}$). The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
 The scope chain specifies where to look in case of e.g. reading a variable that is not present on the variable object. The following simple example can be used to illustrate this:
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
