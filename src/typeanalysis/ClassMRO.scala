@@ -27,8 +27,6 @@ object ClassMRO {
       case NewStyleClassObjectLabel(_, entryNode, _, bases) => (entryNode.classDef.getInternalName(), bases)
     }
     
-    println(indent + "linearize " + name)
-    
     // Lookup base object labels
     val labels = bases.map{(baseName) =>
       val value = Utils.findPropertyValueInScope(baseName, state, false)
@@ -56,8 +54,6 @@ object ClassMRO {
         acc ++ merge(input, state, indent + "    ")
       }
     }
-    
-    println(indent + "result: " + ppSetOfLists(if (result.isEmpty) Set(List(classLabel)) else result.map((list) => classLabel :: list)))
     
     if (result.isEmpty)
       Set(List(classLabel))
@@ -87,8 +83,6 @@ object ClassMRO {
    * refuse to create the class C and will raise an exception.
    */
   def merge(labels: List[List[ObjectLabel]], state: StateLattice.Elt, indent: String = ""): Set[List[ObjectLabel]] = {
-    println(indent + "merge: " + ppListOfLists(labels))
-    
     if (labels.isEmpty) {
       Set()
       
@@ -143,6 +137,7 @@ object ClassMRO {
     }
   }
   
+  /*
   def ppSetOfListsOfLists(data: Set[List[List[ObjectLabel]]]): String = {
     "{" + data.foldLeft("") {(acc, list) => acc + ppListOfLists(list) + ", " } + "}"
   }
@@ -177,4 +172,6 @@ object ClassMRO {
       case label: NewStyleClassObjectLabel => label.entryNode.classDef.getInternalName()
     }
   }
+  */
+  */
 }
