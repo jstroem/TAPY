@@ -30,11 +30,11 @@ TAPY/
 #Docx temps
 ~$*.docx
 *.aux
-*.pdf 
 *.log 
 *.out
 *.fdb_latexmk
 *.fls
+report/Main.pdf
 
 # Scala-IDE specific
 .scala_dependencies
