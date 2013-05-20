@@ -1,7 +1,7 @@
 package tapy.lattices
 
 import tapy.dfa._
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
 
 object ValueLattice
