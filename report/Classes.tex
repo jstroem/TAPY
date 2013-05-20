@@ -1,0 +1,131 @@
+\chapter{Analyzing Classes}
+Python has two different kinds of classes, namely new and old style (or classic) classes that both supports multiple inheritance (note that from Python 3 all classes are new style classes). A new style class is one that contrary to an old style class is a subclass of \inlinecode{object}. The two different kinds of classes vary among others in their method resolution order (MRO)\cite{pyref.typehierarchy}: old style classes resolves variables and attributes by a depth-first, left-to-right strategy, whereas new style classes uses the more complex strategy C3\cite{pyref.c3mro}, which is also known as the call-next-method from other multiple inheritance languages. Also, the built in function \inlinecode{super} can only be used with new style classes. In this section we present our work towards handling those two kinds of classes.
+
+To start with, consider the below example.
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class A():
+	x = 'A'
+class B(A): pass
+class C(A):
+	x = 'C'
+class D(B, C): pass
+D().x # 'A'
+	\end{minted}
+	\caption{Multiple inheritance}\label{code:OldStyleMROExample}
+\end{listing}
+
+Since \inlinecode{D} extends \inlinecode{B} and \inlinecode{C}, which in turn extends the old style class \inlinecode{A}, \inlinecode{D} is itself an old style class. Therefore, evaluating \inlinecode{D().x} will result in \inlinecode{'A'}. If we instead had declared \inlinecode{A} as a new style class \inlinecode{class A(object): ...}, evaluating \inlinecode{D().x} would result in \inlinecode{'C'}.
+
+
+\subsection{Class declarations}
+To start with we must take care of class declarations. In the CFG we have the following nodes related to this: \textit{ClassDeclNode}, \textit{ClassEntryNode}, and \textit{ClassExitNode}. Consider a class declaration like \inlinecode{class C(B1,...,Bn):<body>}. For this particular code we create a class declaration node in our CFG which holds the name of the class and the names of the baseclasses, i.e. \inlinecode{C}, and \inlinecode{B1}, ..., \inlinecode{Bn}. Furthermore we create a class entry node which we make the successor of the class declaration node. Then the inductively created CFG for the piece of code appearing at \inlinecode{<body>} will be inserted after the class entry node, and finally, we create a class exit node and make it the successor of the exit node of the inductively created \inlinecode{<body>} CFG.
+
+More or less, the purpose of the three different kinds of nodes is the following:
+
+\begin{itemize}
+	\item The class declaration node, \textit{ClassDeclNode}, creates one or more class objects on the heap.
+	\item The class entry node, \textit{ClassEntryNode}, modifies the set of execution contexts by pushing the newly created class object on top of each of them.
+	\item The class exit node, \textit{ClassExitNode}, reverts the execution contexts to what they were before visiting the class entry node (by popping the newly created class object from each of the execution contexts).
+\end{itemize}
+
+As mentioned, our type analysis creates a class object on the heap whenever a class declaration node is meet.
+
+\begin{itemize}
+	\item If \inlinecode{C} is definately a new style class, a new style class object is created on the heap. Likewise for old style classes.
+	\item Otherwise, both a new style class object and an old style class object is created on the heap.
+\end{itemize}
+
+For the example in listing \ref{code:OldStyleMROExample} we will only create an old style class object on the heap, however for the below example we generate two objects:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+if (...):
+	class B(): pass
+else:
+	class B(object): pass
+class C(B): pass
+	\end{minted}
+	\caption{An example where we can't conclude that \inlinecode{C} is definately a new style class or definately an old style class.}\label{code:NotDefinatelyNewOldStyleClass}
+\end{listing}
+
+As mentioned above the heap objects we create on class declaration are empty. We add fields and methods to these heap objects inbetween the class entry and class exit node. First, let us investigate how fields and methods are created for classes below.
+
+
+\subsection{Fields and methods}
+Fields and methods can be created at class declaration time, and dynamically added to the class after declaration:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class C(object):
+	x = 10
+	def getX(self):
+		return self.x
+def setX(self, x):
+	self.x = x
+C.setX = setX
+	\end{minted}
+	\caption{Fields and methods on a class.}\label{code:FieldAndMethodOnClass}
+\end{listing}
+
+We can handle this quite easily by just updating the execution contexts at class entry. What we do is to push the class heap object (whether it is a new or an old style class) onto each current execution context. Thus when we write to a variable like \inlinecode{x} inside the class, it will be written to the head of each possible execution context, i.e. the class heap object, which is what we want.
+
+For methods we must do a little more, however. This is the case since our CFG does not distinguish between function and method declarations. Thus \inlinecode{getX} will appear as a function declaration in our CFG, even though it is actually a method. We handle this at function declaration time by checking whether the head of the execution context is a class heap object. In that case we wrap it in a method, otherwise we proceed as we would otherwise have handled a function declaration.
+
+It is necessary to distinguish between functions and methods on classes: When an instance of a class is created each of its (unbound) methods are turned into bound methods on the object. The purpose of the bound method is to pass the instance reference as the first argument to the unbound method (the \inlinecode{self} argument). If the class however has any functions on it (not methods), these won't be wrapped such that the instance argument is passed as the first argument to the function:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class C(object):
+	x = 42
+def getX(self):
+	return self.x
+C.getX1 = getX # Make C.getX1 a method
+C.getX2 = getX.__call__ # Make C.getX2 the function wrapper of getX
+C().getX1() # 42
+C().getX2() # TypeError: getX() takes exactly 1 argument (0 given)
+	\end{minted}
+	\caption{Difference between methods and functions on classes.}\label{code:FieldAndMethodOnClass}
+\end{listing}
+
+
+\subsection{Creating class instances}
+Contrary to e.g. JavaScript, class instances are not created using the \inlinecode{new} keyword. This means that we can't necessarily distinguish a function call from an object creation.
+
+At each function call (i.e. \textit{ClassNode} in our CFG) we therefore investigate which kind of object label on the heap we are calling. Recall that for usual function calls, the heap object being called must be a function heap object. If we happen to call a new style class object on the heap, we create a new style instance object on the heap, representing the newly created instance (likewise for old style classes).
+
+Of course we wish to do this conservatively. Consider the following code:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+if (...):
+	class C(): pass
+elif (...):
+	class C(object): pass
+elif:
+	def C():
+		return 42
+x = C()
+	\end{minted}
+	\caption{Difference between methods and functions on classes.}\label{code:FieldAndMethodOnClass}
+\end{listing}
+
+For this code we can't tell whether \inlinecode{C} after the \inlinecode{if} statement is the old style class in line 2, the new style class in line 4 or the function in line 6. Therefore, our analysis will conclude that \inlinecode{x} is either a pointer to a new style class instance, a pointer to an old style class instance, or the integer 42.
+
+
+\subsection{Supporting constructor calls}
+The magic method \inlinecode{\_\_init\_\_} can be set on a class in order to supply a constructor as the following illustrates:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class C(object):
+	def __init__(self, x):
+		self.x = x
+c = C(42)
+c.x # 42
+	\end{minted}
+	\caption{The \inlinecode{\_\_init\_\_} magic method.}\label{code:InitConstructorClass}
+\end{listing}
+
+TODO: Her tilfoejer vi kanter til kaldgrafen. Vi har et ekstra return register til instansen.

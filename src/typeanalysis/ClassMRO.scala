@@ -73,9 +73,15 @@ object ClassMRO {
       acc + lst.flatten
     }
     
+    println()
+    println(indent + "lst: " + ppSetOfLists(lst))
+    
     val input = combinations.foldLeft(Set[List[List[ObjectLabel]]]()) {(acc, list) =>
       lst.foldLeft(acc) {(acc, appendList) => acc + (list :+ appendList)}
     }
+    
+    println()
+    println(indent + "input: " + ppSetOfListsOfLists(input))
     
     val result = input.foldLeft(Set[List[ObjectLabel]]()) {(acc, linearization) =>
       acc ++ merge(linearization, state, indent + "    ")
@@ -153,7 +159,6 @@ object ClassMRO {
   }
   
   def findGoodHead(lists: List[List[ObjectLabel]]): Option[ObjectLabel] = {
-    println("findGoodHead: " + ppListOfLists(lists))
     lists match {
       case Nil => None
       case head :: tail =>
@@ -183,8 +188,8 @@ object ClassMRO {
     powerLinearizations match {
       case Nil => Set()
       case linearizations :: remaining =>
-        if (debugIntermediate) println(indent + "linearizations: " + linearizations)
-        if (debugIntermediate) println(indent + "remaining: " + remaining)
+        // if (debugIntermediate) println(indent + "linearizations: " + linearizations)
+        // if (debugIntermediate) println(indent + "remaining: " + remaining)
         
         val acc = linearizations.map((linearization) => linearization :: List())
         val subLinearizations = combine(remaining, indent + "    ")
