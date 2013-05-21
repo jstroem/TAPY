@@ -19,7 +19,7 @@ object IntegerLattice extends Lattice[IntegerElt] {
     override def toString() = i.toString()
   }
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Abstract() extends Elt {
     override def toString() = "integer"

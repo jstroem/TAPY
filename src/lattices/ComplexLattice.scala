@@ -10,9 +10,12 @@ import tapy.exceptions._
 object ComplexLattice extends ProductLattice(FloatLattice, FloatLattice) {
   
   /* Element utility functions */
+  
   def toString(el : Elt) : String = el match {
     case (FloatLattice.Concrete(real),FloatLattice.Concrete(imag)) => s"${real.toString()} + ${imag.toString()}j"
-    case (FloatLattice.Bottom(),FloatLattice.Bottom()) => "?"
+    case (FloatLattice.Bottom(),FloatLattice.Concrete(imag)) => s"_ + ${imag.toString()}j"
+    case (FloatLattice.Concrete(real),FloatLattice.Bottom()) => s"${real.toString()} + _j"
+    case (FloatLattice.Bottom(),FloatLattice.Bottom()) => ""
     case _ => "complex"
   }
 

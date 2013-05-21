@@ -17,7 +17,7 @@ object LongLattice extends Lattice[LongElt] {
     override def toString() = l.toString()
   }
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Abstract() extends Elt {
     override def toString() = "long"

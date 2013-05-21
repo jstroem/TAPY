@@ -13,7 +13,7 @@ object StringLattice extends Lattice[StringElt] {
   type Elt = StringElt
   
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Concrete(s: String) extends Elt {
     override def toString() = "'%s'".format(s)

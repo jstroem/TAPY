@@ -12,7 +12,7 @@ object EllipsisLattice extends Lattice[EllipsisElt] {
   type Elt = EllipsisElt
 
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Ellipsis() extends Elt {
     override def toString() = "Ellipsis"

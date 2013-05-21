@@ -3,6 +3,7 @@ package tapy.lattices
 import tapy.dfa._
 import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
+import tapy.cfg._
 
 object ValueLattice
 extends ProductLattice(
@@ -29,10 +30,13 @@ extends ProductLattice(
   
   /* Element utility functions */
 
-  def toString(el: Elt) : String = {
-    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
-    s"(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, ComplexLattice.toString(complex), string, ObjectLabelLattice.toString(objectLabels))
-  }
+  def toString(el: Elt) : String =
+    "(" + ASTPrettyPrinter.implodeStringList(unpackElement(el).productIterator.toList.map((value) =>
+      value.toString() match {
+        case "(,)" => ""
+        case "Set()" => ""
+        case str => str
+      }), ", ", true) + ")"
 
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
   def elementCompare(op: cmpopType, left: Elt, right: Elt) : Elt = {

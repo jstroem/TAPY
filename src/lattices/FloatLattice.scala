@@ -17,7 +17,7 @@ object FloatLattice extends Lattice[FloatElt] {
     override def toString() = f.toString()
   }
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Abstract() extends Elt {
     override def toString() = "float"

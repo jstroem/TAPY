@@ -12,37 +12,37 @@ abstract class CallableObjectLabel() extends ObjectLabel()
 abstract class ClassObjectLabel() extends ObjectLabel()
 
 case class ModuleScopeObjectLabel(label: String) extends ObjectLabel() {
-  override def toString() = s"Module Scope Object $label"
+  override def toString() = s"Scope $label"
 }
 case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
-  override def toString() = s"New Style Class Object ${entryNode.classDef.getInternalName()}"
+  override def toString() = s"New Style Class ${entryNode.classDef.getInternalName()}"
 }
 case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
-  override def toString() = s"Old Style Class Object ${entryNode.classDef.getInternalName()}"
+  override def toString() = s"Old Style Class ${entryNode.classDef.getInternalName()}"
 }
 case class WrapperObjectLabel(label: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Function Wrapper Object ${label.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Function Wrapper ${label.entryNode.funcDef.getInternalName()}"
 }
 case class UnboundMethodObjectLabel(functionLabel: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Unbound Method Object ${functionLabel.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Unbound Method ${functionLabel.entryNode.funcDef.getInternalName()}"
 }
 case class BoundMethodObjectLabel(instance: ObjectLabel, functionLabel: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Bound Method Object ${functionLabel.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Bound Method ${functionLabel.entryNode.funcDef.getInternalName()}"
 }
 case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode) extends ObjectLabel() {
-  override def toString() = s"Function/Method Scope Object ${entryNode.toString()}"
+  override def toString() = s"Scope ${entryNode.funcDef.getInternalName()}"
 }
 case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
-	override def toString() = s"Function Object ${entryNode.funcDef.getInternalName()}"
+	override def toString() = s"Function ${entryNode.funcDef.getInternalName()}"
 }
 case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
-  override def toString() = s"New Style Instance Object"
+  override def toString() = s"New Style Instance ${classLabel.entryNode.classDef.getInternalName()}"
 }
 case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
-  override def toString() = s"Old Style Instance Object"
+  override def toString() = s"Old Style Instance ${classLabel.entryNode.classDef.getInternalName()}"
 }
 case class BuiltInClassObjectLabel(name: String) extends ObjectLabel() {
-  override def toString() = s"Built In Class Object $name"
+  override def toString() = s"Built In Class $name"
 }
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {

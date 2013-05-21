@@ -16,7 +16,7 @@ object BooleanLattice extends Lattice[BooleanElt] {
     override def toString() = b.toString()
   }
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Abstract() extends Elt {
     override def toString() = "boolean"

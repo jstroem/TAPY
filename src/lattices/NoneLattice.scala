@@ -12,7 +12,7 @@ object NoneLattice extends Lattice[NoneElt] {
   type Elt = NoneElt
 
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class None() extends Elt {
     override def toString() = "None"

@@ -8,7 +8,7 @@ object UndefinedLattice extends Lattice[UndefinedElt] {
   type Elt = UndefinedElt
   
   case class Bottom() extends Elt {
-    override def toString() = "?"
+    override def toString() = ""
   }
   case class Undefined() extends Elt {
     override def toString() = "undefined"
