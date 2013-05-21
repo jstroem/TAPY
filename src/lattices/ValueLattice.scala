@@ -31,12 +31,12 @@ extends ProductLattice(
   /* Element utility functions */
 
   def toString(el: Elt) : String =
-    "(" + ASTPrettyPrinter.implodeStringList(unpackElement(el).productIterator.toList.map((value) =>
+    ASTPrettyPrinter.implodeStringList(unpackElement(el).productIterator.toList.map((value) =>
       value.toString() match {
         case "(,)" => ""
         case "Set()" => ""
         case str => str
-      }), ", ", true) + ")"
+      }), ", ", true)
 
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
   def elementCompare(op: cmpopType, left: Elt, right: Elt) : Elt = {
