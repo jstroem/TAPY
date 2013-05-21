@@ -1,0 +1,68 @@
+\chapter{Handling functions}
+In this chapter we start with motivating why it is necessary to have three objects on the heap for each function declaration. Consider the below example \ref{code:FunctionPropertyExample}. As mentioned we create a function object on the heap for each function declaration. This object is necessary as functions are themselves objects, just like in e.g. JavaScript. For instance we can set a property on a function object as line 2 illustrates.
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def a(): pass
+a.prop = 42
+	\end{minted}
+\caption{Property on function object}\label{code:FunctionPropertyExample}
+\end{listing}
+
+Thus for this concrete example we map the property \inlinecode{prop} to the integer 42 on the object of the function.
+
+Another relevant thing with regards to function objects on the heap, is that Python has a built in method \inlinecode{\_\_call\_\_} on each function. This method is a function wrapper of the function itself; calling it will result in calling the function itself. We therefore map the property \inlinecode{\_\_call\_\_} on the function object to its function wrapper object. The following illustrates how each newly declared function has this method:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def a():
+	print "a"
+a() // "a"
+a.__call__ # <method-wrapper '__call__' of function object at ...> 
+a.__call__() # "a"
+	\end{minted}
+\caption{On a newly declared function the \_\_call\_\_ property is set to a built in method wrapper.}\label{code:printFunctionExample}
+\end{listing}
+
+It is important to distinguish between the object of the function, and the function object, since \inlinecode{\_\_call\_\_} is not just a reference to the object of the function, as illustrated below:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def a(): 
+	pass
+
+# TypeError: 'method-wrapper' object has only read-only attributes
+a.__call__.prop = 10
+	\end{minted}
+\caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
+\end{listing}
+
+Finally, the scope object of a function in example \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def a(): 
+	x = 42
+a.x # AttributeError
+	\end{minted}
+\caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
+\end{listing}
+
+
+\subsection{Calling functions and updating the call graph}
+We need to describe what we do when functions are called, how the call graph is populated, and how we fix parameter passing + default parameters\todo{Fixme}.
+
+\subsection{Further work with functions}
+In Python it is possible to unfold e.g. a dictionary to the arguments of a function:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def foo(bar, baz):
+	return bar + baz
+params = { 'bar': 'bar', 'baz': 'baz' }
+foo(*params) # 'barbaz'
+	\end{minted}
+\caption{Unfolding of a dictionary to the parameters a function.}\label{code:UnfoldDictFunctionExample}
+\end{listing}
+
+Currently, our analysis does not support this kind of parameter passing. Also, it does not support the special \inlinecode{**args} parameter that collects all of the superfluous arguments in a list, quite similar to the \inlinecode{arguments} object that is available inside functions in JavaScript.

@@ -55,7 +55,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def updateHeap(el: Elt, node: Node, pairs: Set[(ObjectLabel, ObjectLattice.Elt)]): Elt =
     pairs.foldLeft(el) {(acc, pair) =>
       val (label, obj) = pair
-      setState(el, node, StateLattice.updateHeap(getState(node, el), label, obj))
+      setState(acc, node, StateLattice.updateHeap(getState(node, acc), label, obj))
     }
   
   def updateCallGraph(el: Elt, callGraph: CallGraphLattice.Elt): Elt =
