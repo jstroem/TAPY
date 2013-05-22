@@ -1,10 +1,10 @@
 class Eventify(object):
 
-	def trigger(self, e, args):
+	def trigger(self, obj, e, args):
 		if (e in self.events):
 			i = 0
 			while i < len(self.events[e]):
-				self.events[e][i](args)
+				self.events[e][i](obj, args)
 				i += 1
 
 	def on(self, e, func):
@@ -20,9 +20,14 @@ class Eventify(object):
 			else:
 				self.events[e].remove(func)
 
+	def triggerWrapper(self, obj):
+		def triggerInner(e,args):
+			return self.trigger(obj,e,args)
+		return triggerInner
+
 	def __init__(self, obj):
 		self.events = {}
-		obj.trigger = self.trigger
+		obj.trigger = self.triggerWrapper(obj)
 		obj.off = self.off
 		obj.on = self.on
 
@@ -33,11 +38,11 @@ class A(object):
 x = A()
 Eventify(x)
 
-def onC(args):
-	print "onC", args
+def onC(self,args):
+	print "onC", self, args
 
-def onB(args):
-	print "onB", args
+def onB(self,args):
+	print "onB", self, args
 
 x.on("B", onB)
 x.on("C", onC)
