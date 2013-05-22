@@ -4,7 +4,7 @@ TAPY
 Type analysis for python
 
 
-Link to Python 3.3 specification: [docs.python.org/3.3/reference/](http://docs.python.org/3.3/reference/)
+Link to Python 2.7 specification: [docs.python.org/2.7/reference/](http://docs.python.org/2.7/reference/)
 
 Antlr 3.0 javadoc: [www.antlr3.org/api/Java/index.html](http://www.antlr3.org/api/Java/index.html)
 
@@ -33,13 +33,10 @@ Weird members
 http://docs.python.org/2/library/inspect.html#types-and-members
 
 
-
-
 TODO
 =====
-This is missing to the registers
+This is missing in the CFG
 
-	with
 	lambda
 	generatorexp
 	yield
