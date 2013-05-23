@@ -20,21 +20,28 @@ trait Modules {
   type Elt = AnalysisLattice.Elt
   
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
-    println("Handle module entry")
-    
-    // Create the main module
     val moduleLabel = ModuleScopeObjectLabel(node.name)
-    val moduleObject = ObjectLattice.updatePropertyValues(
-        Set(("object", BuiltIn.objectValue),
-            ("None", BuiltIn.noneValue)))
     
-    val result = node.updateHeap(solution, Set((BuiltIn.objectLabel, BuiltIn.objectElt), (moduleLabel, moduleObject)))
-    AnalysisLattice.setExecutionContexts(result, node, Set((List(), moduleLabel)))
+    val tmp = node.name match {
+      case "__builtin__" =>
+        val moduleObject = ObjectLattice.updatePropertyValues(
+          Set(("object", BuiltIn.objectValue),
+              ("None", BuiltIn.noneValue),
+              ("float", BuiltIn.floatFunctionValue)))
+              
+        node.updateHeap(solution,
+          Set((BuiltIn.objectLabel, ObjectLattice.bottom),
+              (BuiltIn.floatFunctionLabel, ObjectLattice.bottom),
+              (moduleLabel, moduleObject)))
+            
+      case _ =>
+        node.updateHeap(solution, Set((moduleLabel, ObjectLattice.bottom)))
+    }
+    
+    AnalysisLattice.setExecutionContexts(tmp, node, Set((List(), moduleLabel)))
   }
   
   def handleImportNode(node: ImportNode, solution: Elt): Elt = {
-    println("Handle import")
-    
     val moduleName = node.names.last
     val moduleQualifiedName = ASTPrettyPrinter.implodeStringList(node.names, ".", false)
     
@@ -48,11 +55,11 @@ trait Modules {
       worklist.setCFG(newCfg, moduleCfg)
     }
     
-    val tmp = Utils.writePropertyValueOnVariableObjects(node, moduleName, ValueLattice.setObjectLabels(Set(ModuleScopeObjectLabel(moduleName))), solution, true)
+    val tmp = Utils.writePropertyValueOnVariableObjects(node, moduleName, ValueLattice.setObjectLabels(Set(ModuleScopeObjectLabel(moduleQualifiedName))), solution, true)
     
     if (node.isImplicit) {
       // Copy variables from imported module
-      val moduleScopeObject = node.getObject(solution, ModuleScopeObjectLabel(moduleName))
+      val moduleScopeObject = node.getObject(solution, ModuleScopeObjectLabel(moduleQualifiedName))
       
       node.getVariableObjects(solution).foldLeft(tmp) {(acc, variableObjectLabel) =>
         val variableObject = node.getObject(solution, variableObjectLabel)

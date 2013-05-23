@@ -15,15 +15,27 @@ import scala.collection.JavaConversions._
 object BuiltIn {
   type Elt = AnalysisLattice.Elt
   
+  /**
+   * Objects
+   */
   val objectLabel = BuiltInClassObjectLabel("object")
-  val objectElt = ObjectLattice.bottom
-
   val objectValue = ValueLattice.setObjectLabels(Set(objectLabel))
+  
+  /**
+   * Values
+   */
   val noneValue = ValueLattice.setNone(NoneLattice.top)
   val falseValue = ValueLattice.setBoolean(false)
   val trueValue = ValueLattice.setBoolean(true)
   
-  /* Built in objects */
+  /**
+   * Functions
+   */
+  
+  val floatFunctionLabel = BuiltInFunctionObjectLabel("float")
+  val floatFunctionValue = ValueLattice.setObjectLabels(Set(floatFunctionLabel))
+  
+  /* Utility functions */
   
   def objectOverwritten(node: Node, solution: Elt): Boolean = {
     Utils.findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue

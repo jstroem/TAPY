@@ -39,6 +39,7 @@ trait Calls {
           val obj = HeapLattice.getObject(node.getHeap(solution), label)
           
           label match {
+            case label: BuiltInFunctionObjectLabel => handleBuiltInFunctionCall(node, afterCallNode, label, acc)
             case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
@@ -133,6 +134,10 @@ trait Calls {
     } else {
       throw new NotImplementedException("TypeError: Trying to call non-callable object")
     }
+  }
+  
+  def handleBuiltInFunctionCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInFunctionObjectLabel, solution: Elt): Elt = {
+    solution
   }
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {

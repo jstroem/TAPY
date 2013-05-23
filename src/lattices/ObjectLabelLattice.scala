@@ -44,6 +44,9 @@ case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, all
 case class BuiltInClassObjectLabel(name: String) extends ObjectLabel() {
   override def toString() = s"Built In Class $name"
 }
+case class BuiltInFunctionObjectLabel(name: String) extends ObjectLabel() {
+  override def toString() = s"Built In Function $name"
+}
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
   def elementCompare(op: cmpopType, e1: Elt, e2: Elt) : BooleanLattice.Elt = op match {

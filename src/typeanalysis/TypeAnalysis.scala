@@ -16,12 +16,7 @@ class TypeAnalysis
 extends Analysis[AnalysisLattice.Elt]
 with ClassFunctionDecls with Calls with Constants with Operators with Modules {
   
-  /* Declarations */
-  
   override type Elt = AnalysisLattice.Elt
-  
-  var environments: Map[Node, Set[String]] = null
-  
   
   /* Analysis interface */
   
@@ -88,16 +83,20 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules {
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
     try {
-      val value = Utils.findPropertyValueInScope(node, node.variable, solution, true)
-      if (value != ValueLattice.bottom)
-        node.updateStackFrame(solution, node.resultReg, value)
-      else
-        node.variable match {
-          case "__BooleanLattice_Concrete_TRUE__" => node.updateStackFrame(solution, node.resultReg, ValueLattice.setBoolean(true))
-          case "__BooleanLattice_Concrete_FALSE__" => node.updateStackFrame(solution, node.resultReg, ValueLattice.setBoolean(false))
-          case name =>
-            throw new NameError("Name '" + name + "' is not defined.")
-        }
+      val lookup = Utils.findPropertyValueInScope(node, node.variable, solution, true)
+      val value =
+        if (lookup != ValueLattice.bottom)
+          lookup
+        else
+          node.variable match {
+            case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
+            case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
+            case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
+            case name =>
+              throw new NameError("Name '" + name + "' is not defined.")
+          }
+      
+      node.updateStackFrame(solution, node.resultReg, value)
     } catch {
       case e: NameError => node.setState(solution, StateLattice.bottom)
     }
