@@ -29,7 +29,7 @@ object BuiltIn {
     Utils.findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue
   }
 
-  trait BuiltInClass[T] {
+ // trait BuiltInClass[T] {
 	// 	def lookupSelf(state: AnalysisLattice.Elt, node: Node, selfReg: Int) : ObjectLabelLattice.Elt = {
 	// 		val stackFrame = StackFrame = AnalysisLattice.getStackFrame(node, state)
 	// 		val selfObject = StackFrameLattice.getRegisterValue(stackFrame, selfReg)
