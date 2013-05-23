@@ -13,7 +13,11 @@ abstract class Node(id: UUID) {
   
   def getState(el: AnalysisLattice.Elt): StateLattice.Elt = AnalysisLattice.getState(this, el)
   
-  def getHeap(el: AnalysisLattice.Elt): HeapLattice.Elt = AnalysisLattice.getHeap(this, el)
+  def getHeap(el: AnalysisLattice.Elt): Map[ObjectLabel, ObjectLattice.Elt] = AnalysisLattice.getHeap(this, el) match {
+    case HeapLattice.Top() => null
+    case HeapLattice.Concrete(map) => map
+    case _ => throw new InternalError()
+  }
   
   def getObject(el: AnalysisLattice.Elt, label: ObjectLabel): ObjectLattice.Elt = AnalysisLattice.getHeapObject(this, label, el)
   
@@ -208,4 +212,8 @@ case class GlobalNode(variable: String, id: UUID = UUID.randomUUID()) extends No
 
 case class AssertIterable(reg: Int, length: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"assert(${reg(reg)}.length = $length)"
+}
+
+case class ImportNode(names: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"import ${ASTPrettyPrinter.implodeStringList(names, ".", false)}"
 }

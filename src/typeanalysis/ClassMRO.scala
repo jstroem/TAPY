@@ -13,7 +13,6 @@ import tapy.constants
 import scala.collection.JavaConversions._
 
 object ClassMRO {
-  def Utils = TypeAnalysis
   
   def mro(label: ObjectLabel, state: StateLattice.Elt): Set[List[ObjectLabel]] =
     linearize(label, state)

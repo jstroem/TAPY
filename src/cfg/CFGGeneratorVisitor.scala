@@ -561,7 +561,10 @@ object CFGGeneratorVisitor extends VisitorBase[ControlFlowGraph] {
 
   override def visitImport(node: Import): ControlFlowGraph = {
     println("visitImport")
-    return null
+    val names = node.getInternalNames().toList.foldRight(List[String]()) {(name, acc) =>
+      name.getInternalName() :: acc
+    }
+    return new ControlFlowGraph(new ImportNode(names))
   }
 
   override def visitImportFrom(node: ImportFrom): ControlFlowGraph = {
