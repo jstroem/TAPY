@@ -13,10 +13,12 @@ import tapy.constants
 import scala.collection.JavaConversions._
 
 trait Calls {
+  var worklist: Worklist[AnalysisLattice.Elt]
+  
   type Elt = AnalysisLattice.Elt
   
-  def handleCallNode(node: CallNode, solution: Elt, cfg: ControlFlowGraph): Elt = {
-    val afterCallNode = cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
+  def handleCallNode(node: CallNode, solution: Elt): Elt = {
+    val afterCallNode = worklist.cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
     
     // Clear the return registers
     val tmp = node.updateStackFrames(solution, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)

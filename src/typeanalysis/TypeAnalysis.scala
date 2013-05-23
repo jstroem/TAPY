@@ -12,12 +12,16 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-class TypeAnalysis(cfg: ControlFlowGraph)
+class TypeAnalysis
 extends Analysis[AnalysisLattice.Elt]
 with ClassFunctionDecls with Calls with Constants with Operators with Modules {
+  
+  /* Declarations */
+  
   override type Elt = AnalysisLattice.Elt
   
-  var environments: Map[Node, Set[String]] = Environment.build(cfg)
+  var environments: Map[Node, Set[String]] = null
+  
   
   /* Analysis interface */
   
@@ -46,7 +50,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules {
     case node: FunctionDeclNode => {(solution) => handleFunctionOrUnboundMethodDeclNode(node, joinPredecessors(node, solution))}
     case node: FunctionEntryNode => {(solution) => handleFunctionEntryNode(node, joinPredecessors(node, solution))}
     case node: ExitNode => {(solution) => handleExitNode(node, joinPredecessors(node, solution))}
-    case node: CallNode => {(solution) => handleCallNode(node, joinPredecessors(node, solution), cfg)}
+    case node: CallNode => {(solution) => handleCallNode(node, joinPredecessors(node, solution))}
     case node: ReturnNode => {(solution) => handleReturnNode(node, joinPredecessors(node, solution))}
     case node: AfterCallNode => {(solution) => handleAfterCallNode(node, joinPredecessors(node, solution))}
 
@@ -58,7 +62,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules {
   }
   
   def nodeDependencies(node: Node, solution: Elt): Set[Node] = {
-    return cfg.getSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
+    return worklist.cfg.getSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
   }
   
   var i = 0
@@ -72,7 +76,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules {
    * their AfterCallNodes. This is handled by handleAfterCallNode().
    */
   def joinPredecessors(node: Node, solution: Elt): Elt = {
-    val predecessors = cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
+    val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
     
     var state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
       StateLattice.leastUpperBound(acc, pred.getState(solution)))
@@ -83,8 +87,20 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules {
   /* Variables */
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
-    val value = Utils.findPropertyValueInScope(node, node.variable, solution, true)
-    node.updateStackFrame(solution, node.resultReg, value)
+    try {
+      val value = Utils.findPropertyValueInScope(node, node.variable, solution, true)
+      if (value != ValueLattice.bottom)
+        node.updateStackFrame(solution, node.resultReg, value)
+      else
+        node.variable match {
+          case "__BooleanLattice_Concrete_TRUE__" => node.updateStackFrame(solution, node.resultReg, ValueLattice.setBoolean(true))
+          case "__BooleanLattice_Concrete_FALSE__" => node.updateStackFrame(solution, node.resultReg, ValueLattice.setBoolean(false))
+          case name =>
+            throw new NameError("Name '" + name + "' is not defined.")
+        }
+    } catch {
+      case e: NameError => node.setState(solution, StateLattice.bottom)
+    }
   }
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {

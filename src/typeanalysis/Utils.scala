@@ -15,6 +15,21 @@ import scala.collection.JavaConversions._
 object Utils {
   type Elt = AnalysisLattice.Elt
   
+  def copyObjectProperties(from: ObjectLattice.Elt, to: ObjectLattice.Elt, overwrite: Boolean = false): ObjectLattice.Elt = {
+    ObjectLattice.getProperties(from) match {
+      case PropertiesLattice.Top() => to
+      case PropertiesLattice.Concrete(map) =>
+        map.foldLeft(to) {(acc, entry) =>
+          val (property, value) = entry
+          if (overwrite || ObjectLattice.getProperty(to, property) == PropertyLattice.bottom)
+            ObjectLattice.setProperty(property, value, acc)
+          else
+            acc
+        }
+      case _ => throw new InternalError()
+    }
+  }
+  
   def findPropertyValueInScope(node: Node, property: String, solution: Elt, print: Boolean = false): ValueLattice.Elt = findPropertyValueInScope(property, node.getState(solution), print)
   def findPropertyValueInScope(property: String, state: StateLattice.Elt, print: Boolean): ValueLattice.Elt =
     PropertyLattice.getValue(findPropertyInScope(property, state, print))

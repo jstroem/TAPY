@@ -41,13 +41,13 @@ object Main {
   
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
-      val cfg = ast.accept(CFGGeneratorVisitor).exportToFile(dir + fname)
+      val cfg = ast.accept(new CFGGeneratorVisitor("__main__")).exportToFile(dir + fname)
       var cfgMin = cfg.minify()
       cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
       
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
-      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin).run()
+      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(), AnalysisLattice, cfgMin, dir).run()
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
 
       println("\n----------\n")

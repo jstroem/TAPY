@@ -12,6 +12,7 @@ abstract class Node(id: UUID) {
   protected def reg(r: Int) = s"<$r>"
   
   def getState(el: AnalysisLattice.Elt): StateLattice.Elt = AnalysisLattice.getState(this, el)
+  def setState(el: AnalysisLattice.Elt, state: StateLattice.Elt): AnalysisLattice.Elt = AnalysisLattice.setState(el, this, state)
   
   def getHeap(el: AnalysisLattice.Elt): Map[ObjectLabel, ObjectLattice.Elt] = AnalysisLattice.getHeap(this, el) match {
     case HeapLattice.Top() => null
@@ -59,8 +60,8 @@ case class ExitNode(note: String, entryNode: Node, id: UUID = UUID.randomUUID())
   override def toString = s"ExitNode($note)"
 }
 
-case class ModuleEntryNode(note: String, moduleDef: org.python.antlr.ast.Module, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"ModuleEntryNode($note)"
+case class ModuleEntryNode(name: String, moduleDef: org.python.antlr.ast.Module, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ModuleEntryNode($name)"
 }
 
 // Write variable; variable = value
@@ -214,6 +215,6 @@ case class AssertIterable(reg: Int, length: Int, id: UUID = UUID.randomUUID()) e
   override def toString = s"assert(${reg(reg)}.length = $length)"
 }
 
-case class ImportNode(names: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ImportNode(names: List[String], isImplicit: Boolean = false, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"import ${ASTPrettyPrinter.implodeStringList(names, ".", false)}"
 }
