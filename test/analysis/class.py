@@ -6,3 +6,5 @@ class C(object):
 
 	def getX(self):
 		return self.x
+
+c = C()

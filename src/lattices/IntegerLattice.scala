@@ -77,28 +77,30 @@ object IntegerLattice extends Lattice[IntegerElt] {
     case _ => BooleanLattice.top
   }
   
-  def binaryOperator(el1: IntegerLattice.Elt, el2: IntegerLattice.Elt, op: operatorType): ValueLattice.Elt = {
-    (el1, el2) match {
-      case (Concrete(i1), Concrete(i2)) =>
-        op match {
-          case operatorType.UNDEFINED => throw new NotImplementedException()
-          case operatorType.Add => ValueLattice.setInteger(i1 + i2)
-          case operatorType.Sub => ValueLattice.setInteger(i1 - i2)
-          case operatorType.Mult => ValueLattice.setInteger(i1 * i2)
-          case operatorType.Div => ValueLattice.setInteger(i1 / i2)
-          case operatorType.Mod => ValueLattice.setInteger(i1 % i2)
-          case operatorType.Pow => ValueLattice.setInteger(i1 ^ i2)
-          case operatorType.LShift => throw new NotImplementedException()
-          case operatorType.RShift => throw new NotImplementedException()
-          case operatorType.BitOr => ValueLattice.setInteger(i1 | i2)
-          case operatorType.BitXor => throw new NotImplementedException()
-          case operatorType.BitAnd => ValueLattice.setInteger(i1 & i2)
-          case operatorType.FloorDiv => throw new NotImplementedException()
-        }
-        
-      case _ =>
-        throw new NotImplementedException()
-    }
+  def binaryOperator(el1: IntegerLattice.Elt, el2: IntegerLattice.Elt, op: operatorType): ValueLattice.Elt = (el1, el2) match {
+    case (Concrete(i1), Concrete(i2)) =>
+      op match {
+        case operatorType.UNDEFINED => throw new NotImplementedException()
+        case operatorType.Add => ValueLattice.setInteger(i1 + i2)
+        case operatorType.Sub => ValueLattice.setInteger(i1 - i2)
+        case operatorType.Mult => ValueLattice.setInteger(i1 * i2)
+        case operatorType.Div => ValueLattice.setInteger(i1 / i2)
+        case operatorType.Mod => ValueLattice.setInteger(i1 % i2)
+        case operatorType.Pow => ValueLattice.setInteger(i1 ^ i2)
+        case operatorType.LShift => throw new NotImplementedException()
+        case operatorType.RShift => throw new NotImplementedException()
+        case operatorType.BitOr => ValueLattice.setInteger(i1 | i2)
+        case operatorType.BitXor => throw new NotImplementedException()
+        case operatorType.BitAnd => ValueLattice.setInteger(i1 & i2)
+        case operatorType.FloorDiv => throw new NotImplementedException()
+      }
+    case (Abstract(), Concrete(_)) | (Concrete(_), Abstract()) =>
+      op match {
+        case operatorType.Add => ValueLattice.setIntegerElt(Abstract())
+        case _ => throw new NotImplementedException()
+      }
+    case _ =>
+      throw new NotImplementedException()
   }
 
   def unaryOperator(el: Elt, op: unaryopType) : ValueLattice.Elt = el match {
