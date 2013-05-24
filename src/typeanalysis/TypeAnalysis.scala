@@ -14,7 +14,7 @@ import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph)
 extends Analysis[AnalysisLattice.Elt]
-with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment {
+with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions {
   
   override type Elt = AnalysisLattice.Elt
   
@@ -57,6 +57,8 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     
     case node: AssertNode => {(solution) => handleAssertNode(node, joinPredecessors(node, solution))}
 
+    case node: RaiseNode => {(solution) => handleRaiseNode(node, joinPredecessors(node, solution))}
+    
     case node => {(solution) => joinPredecessors(node, solution) }
   }
   
@@ -96,6 +98,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
             case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
             case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
             case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
+            case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
             case name =>
               throw new NameError("Name '" + name + "' is not defined.")
           }

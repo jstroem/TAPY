@@ -1,10 +1,12 @@
 package tapy.lattices
 
 import tapy.cfg._
+import tapy.typeanalysis._
 import java.util.UUID
 import org.python.antlr.ast.cmpopType
 import tapy.lattices._
 import tapy.dfa._
+import tapy.exceptions._
 
 abstract class ObjectLabel()
 
@@ -16,9 +18,15 @@ case class ModuleScopeObjectLabel(label: String) extends ObjectLabel() {
 }
 case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
   override def toString() = s"New Style Class ${entryNode.classDef.getInternalName()}"
+  
+  def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
+    ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
 case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
   override def toString() = s"Old Style Class ${entryNode.classDef.getInternalName()}"
+  
+  def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
+    ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
 case class WrapperObjectLabel(label: FunctionObjectLabel) extends CallableObjectLabel() {
   override def toString() = s"Function Wrapper ${label.entryNode.funcDef.getInternalName()}"
@@ -37,9 +45,15 @@ case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEn
 }
 case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
   override def toString() = s"New Style Instance ${classLabel.entryNode.classDef.getInternalName()}"
+  
+  def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
+    ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
 case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
   override def toString() = s"Old Style Instance ${classLabel.entryNode.classDef.getInternalName()}"
+  
+  def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
+    ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
 case class BuiltInClassObjectLabel(name: String) extends ObjectLabel() {
   override def toString() = s"Built In Class $name"
@@ -55,6 +69,44 @@ object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
     case _ => BooleanLattice.top
   }
 
+  def definatelyInheritsFrom(subject: ObjectLabel, labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
+    labels.foldLeft(true) {(acc, label) => definatelyInheritsFrom(subject, label, node, solution) && acc }
+  
+  def definatelyInheritsFrom(subjectLabel: ObjectLabel, label: ObjectLabel, node: Node, solution: AnalysisLattice.Elt): Boolean = {
+    val bases = subjectLabel match {
+      case subject: NewStyleClassObjectLabel => subject.bases
+      case subject: OldStyleClassObjectLabel => subject.bases
+      case subject: NewStyleInstanceObjectLabel => subject.classLabel.bases
+      case subject: OldStyleInstanceObjectLabel => subject.classLabel.bases
+    }
+    
+    bases.foldLeft(false) {(acc, baseName) =>
+      if (acc)
+        true
+      else {
+        val baseValue = Utils.findPropertyValueInScope(baseName, node.getState(solution))
+        val baseLabels = ValueLattice.getObjectLabels(baseValue)
+        
+        if (baseLabels.size == 0)
+          false
+        else
+          // All the possible base labels must inherit from subject, in order to conclude
+          // that subject definately inherits from label
+          baseLabels.foldLeft(true) {(acc, base) =>
+            if (base == label)
+              acc
+            else
+              base match {
+                case base: NewStyleClassObjectLabel => acc && definatelyInheritsFrom(base, label, node, solution)
+                case base: OldStyleClassObjectLabel => acc && definatelyInheritsFrom(base, label, node, solution)
+                case base: BuiltInClassObjectLabel => false
+                case _ => throw new TypeError()
+              }
+          }
+      }
+    }
+  }
+  
   def toString(el: Elt) : String =
     if (el == null)
       "(<TOP>)"
