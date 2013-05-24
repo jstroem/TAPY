@@ -71,21 +71,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   }
   
   def constraintWrapper(node: Node, solution: Elt, constraint: Elt => Elt): Elt = {
-    node match {
-      case node: ExceptNode =>
-        // Not infeasible if the exception register is set (it might catch it)
-        constraint(join(node, solution))
-        
-      case node =>
-        // Infeasible if the exception register is set
-        val exception = node.getRegisterValue(solution, StackConstants.EXCEPTION)
-        if (exception == ValueLattice.bottom)
-          constraint(join(node, solution))
-        else {
-          log(node.toString(), "Infeasible path")
-          constraint(join(node, solution)) // node.setState(solution)
-        }
-    }
+    constraint(join(node, solution))
   }
   
   def nodeDependencies(node: Node, solution: Elt): Set[Node] = {
