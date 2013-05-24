@@ -2,11 +2,6 @@ class IllegalOperatorException(Exception):
 	def __init__(self, msg):
 		self.msg = msg
 
-# TODO:
-# Overwriting Exception makes the analysis conclude
-# that IllegalOperatorException does not inherit from
-# BaseException.
-
 def calculator(a, op, b):
 	if (op == "+"):
 		result = a + b
@@ -17,8 +12,17 @@ def calculator(a, op, b):
 	elif (op == "/"):
 		result = a / b
 	else:
+		# Variant 1:
 		# result = "error"
-		raise IllegalOperatorException("Illegal operator")
+		#
+		# Variant 2:
+		try:
+			raise IllegalOperatorException("Illegal operator")
+		except:
+			result = "error"
+		#
+		# Variant 3:
+		# raise IllegalOperatorException("Illegal operator")
 	return result
 
 a = 10 # float(raw_input("First number: "))

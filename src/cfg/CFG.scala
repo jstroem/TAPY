@@ -119,9 +119,13 @@ case class ControlFlowGraph(entryNodes: Set[Node],
    */
 
   private def addEdges(predecessors: Set[Node], successors: Set[Node], edges: Map[Node, Set[Node]]): Map[Node, Set[Node]] = {
-    return predecessors.foldLeft(edges) {(edgeMap, pred) =>
-      val currSuccs = edgeMap.getOrElse(pred, Set())
-      edgeMap + (pred -> (currSuccs ++ successors))
+    return predecessors.foldLeft(edges) {(acc, pred) =>
+      pred match {
+        case pred: RaiseNode => acc
+        case pred =>
+          val currSuccs = acc.getOrElse(pred, Set())
+          acc + (pred -> (currSuccs ++ successors))
+      }
     }
   }
   

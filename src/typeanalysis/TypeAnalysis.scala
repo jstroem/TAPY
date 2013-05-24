@@ -14,7 +14,7 @@ import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph)
 extends Analysis[AnalysisLattice.Elt]
-with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions {
+with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions with Logger {
   
   override type Elt = AnalysisLattice.Elt
   
@@ -23,47 +23,73 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   /* Analysis interface */
   
   def generateConstraint(node: Node): Constraint[Elt] = node match {
-    case node: ImportNode =>  {(solution) => handleImportNode(node, joinPredecessors(node, solution))}
-    case node: ModuleEntryNode => {(solution) => handleModuleEntry(node, joinPredecessors(node, solution))}
+    case node: ImportNode =>  {(solution) => constraintWrapper(node, solution, ((solution) => handleImportNode(node, solution)))}
+    case node: ModuleEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleModuleEntry(node, solution)))}
     
-    case node: ConstantBooleanNode => {(solution) => handleConstantBoolean(node, joinPredecessors(node, solution))}
-    case node: ConstantIntNode => {(solution) => handleConstantInt(node, joinPredecessors(node, solution))}
-    case node: ConstantFloatNode => {(solution) => handleConstantFloat(node, joinPredecessors(node, solution))}
-    case node: ConstantLongNode => {(solution) => handleConstantLong(node, joinPredecessors(node, solution))}
-    case node: ConstantComplexNode => {(solution) => handleConstantComplex(node, joinPredecessors(node, solution))}
-    case node: ConstantStringNode => {(solution) => handleConstantString(node, joinPredecessors(node, solution))}
-    case node: ConstantNoneNode => {(solution) => handleConstantNone(node, joinPredecessors(node, solution))}
+    // Constants
+    case node: ConstantBooleanNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantBoolean(node, solution)))}
+    case node: ConstantIntNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantInt(node, solution)))}
+    case node: ConstantFloatNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantFloat(node, solution)))}
+    case node: ConstantLongNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantLong(node, solution)))}
+    case node: ConstantComplexNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantComplex(node, solution)))}
+    case node: ConstantStringNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantString(node, solution)))}
+    case node: ConstantNoneNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleConstantNone(node, solution)))}
     
-    case node: ReadVariableNode => {(solution) => handleReadVariableNode(node, joinPredecessors(node, solution))}
-    case node: WriteVariableNode => {(solution) => handleWriteVariableNode(node, joinPredecessors(node, solution))}
+    case node: ReadVariableNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleReadVariableNode(node, solution)))}
+    case node: WriteVariableNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleWriteVariableNode(node, solution)))}
     
-    case node: ReadPropertyNode => {(solution) => handleReadPropertyNode(node, joinPredecessors(node, solution))}
-    case node: WritePropertyNode => {(solution) => handleWritePropertyNode(node, joinPredecessors(node, solution))}
+    case node: ReadPropertyNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleReadPropertyNode(node, solution)))}
+    case node: WritePropertyNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleWritePropertyNode(node, solution)))}
     
-    case node: CompareOpNode => {(solution) => handleCompareOpNode(node, joinPredecessors(node, solution))}
-    case node: BinOpNode => {(solution) => handleBinOpNode(node, joinPredecessors(node, solution))}
-    case node: UnOpNode => {(solution) => handleUnOpNode(node, joinPredecessors(node, solution))}
+    // Operators
+    case node: CompareOpNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleCompareOpNode(node, solution)))}
+    case node: BinOpNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleBinOpNode(node, solution)))}
+    case node: UnOpNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleUnOpNode(node, solution)))}
     
-    case node: FunctionDeclNode => {(solution) => handleFunctionOrUnboundMethodDeclNode(node, joinPredecessors(node, solution))}
-    case node: FunctionEntryNode => {(solution) => handleFunctionEntryNode(node, joinPredecessors(node, solution))}
-    case node: ExitNode => {(solution) => handleExitNode(node, joinPredecessors(node, solution))}
-    case node: CallNode => {(solution) => handleCallNode(node, joinPredecessors(node, solution))}
-    case node: ReturnNode => {(solution) => handleReturnNode(node, joinPredecessors(node, solution))}
-    case node: AfterCallNode => {(solution) => handleAfterCallNode(node, joinPredecessors(node, solution))}
+    // ClassFunctionDecls
+    case node: ClassDeclNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleClassDeclNode(node, solution)))}
+    case node: ClassEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleClassEntryNode(node, solution)))}
+    case node: FunctionDeclNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionOrUnboundMethodDeclNode(node, solution)))}
+    case node: FunctionEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionEntryNode(node, solution)))}
+    case node: ExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExitNode(node, solution)))}
+    
+    // Calls
+    case node: CallNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleCallNode(node, solution)))}
+    case node: ReturnNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleReturnNode(node, solution)))}
+    case node: AfterCallNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleAfterCallNode(node, solution)))}
 
-    case node: GlobalNode => {(solution) => handleGlobalNode(node, joinPredecessors(node, solution))}
-    case node: ClassDeclNode => {(solution) => handleClassDeclNode(node, joinPredecessors(node, solution))}
-    case node: ClassEntryNode => {(solution) => handleClassEntryNode(node, joinPredecessors(node, solution))}
+    // Exceptions
+    case node: RaiseNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleRaiseNode(node, solution)))}
+    case node: ExceptNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExceptNode(node, solution)))}
+    // case node: TryExceptElseEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleTryExceptElseEntryNode(node, solution)))}
     
-    case node: AssertNode => {(solution) => handleAssertNode(node, joinPredecessors(node, solution))}
-
-    case node: RaiseNode => {(solution) => handleRaiseNode(node, joinPredecessors(node, solution))}
+    // Misc
+    case node: GlobalNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleGlobalNode(node, solution)))}
+    case node: AssertNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleAssertNode(node, solution)))}
     
-    case node => {(solution) => joinPredecessors(node, solution) }
+    case node => {(solution) => constraintWrapper(node, solution, ((solution) => solution)) }
+  }
+  
+  def constraintWrapper(node: Node, solution: Elt, constraint: Elt => Elt): Elt = {
+    node match {
+      case node: ExceptNode =>
+        // Not infeasible if the exception register is set (it might catch it)
+        constraint(join(node, solution))
+        
+      case node =>
+        // Infeasible if the exception register is set
+        val exception = node.getRegisterValue(solution, StackConstants.EXCEPTION)
+        if (exception == ValueLattice.bottom)
+          constraint(join(node, solution))
+        else {
+          log(node.toString(), "Infeasible path")
+          constraint(join(node, solution)) // node.setState(solution)
+        }
+    }
   }
   
   def nodeDependencies(node: Node, solution: Elt): Set[Node] = {
-    return worklist.cfg.getSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
+    return worklist.cfg.getSuccessors(node) ++ worklist.cfg.getExceptionSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
   }
   
   var i = 0
@@ -76,11 +102,11 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
    * Note that joinPredecessors does not join the state from __init__-ExitNodes to
    * their AfterCallNodes. This is handled by handleAfterCallNode().
    */
-  def joinPredecessors(node: Node, solution: Elt): Elt = {
-    val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
+  def join(node: Node, solution: Elt): Elt = {
+    val predecessors = worklist.cfg.getPredecessors(node) ++ worklist.cfg.getExceptionPredecessors(node) ++
+      CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
     
-    var state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
-      StateLattice.leastUpperBound(acc, pred.getState(solution)))
+    val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) => StateLattice.leastUpperBound(acc, pred.getState(solution)))
     
     AnalysisLattice.setState(solution, node, state)
   }

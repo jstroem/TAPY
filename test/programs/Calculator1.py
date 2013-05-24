@@ -1,7 +1,9 @@
-class IllegalOperatorException(Exception): pass
+try:
+	x = 10
+	raise Exception()
+except:
+	y = 10.0
+else:
+	z = 15
 
-Exception = 20
-
-raise IllegalOperatorException()
-
-x = __Analysis_Register_EXCEPTION__
+exc = __Analysis_Register_EXCEPTION__

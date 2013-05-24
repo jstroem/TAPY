@@ -30,6 +30,9 @@ abstract class Node(id: UUID) {
   
   def getStackFrame(el: AnalysisLattice.Elt): StackFrameLattice.Elt = AnalysisLattice.getStackFrame(this, el)
   
+  def getRegisterValue(el: AnalysisLattice.Elt, reg: Int): ValueLattice.Elt = StackFrameLattice.getRegisterValue(getStackFrame(el), reg)
+  def setRegisterValue(el: AnalysisLattice.Elt, reg: Int, value: ValueLattice.Elt = ValueLattice.bottom, strong: Boolean = false): AnalysisLattice.Elt = updateStackFrame(el, reg, value, strong)
+  
   def getExecutionContexts(el: AnalysisLattice.Elt): ExecutionContextLattice.Elt = StackLattice.getExecutionContext(getStack(el))
   
   def getVariableObjects(el: AnalysisLattice.Elt): Set[ObjectLabel] = StateLattice.getVariableObjects(getState(el))
@@ -187,6 +190,10 @@ case class ExceptNode(types: List[String], names: List[String], id: UUID = UUID.
   val typesStr = types.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
   val namesStr = names.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
   override def toString = s"except: $typesStr as $namesStr"
+}
+
+case class TryExceptElseEntryNode(id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"(TryExceptElseEntryNode)"
 }
 
 // Binary operation; result = arg1 op arg2

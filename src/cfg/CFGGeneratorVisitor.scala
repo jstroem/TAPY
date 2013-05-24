@@ -472,7 +472,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
       result
     }
     
-    val elseCfg = generateCFGOfStatementList(new NoOpNode("Try-except-else entry"), node.getInternalOrelse())
+    val elseCfg = generateCFGOfStatementList(TryExceptElseEntryNode(), node.getInternalOrelse())
     
     // finallyNormalCfg is null if and only if finallyHandledCfg is null
     if (this.finallyNormalCfg == null && this.finallyHandledCfg == null)
