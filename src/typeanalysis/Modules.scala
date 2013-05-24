@@ -51,7 +51,6 @@ trait Modules extends Environment {
     
     if (!loadedModules.contains(moduleQualifiedName)) {
       // Add the module to the CFG
-      println("Add cfg")
       loadedModules = loadedModules + moduleQualifiedName
       
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))

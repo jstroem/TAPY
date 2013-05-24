@@ -69,10 +69,8 @@ trait Environment {
           acc + getClassExitNode(succ, g, depth)
       })
       
-      if (res.size == 1)
-        println("Success: " + res.head)
-      else
-        println("Error: " + res)
+      if (res.size != 1)
+        throw new InternalError()
       
       res.head
     }
