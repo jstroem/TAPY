@@ -54,6 +54,8 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     case node: GlobalNode => {(solution) => handleGlobalNode(node, joinPredecessors(node, solution))}
     case node: ClassDeclNode => {(solution) => handleClassDeclNode(node, joinPredecessors(node, solution))}
     case node: ClassEntryNode => {(solution) => handleClassEntryNode(node, joinPredecessors(node, solution))}
+    
+    case node: AssertNode => {(solution) => handleAssertNode(node, joinPredecessors(node, solution))}
 
     case node => {(solution) => joinPredecessors(node, solution) }
   }
@@ -204,5 +206,14 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     else {  // if the variableProperty is already bottom, the job is done
       return solution
     }
+  }
+  
+  def handleAssertNode(node: AssertNode, solution: Elt): Elt = {
+    val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.reg)
+    
+    if (ValueLattice.elementIsDefinatelyTruthValue(value, node.negate))
+      node.setState(solution)
+    else
+      solution
   }
 }

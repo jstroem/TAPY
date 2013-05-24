@@ -1,26 +1,31 @@
-class IllegalOperatorException(Exception):
-	def __init__(self, msg):
-		self.msg = msg
+#class IllegalOperatorException(Exception):
+#	def __init__(self, msg):
+#		self.msg = msg
 
 def calculator(a, op, b):
-	if (operator == "+"):
+	if (op == "+"):
 		result = a + b
-	elif (operator == "-"):
+	elif (op == "-"):
 		result = a - b
-	elif (operator == "*"):
+	elif (op == "*"):
 		result = a * b
-	elif (operator == "/"):
+	elif (op == "/"):
 		result = a / b
 	else:
-		raise IllegalOperatorException("Illegal operator")
+		result = "error"
+	#	raise IllegalOperatorException("Illegal operator")
+	return result
 
-a = float(raw_input("First number: "))
+a = 10 # float(raw_input("First number: "))
+b = 20 # float(raw_input("Second number: "))
 op = "+" # raw_input("Operator: ")
-b = float(raw_input("Second number: "))
 
-try:
-	result = calculator(a, op, b)
-except ZeroDivisionError:
-	err = "Division by zero"
-except IllegalOperatorException as e:
-	err = e.msg
+aplusb = calculator(a, "+", b)
+atimesb = calculator(a, "*", b)
+
+#try:
+#	result = calculator(a, op, b)
+#except ZeroDivisionError:
+#	err = "Division by zero"
+#except IllegalOperatorException as e:
+#	err = e.msg

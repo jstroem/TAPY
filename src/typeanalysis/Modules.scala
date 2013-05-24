@@ -56,7 +56,7 @@ trait Modules extends Environment {
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))
       
       // Update the environment
-      // environment = environment ++ Environment.build(moduleCfg)
+      environment = environment ++ Environment.build(moduleCfg)
       
       // Combine the newly constructed CFG with the current one
       val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes)

@@ -203,6 +203,45 @@ extends ProductLattice(
      string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) && (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && manifest[T].erasure.isInstance(objectLabel)})
   }
 
+  def elementIsDefinatelyTruthValue(el: Elt, which: Boolean): Boolean = {
+    splitElement(el).foldLeft(true) {(acc, el) =>
+      val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+      
+      if (elementIsOnlyBoolean(el))
+        boolean match {
+          case BooleanLattice.Concrete(b) => if ((b && which) || (!b && !which)) acc else false
+          case _ => false
+        }
+      else if (elementIsOnlyInteger(el))
+        integer match {
+          case IntegerLattice.Concrete(i) => if ((i != 0 && which) || (i == 0 && !which)) acc else false
+          case _ => false
+        }
+      else if (elementIsOnlyFloat(el))
+        float match {
+          case FloatLattice.Concrete(f) => if ((f != 0 && which) || (f == 0 && !which)) acc else false
+          case _ => false
+        }
+      else if (elementIsOnlyLong(el))
+        long match {
+          case LongLattice.Concrete(l) => if ((l != 0 && which) || (l == 0 && !which)) acc else false
+          case _ => false
+        }
+      else if (elementIsOnlyComplex(el))
+        complex match {
+          case (FloatLattice.Concrete(r), FloatLattice.Concrete(i)) => if (((r != 0 || i != 0) && which) || ((r == 0 && i == 0) && !which)) acc else false
+          case _ => false
+        }
+      else if (elementIsOnlyString(el))
+        string match {
+          case StringLattice.Concrete(s) => if ((s != "" && which) || (s == "" && !which)) acc else false
+          case _ => false
+        }
+      else
+        false
+    }
+  }
+  
   /**
     * Element is unique concrete tests
     */

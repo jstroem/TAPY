@@ -12,7 +12,7 @@ abstract class Node(id: UUID) {
   protected def reg(r: Int) = s"<$r>"
   
   def getState(el: AnalysisLattice.Elt): StateLattice.Elt = AnalysisLattice.getState(this, el)
-  def setState(el: AnalysisLattice.Elt, state: StateLattice.Elt): AnalysisLattice.Elt = AnalysisLattice.setState(el, this, state)
+  def setState(el: AnalysisLattice.Elt, state: StateLattice.Elt = StateLattice.bottom): AnalysisLattice.Elt = AnalysisLattice.setState(el, this, state)
   
   def getHeap(el: AnalysisLattice.Elt): Map[ObjectLabel, ObjectLattice.Elt] = AnalysisLattice.getHeap(this, el) match {
     case HeapLattice.Top() => null
