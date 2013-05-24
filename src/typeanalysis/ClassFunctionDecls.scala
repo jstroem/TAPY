@@ -12,7 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait ClassFunctionDecls {
+trait ClassFunctionDecls extends Environment {
   
   type Elt = AnalysisLattice.Elt
   
@@ -56,7 +56,7 @@ trait ClassFunctionDecls {
     val result = node.updateHeap(solution, Set((scopeLabel, scopeObject), (functionLabel, functionObject), (wrapperLabel, wrapperObject)))
 
     // Add the function name to the current object variables, such that it can be referenced
-    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, functionValue, result)
+    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, functionValue, result, true)
   }
   
   def handleUnboundMethodDeclNode(node: FunctionDeclNode, variableObjectLabel: ObjectLabel, solution: Elt): Elt = {
@@ -87,7 +87,7 @@ trait ClassFunctionDecls {
     val result = node.updateHeap(solution, Set((scopeLabel, scopeObject), (functionLabel, functionObject), (wrapperLabel, wrapperObject), (methodLabel, methodObject)))
 
     // Add the function name to the current object variables, such that it can be referenced
-    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, methodValue, result)
+    Utils.writePropertyValueOnObjectLabelToHeap(node, name, variableObjectLabel, methodValue, result, true)
   }
   
   def isDefinatelyNewStyleClassObject(node: Node, baseNames: List[String], solution: Elt): Boolean = {
@@ -184,19 +184,19 @@ trait ClassFunctionDecls {
       val classObjectValue = ValueLattice.setObjectLabels(Set(newStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, newStyleClassObjectLabel, classObject)
-      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result, true)
       
     } else if (isDefinatelyOldStyleClassObject(node, node.bases, solution)) {
       val classObjectValue = ValueLattice.setObjectLabels(Set(oldStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, oldStyleClassObjectLabel, classObject)
-      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result, true)
       
     } else {
       val classObjectValue = ValueLattice.setObjectLabels(Set(newStyleClassObjectLabel, oldStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, Set((newStyleClassObjectLabel, classObject), (oldStyleClassObjectLabel, classObject)))
-      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result)
+      Utils.writePropertyValueOnVariableObjects(node, className, classObjectValue, result, true)
     }
   }
   
@@ -216,13 +216,13 @@ trait ClassFunctionDecls {
   def handleClassOrFunctionEntryNode[T <: ObjectLabel: Manifest](node: Node, entryNode: T => Node, solution: Elt): Elt = {
     val heap = node.getHeap(solution)
     if (heap != null) {
-      val scopeObjectLabel = heap.foldLeft(null.asInstanceOf[T]: T) {(acc, entry) =>
-        if (acc == null) {
-          val (objectLabel, _) = entry
+      val (scopeObjectLabel, scopeObject) = heap.foldLeft((null.asInstanceOf[T]: T, null: ObjectLattice.Elt)) {(acc, entry) =>
+        if (acc._1 == null && acc._2 == null) {
+          val (objectLabel, obj) = entry
           if (manifest[T].erasure.isInstance(objectLabel)) { // GG :-)
             val scopeObjectLabel: T = objectLabel.asInstanceOf[T]
             if (entryNode(scopeObjectLabel) == node) {
-              scopeObjectLabel
+              (scopeObjectLabel, obj)
             } else acc
           } else acc
         } else acc
@@ -235,7 +235,12 @@ trait ClassFunctionDecls {
         val executionContexts: Set[(List[ObjectLabel], ObjectLabel)] =
           ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map({(scopeChain) =>
             (scopeChain, scopeObjectLabel)})
-        return AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+        val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+        
+        environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+          Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
+        }
+        
       } else {
         // Exception: TODO
         AnalysisLattice.setState(solution, node)

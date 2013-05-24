@@ -47,7 +47,7 @@ object Main {
       
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
-      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(), AnalysisLattice, cfgMin, dir).run()
+      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin, dir).run()
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
 
       println("\n----------\n")

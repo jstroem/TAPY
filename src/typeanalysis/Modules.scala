@@ -12,7 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Modules {
+trait Modules extends Environment {
   var worklist: Worklist[AnalysisLattice.Elt]
   
   var loadedModules: Set[String] = Set()
@@ -22,7 +22,7 @@ trait Modules {
   def handleModuleEntry(node: ModuleEntryNode, solution: Elt): Elt = {
     val moduleLabel = ModuleScopeObjectLabel(node.name)
     
-    val tmp = node.name match {
+    var tmp = node.name match {
       case "__builtin__" =>
         val moduleObject = ObjectLattice.updatePropertyValues(
           Set(("object", BuiltIn.objectValue),
@@ -38,7 +38,11 @@ trait Modules {
         node.updateHeap(solution, Set((moduleLabel, ObjectLattice.bottom)))
     }
     
-    AnalysisLattice.setExecutionContexts(tmp, node, Set((List(), moduleLabel)))
+    tmp = AnalysisLattice.setExecutionContexts(tmp, node, Set((List(), moduleLabel)))
+    
+    environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+      Utils.writePropertyValueOnObjectLabelToHeap(node, variable, moduleLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
+    }
   }
   
   def handleImportNode(node: ImportNode, solution: Elt): Elt = {
@@ -51,6 +55,11 @@ trait Modules {
       loadedModules = loadedModules + moduleQualifiedName
       
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))
+      
+      // Update the environment
+      // environment = environment ++ Environment.build(moduleCfg)
+      
+      // Combine the newly constructed CFG with the current one
       val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes).exportToFile("TEST", true, true)
       worklist.setCFG(newCfg, moduleCfg)
     }

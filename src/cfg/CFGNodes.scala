@@ -218,3 +218,10 @@ case class AssertIterable(reg: Int, length: Int, id: UUID = UUID.randomUUID()) e
 case class ImportNode(names: List[String], isImplicit: Boolean = false, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"import ${ASTPrettyPrinter.implodeStringList(names, ".", false)}"
 }
+
+case class AssertNode(reg: Int, negate: Boolean = false, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = negate match {
+    case true => s"assertNot(${reg(reg)})"
+    case false => s"assert(${reg(reg)})"
+  }
+}

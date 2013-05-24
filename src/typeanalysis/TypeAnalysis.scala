@@ -12,11 +12,13 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-class TypeAnalysis
+class TypeAnalysis(cfg: ControlFlowGraph)
 extends Analysis[AnalysisLattice.Elt]
-with ClassFunctionDecls with Calls with Constants with Operators with Modules {
+with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment {
   
   override type Elt = AnalysisLattice.Elt
+  
+  override var environment = Environment.build(cfg)
   
   /* Analysis interface */
   

@@ -389,8 +389,8 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     val ifExitNode = new NoOpNode("If exit")
 
     // Construct the CFG's for the two branches
-    var thenCfg = generateCFGOfStatementList(new NoOpNode("If-then entry"), node.getInternalBody())
-    var elseCfg = generateCFGOfStatementList(new NoOpNode("If-else entry"), node.getInternalOrelse())
+    var thenCfg = generateCFGOfStatementList(new AssertNode(conditionRegister), node.getInternalBody())
+    var elseCfg = generateCFGOfStatementList(new AssertNode(conditionRegister, true), node.getInternalOrelse())
 
     return conditionCfg.append(ifEntryNode)
                        .append(Set(thenCfg,
