@@ -28,7 +28,7 @@ object ClassMRO {
     
     // Lookup base object labels
     val labels = bases.map{(baseName) =>
-      val value = Utils.findPropertyValueInScope(baseName, state, false)
+      val value = Utils.findPropertyValueInScope(baseName, state)
       
       if (value == BuiltIn.objectValue) {
         Set[ObjectLabel](BuiltIn.objectLabel)

@@ -15,7 +15,7 @@ def calculator(a, op, b):
 		raise IllegalOperatorException("Illegal operator")
 
 a = float(raw_input("First number: "))
-op = raw_input("Operator: ")
+op = "+" # raw_input("Operator: ")
 b = float(raw_input("Second number: "))
 
 try:

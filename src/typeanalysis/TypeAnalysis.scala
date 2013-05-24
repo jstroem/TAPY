@@ -85,7 +85,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
     try {
-      val lookup = Utils.findPropertyValueInScope(node, node.variable, solution, true)
+      val lookup = Utils.findPropertyValueInScope(node, node.variable, solution)
       val value =
         if (lookup != ValueLattice.bottom)
           lookup

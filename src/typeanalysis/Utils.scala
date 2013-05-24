@@ -30,33 +30,17 @@ object Utils {
     }
   }
   
-  def findPropertyValueInScope(node: Node, property: String, solution: Elt, print: Boolean = false): ValueLattice.Elt = findPropertyValueInScope(property, node.getState(solution), print)
-  def findPropertyValueInScope(property: String, state: StateLattice.Elt, print: Boolean): ValueLattice.Elt =
-    PropertyLattice.getValue(findPropertyInScope(property, state, print))
+  def findPropertyValueInScope(node: Node, property: String, solution: Elt): ValueLattice.Elt = findPropertyValueInScope(property, node.getState(solution))
+  def findPropertyValueInScope(property: String, state: StateLattice.Elt): ValueLattice.Elt =
+    PropertyLattice.getValue(findPropertyInScope(property, state))
   
   def findPropertyInScope(node: Node, property: String, solution: Elt): PropertyLattice.Elt = findPropertyInScope(property, node.getState(solution))
-  def findPropertyInScope(property: String, state: StateLattice.Elt, print: Boolean = false): PropertyLattice.Elt = {
+  def findPropertyInScope(property: String, state: StateLattice.Elt): PropertyLattice.Elt = {
     val chains = ExecutionContextLattice.getVariableObjectsOnScopeChains(StackLattice.getExecutionContext(StateLattice.getStack(state)))
     
     // TODO: What if the property is only found in one of the chains? Should add result to also be undefined...
     chains.foldLeft(PropertyLattice.bottom) {(acc, chain) =>
-      val value = chain.foldLeft(PropertyLattice.bottom) {(acc, objectLabel) =>
-        if (print)
-          try {
-            objectLabel match {
-              case objectLabel: NewStyleClassObjectLabel =>
-                println("--- MRO of " + objectLabel.entryNode.classDef.getInternalName() + "---")
-                ClassMRO.linearize(objectLabel, state).foldLeft() {(acc, chain) =>
-                  chain.foldLeft() {(acc, label) =>
-                    label match {
-                      case label: BuiltInClassObjectLabel => println(label.name)
-                      case label: NewStyleClassObjectLabel => println(label.entryNode.classDef.getInternalName())
-                    }
-                  }}
-              case _ =>
-            }
-          } catch { case e: Exception => e.printStackTrace()}
-        
+      val value = chain.foldLeft(PropertyLattice.bottom) {(acc, objectLabel) =>        
         if (acc != PropertyLattice.bottom)
           acc
         else

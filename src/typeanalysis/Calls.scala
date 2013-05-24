@@ -58,7 +58,6 @@ trait Calls {
       
     } catch {
       case e: NotImplementedException =>
-        e.printStackTrace()
         AnalysisLattice.setState(tmp, node)
     }
   }
@@ -203,6 +202,9 @@ trait Calls {
    */
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
     try {
+      println()
+      println("op: " + Utils.findPropertyValueInScope("op", node.getState(solution)))
+      
       // Join constructor call edges!
       val state = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StateLattice.bottom) {(acc, pred) =>
         // Check that __init__ returns None
@@ -217,6 +219,8 @@ trait Calls {
       }
       
       var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(node.getState(solution), state))
+      
+      println("op: " + Utils.findPropertyValueInScope("op", node.getState(tmp)))
       
       // Get the returned values and store them
       val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), StackConstants.RETURN)
