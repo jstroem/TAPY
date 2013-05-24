@@ -59,7 +59,7 @@ trait Modules extends Environment {
       // environment = environment ++ Environment.build(moduleCfg)
       
       // Combine the newly constructed CFG with the current one
-      val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes).exportToFile("TEST", true, true)
+      val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes)
       worklist.setCFG(newCfg, moduleCfg)
     }
     
