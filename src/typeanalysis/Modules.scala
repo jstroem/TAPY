@@ -71,7 +71,7 @@ trait Modules extends Environment {
       
       node.getVariableObjects(solution).foldLeft(tmp) {(acc, variableObjectLabel) =>
         val variableObject = node.getObject(solution, variableObjectLabel)
-        node.updateHeap(acc, variableObjectLabel, Utils.copyObjectProperties(moduleScopeObject, variableObject))
+        node.updateHeap(acc, variableObjectLabel, Utils.copyObjectProperties(moduleScopeObject, variableObject, true))
       }
     } else
       tmp

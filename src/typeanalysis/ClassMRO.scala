@@ -26,28 +26,13 @@ object ClassMRO {
       case NewStyleClassObjectLabel(_, entryNode, _, bases) => (entryNode.classDef.getInternalName(), bases)
     }
     
-    // Lookup base object labels
-    val labels = bases.map{(baseName) =>
-      val value = Utils.findPropertyValueInScope(baseName, state)
-      
-      if (value == BuiltIn.objectValue) {
-        Set[ObjectLabel](BuiltIn.objectLabel)
-        
-      } else if (!ValueLattice.elementIsOnlyObjectLabels[NewStyleClassObjectLabel](value)) {
-        throw new TypeError("Potentially inheriting from a non-class (" + baseName + ")")
-        
-      } else {
-        ValueLattice.getObjectLabels(value)
-      }
-    }
-    
-    val linearizations = labels.foldLeft(Map[ObjectLabel, Set[List[ObjectLabel]]]()) {(acc, labels) =>
+    val linearizations = bases.foldLeft(Map[ObjectLabel, Set[List[ObjectLabel]]]()) {(acc, labels) =>
       labels.foldLeft(acc) {(acc, label) =>
         if (acc.contains(label)) acc else acc + (label -> linearize(label, state, indent + "    "))
       }
     }
     
-    val labelCombinations = combineListOfSets(labels)
+    val labelCombinations = combineListOfSets(bases)
     val result = labelCombinations.foldLeft(Set[List[ObjectLabel]]()) {(acc, labelCombination) =>
       prepare(labelCombination, labelCombination, linearizations).foldLeft(acc) {(acc, input) =>
         acc ++ merge(input, state, indent + "    ")

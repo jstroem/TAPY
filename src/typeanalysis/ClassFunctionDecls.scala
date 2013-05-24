@@ -176,8 +176,12 @@ trait ClassFunctionDecls extends Environment {
     val classObject = ObjectLattice.setScopeChain(classObjectScopeChain)
     
     // Create labels
-    val newStyleClassObjectLabel = NewStyleClassObjectLabel(node, node.entry, node.exit, node.bases)
-    val oldStyleClassObjectLabel = OldStyleClassObjectLabel(node, node.entry, node.exit, node.bases)
+    val bases = node.bases.map{(baseName) =>
+      ValueLattice.getObjectLabels(Utils.findPropertyValueInScope(baseName, node.getState(solution)))
+    }
+    
+    val newStyleClassObjectLabel = NewStyleClassObjectLabel(node, node.entry, node.exit, bases)
+    val oldStyleClassObjectLabel = OldStyleClassObjectLabel(node, node.entry, node.exit, bases)
     
     // Update lattice
     if (isDefinatelyNewStyleClassObject(node, node.bases, solution)) {

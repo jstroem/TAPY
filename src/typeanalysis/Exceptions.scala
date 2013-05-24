@@ -34,13 +34,13 @@ trait Exceptions {
               label match {
                 case label: NewStyleInstanceObjectLabel =>
                   if (!label.definatelyInheritsFrom(baseExceptionLabels, node, solution))
-                    throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual label: " + label + ")")
+                    throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual: " + label + ")")
                 
                 case label: OldStyleInstanceObjectLabel =>
                   Unit
                 
                 case label =>
-                  throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual label: " + label + ")")
+                  throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual: " + label + ")")
               }
             }
             
@@ -48,7 +48,9 @@ trait Exceptions {
           }
       }
     } catch {
-      case e: TypeError => println(e.getMessage()); node.setState(solution)
+      case e: TypeError =>
+        println("[handleRaiseNode] TypeError: " + e.getMessage())
+        node.setState(solution)
     }
   }
 }

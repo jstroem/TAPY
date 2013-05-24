@@ -16,13 +16,13 @@ abstract class ClassObjectLabel() extends ObjectLabel()
 case class ModuleScopeObjectLabel(label: String) extends ObjectLabel() {
   override def toString() = s"Scope $label"
 }
-case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
+case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
   override def toString() = s"New Style Class ${entryNode.classDef.getInternalName()}"
   
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
-case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[String]) extends ClassObjectLabel() {
+case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
   override def toString() = s"Old Style Class ${entryNode.classDef.getInternalName()}"
   
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
@@ -80,13 +80,10 @@ object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
       case subject: OldStyleInstanceObjectLabel => subject.classLabel.bases
     }
     
-    bases.foldLeft(false) {(acc, baseName) =>
+    bases.foldLeft(false) {(acc, baseLabels) =>
       if (acc)
         true
       else {
-        val baseValue = Utils.findPropertyValueInScope(baseName, node.getState(solution))
-        val baseLabels = ValueLattice.getObjectLabels(baseValue)
-        
         if (baseLabels.size == 0)
           false
         else
