@@ -238,7 +238,6 @@ trait ClassFunctionDecls extends Environment {
         val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
         
         environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
-          println("Set variable " + variable + " to undefined")
           Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
         }
         
