@@ -1,6 +1,16 @@
+def dunno(b):
+	return b
+
+dunno(True)
+a = dunno(False)
+
 try:
 	x = 10
-	raise Exception()
+	if (a):
+		b = 'b'
+		raise Exception()
+	else:
+		c = 'c'
 except:
 	y = 10.0
 else:

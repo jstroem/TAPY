@@ -89,10 +89,23 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
    * their AfterCallNodes. This is handled by handleAfterCallNode().
    */
   def join(node: Node, solution: Elt): Elt = {
-    val predecessors = worklist.cfg.getPredecessors(node) ++ worklist.cfg.getExceptionPredecessors(node) ++
-      CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
-    
-    val state = predecessors.foldLeft(StateLattice.bottom)((acc, pred) => StateLattice.leastUpperBound(acc, pred.getState(solution)))
+    val state = node match {
+      case node: ExceptNode =>
+        // Only join from predecessors where an exception was thrown for precision
+        val predecessors = worklist.cfg.getExceptionPredecessors(node)
+        predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+          if (pred.getRegisterValue(solution, StackConstants.EXCEPTION) == ValueLattice.bottom)
+            acc
+          else
+            StateLattice.leastUpperBound(acc, pred.getState(solution)))
+        
+      case node =>
+        val predecessors = worklist.cfg.getPredecessors(node) ++
+          CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
+        
+        predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+          StateLattice.leastUpperBound(acc, pred.getState(solution)))
+    }
     
     AnalysisLattice.setState(solution, node, state)
   }
