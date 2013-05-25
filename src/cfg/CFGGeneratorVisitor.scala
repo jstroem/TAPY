@@ -161,7 +161,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     }
     
     // Connect nodes to the exceptional exit node
-    funcCfg.connectExcept(funcCfg.nodes, exceptionalExitNode)
+    funcCfg.connectExcept(funcCfg.nodes - entryNode - exitNode - exceptionalExitNode, exceptionalExitNode)
   }
 
   // Note: ClassDeclNode inserted in generateCFGOfStatementList
