@@ -210,6 +210,10 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return append(new ControlFlowGraph(node))
   }
   
+  def append(nodes: Set[Node]): ControlFlowGraph = {
+    return append(nodes.map((node) => new ControlFlowGraph(node)))
+  }
+  
   def append(o: ControlFlowGraph): ControlFlowGraph = {
     return combine(o).setEntryNodes(entryNodes).setExitNodes(o.exitNodes).connect(exitNodes, o.entryNodes)
   }

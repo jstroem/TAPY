@@ -157,6 +157,10 @@ case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node
   override def toString = s"return ${reg(resultReg)}\t(ReturnNode)"
 }
 
+case class ExceptionalExitNode(name: String, entryNode: Node, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ExceptionalExitNode($name)"
+}
+
 // Function invokation and Object creation calls; result = [base.]function(arguments)
 case class CallNode(functionReg: Int, argRegs: List[Int], keywordRegs: Map[String, Int] = Map(), starArgReg: Option[Int] = None, kwArgReg: Option[Int] = None, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString() = {
@@ -190,10 +194,6 @@ case class ExceptNode(types: List[String], names: List[String], id: UUID = UUID.
   val typesStr = types.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
   val namesStr = names.foldLeft("")((acc,s) => if (acc == "") s else acc + ", " + s)
   override def toString = s"except: $typesStr as $namesStr"
-}
-
-case class TryExceptElseEntryNode(id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"(TryExceptElseEntryNode)"
 }
 
 // Binary operation; result = arg1 op arg2

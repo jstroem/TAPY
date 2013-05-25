@@ -32,7 +32,7 @@ trait Environment {
       if (seen.contains(n))
         return seen
       
-      val nsucc = g.getSuccessors(n).foldLeft(Set[Node]()) ((acc, node) => node match {
+      val nsucc = (g.getSuccessors(n) ++ g.getExceptionSuccessors(n)).foldLeft(Set[Node]()) ((acc, node) => node match {
         case node: ModuleEntryNode =>
           // A new module begins, don't take the environment of that module
           acc

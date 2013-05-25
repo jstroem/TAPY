@@ -36,8 +36,6 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
 
   // Try-except-finally
   
-  var exceptCfg: ControlFlowGraph = null
-  
   var finallyNormalCfg: ControlFlowGraph = null
   var finallyHandledCfg: ControlFlowGraph = null
   var finallyUnhandledCfg: ControlFlowGraph = null
@@ -147,6 +145,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     
     val entryNode = FunctionEntryNode(node.getInternalName(), node)
     val exitNode = ExitNode(node.getInternalName(), entryNode)
+    val exceptionalExitNode = ExceptionalExitNode(node.getInternalName(), entryNode)
     
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     
@@ -155,11 +154,14 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     val returnNoneCfg = new ControlFlowGraph(new ConstantNoneNode(noneRegister))
       .append(new ReturnNode(noneRegister))
     
-    return bodyCfg.exitNodes.foldLeft(bodyCfg.append(exitNode)) {(acc, node) => node match {
+    val funcCfg = bodyCfg.exitNodes.foldLeft(bodyCfg.append(Set[Node](exitNode, exceptionalExitNode))) {(acc, node) => node match {
         case node: ReturnNode => acc
         case node => acc.removeEdges(node, exitNode).insert(returnNoneCfg, node, exitNode)
       }
     }
+    
+    // Connect nodes to the exceptional exit node
+    funcCfg.connectExcept(funcCfg.nodes, exceptionalExitNode)
   }
 
   // Note: ClassDeclNode inserted in generateCFGOfStatementList
@@ -371,7 +373,6 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     
     this.loopEntryNode = oldLoopEntryNode // Recover in case of nested loops
     this.loopExitNode = oldLoopExitNode
-    println("while now")
     
     return conditionCfg.append(whileEntryNode)
                        .append(whileOrElseCfg)
@@ -472,7 +473,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
       result
     }
     
-    val elseCfg = generateCFGOfStatementList(TryExceptElseEntryNode(), node.getInternalOrelse())
+    val elseCfg = generateCFGOfStatementList(NoOpNode("Try-except-else-entry"), node.getInternalOrelse())
     
     // finallyNormalCfg is null if and only if finallyHandledCfg is null
     if (this.finallyNormalCfg == null && this.finallyHandledCfg == null)

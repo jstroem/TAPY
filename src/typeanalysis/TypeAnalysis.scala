@@ -122,6 +122,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
           node.variable match {
             case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
             case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
+            case "__BooleanLattice_Abstract__" => ValueLattice.setBooleanElt(BooleanLattice.Abstract())
             case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
             case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
             case name =>

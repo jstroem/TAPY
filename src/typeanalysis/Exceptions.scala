@@ -76,15 +76,4 @@ trait Exceptions extends Logger {
       }
     }
   }
-  
-  /**
-    * If an exception is raised, the EXCEPTION register is set. The EXCEPTION register is
-    * cleared in an except node if it is caught. If we don't clear the EXCEPTION register here
-    * the least upper bound at the try-except exit node will result in the EXCEPTION register
-    * being set.
-    */
-  def handleTryExceptElseEntryNode(node: TryExceptElseEntryNode, solution: Elt): Elt = {
-    log("[TryExceptElseEntryNode]", "Clearing the exception register")
-    node.setRegisterValue(solution, StackConstants.EXCEPTION, ValueLattice.bottom, true)
-  }
 }
