@@ -154,7 +154,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     val returnNoneCfg = new ControlFlowGraph(new ConstantNoneNode(noneRegister))
       .append(new ReturnNode(noneRegister))
     
-    val funcCfg = bodyCfg.exitNodes.foldLeft(bodyCfg.append(Set[Node](exitNode, exceptionalExitNode))) {(acc, node) => node match {
+    val funcCfg = bodyCfg.exitNodes.foldLeft(bodyCfg.appendNodes(Set(exitNode, exceptionalExitNode))) {(acc, node) => node match {
         case node: ReturnNode => acc
         case node => acc.removeEdges(node, exitNode).insert(returnNoneCfg, node, exitNode)
       }
