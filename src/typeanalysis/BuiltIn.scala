@@ -77,9 +77,20 @@ object BuiltIn {
 
     objectInstance = ObjectLattice.updatePropertyValue("append", ValueLattice.setObjectLabels(Set(appendFunctionLabel)), objectInstance)
 
+    var initFunctionLabel = BuiltInFunctionObjectLabel("__init__", new BuiltInFunction() {
+      var name = "list __init__"
+      def execute(state: AnalysisLattice.Elt, args: List[Int]) : AnalysisLattice.Elt = {
+        println("TESTING")
+        state
+      }
+    })
+
+    objectInstance = ObjectLattice.updatePropertyValue("__init__", ValueLattice.setObjectLabels(Set(initFunctionLabel)), objectInstance)
+
     def getHeapSet() = {
       Set[(ObjectLabel, ObjectLattice.Elt)]((label, objectInstance),
-                                            (appendFunctionLabel, ObjectLattice.bottom))
+                                            (appendFunctionLabel, ObjectLattice.bottom),
+                                            (initFunctionLabel, ObjectLattice.bottom))
     }
 	}
 }
