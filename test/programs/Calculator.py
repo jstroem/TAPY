@@ -25,18 +25,10 @@ def calculator(a, op, b):
 		raise Exception() # IllegalOperatorException("Illegal operator")
 	return result
 
-a = 10 # float(raw_input("First number: "))
-b = 20 # float(raw_input("Second number: "))
-op = "+" # raw_input("Operator: ")
-
-#aplusb = calculator(a, "+", b)
-#atimesb = calculator(a, "*", b)
-
 try:
-	# TODO: When setting amodb to e.g. 10 before calling
-	# calculator results in amodb being undefined (but
-	# it should have been 10)
-	amodb = calculator(a, "%", b)
+	amodb  = 10
+	# aplusb = calculator(a, "+", b)
+	amodb  = calculator(10, "%", 20)
 	__Analysis_Dump_try__
 except:
 	err = "An error occured"

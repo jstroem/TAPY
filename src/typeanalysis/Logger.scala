@@ -14,7 +14,14 @@ import scala.collection.JavaConversions._
 
 trait Logger {
   val DEBUG = true
+  var last = ""
   
   def log(node: String, msg: String): Unit =
-    if (DEBUG) println(s"[$node] $msg")
+    if (DEBUG) {
+      val str = s"[$node] $msg"
+      if (str != last) {
+        println(s"[$node] $msg")
+        last = str
+      }
+    }
 }

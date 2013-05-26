@@ -23,7 +23,7 @@ trait Exceptions extends Logger {
           val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), reg)
           
           if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](value)) {
-            throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual: " + value + ")")
+            throw new TypeError("Exceptions must be old-style classes or derived from BaseException (actual (reg. " + reg + "): " + value + ")")
             
           } else {
             val __builtin__ = node.getObject(solution, ModuleScopeObjectLabel("__builtin__"))

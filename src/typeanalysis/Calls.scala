@@ -12,7 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Calls {
+trait Calls extends Logger {
   var worklist: Worklist[AnalysisLattice.Elt]
   
   type Elt = AnalysisLattice.Elt
@@ -209,13 +209,13 @@ trait Calls {
     })
 
     functionScopeObject = receiver match {
-      case Some(receiver) => Utils.writePropertyValueOnObject(functionScopeObject, args(0), receiver)
+      case Some(receiver) => Utils.writePropertyValueOnObject(functionScopeObject, args(0), receiver, false)
       case None => functionScopeObject
     }
     
     functionScopeObject = argRegPairs.foldLeft(functionScopeObject) {(acc,pair) =>
       val (argName,reg) = pair
-      Utils.writePropertyValueOnObject(acc, argName, StackFrameLattice.getRegisterValue(callNode.getStackFrame(solution), reg))
+      Utils.writePropertyValueOnObject(acc, argName, callNode.getRegisterValue(solution, reg), false)
     }
     
     callNode.updateHeap(solution, functionLabel.scopeLabel, functionScopeObject)
@@ -247,15 +247,17 @@ trait Calls {
       
       // Get the returned values and store them
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
+      log("AfterCallNode", "Returned value: " + value)
       
+      val oldValue = node.getRegisterValue(solution, node.resultReg)
       if (value == ValueLattice.bottom) {
         // We know with certainty that we are dealing with an uncaught exception, since
         // functions at least return None! We should not get here: Whenever an exception is not caught
         // from a function, it is thrown to the nearest surrounding except/finally block.
-        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.setUndefined(UndefinedLattice.top))
+        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.setUndefined(UndefinedLattice.top, oldValue))
         
       } else {
-        tmp = node.updateStackFrame(tmp, node.resultReg, value)
+        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.leastUpperBound(value, oldValue))
       }
     
       // Clear the return registers:
