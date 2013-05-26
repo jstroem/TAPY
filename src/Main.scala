@@ -1,18 +1,19 @@
 package tapy
 
 import tapy.cfg._
-import org.python.indexer._;
-import org.python.indexer.ast._;
-import org.python.antlr._;
-import org.python.antlr.base._;
-import org.python.antlr.runtime._;
-import org.python.antlr.runtime.tree._;
+import org.python.indexer._
+import org.python.indexer.ast._
+import org.python.antlr._
+import org.python.antlr.base._
+import org.python.antlr.runtime._
+import org.python.antlr.runtime.tree._
 import java.io._
 import tapy.export._
-import tapy.dfa.Worklist
-import tapy.lattices.AnalysisLattice
+import tapy.dfa._
+import tapy.lattices._
 import tapy.typeanalysis.TypeAnalysis
 import tapy.lattices.HeapLattice
+import tapy.cfg.ReadVariableNode
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -42,21 +43,21 @@ object Main {
       println("\n----------\n")
       println("Generation CFG of \"" + file + "\"\n")
       var now = System.currentTimeMillis();
-      val cfg = ast.accept(new CFGGeneratorVisitor("__main__"))
-      var cfgMin = cfg.minify()
+      var cfgMin = ast.accept(new CFGGeneratorVisitor("__main__")).minify()
       cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
       println("\n----------\n")
       println("Generation analysis result of \"" + file + "\"\n")
       now = System.currentTimeMillis();
-      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin, dir).run()
+      val worklist = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin, dir)
+      val solution = worklist.run()
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
   
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
       now = System.currentTimeMillis();
-      cfg.exportToFile(dir + fname, true, true, AnalysisLattice.getCallGraph(solution))
+      cfgMin.exportToFile(dir + fname, true, false, AnalysisLattice.getCallGraph(solution))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
       println("\n----------\n")
@@ -71,6 +72,29 @@ object Main {
         now = System.currentTimeMillis();
         HeapLattice.exportToFile(AnalysisLattice.getHeap(cfgMin.exitNodes.head, solution), dir + fname)
         println("...done in " + (System.currentTimeMillis() - now) + " ms")
+      }
+      
+      AnalysisLattice.getProgramState(solution) match {
+        case ProgramStateLattice.Concrete(map) =>
+          map.foreach{(entry) =>
+            val (node, state) = entry
+            node match {
+              case node: ReadVariableNode =>
+                if (node.variable.startsWith("__Analysis_Dump_")) {
+                  val name = node.variable.replaceFirst("__Analysis_Dump_", "").replace("__", "")
+                  
+                  println("\n----------\n")
+                  println("Pretty printing heap for dump " + name + " of \"" + file + "\"\n")
+                  now = System.currentTimeMillis();
+                  HeapLattice.exportToFile(StateLattice.getHeap(state), dir + fname + "-dump-" + name)
+                  println("...done in " + (System.currentTimeMillis() - now) + " ms")
+                }
+                
+              case _ =>
+            }
+          }
+          
+        case _ =>
       }
     } catch {
       case e: Exception => e.printStackTrace()

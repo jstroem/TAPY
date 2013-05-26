@@ -32,9 +32,18 @@ op = "+" # raw_input("Operator: ")
 #aplusb = calculator(a, "+", b)
 #atimesb = calculator(a, "*", b)
 
-amodb = calculator(a, "%", b)
-x = __Analysis_Register_EXCEPTION__
+try:
+	# TODO: When setting amodb to e.g. 10 before calling
+	# calculator results in amodb being undefined (but
+	# it should have been 10)
+	amodb = calculator(a, "%", b)
+	# __Analysis_Dump_try__
+except:
+	err = "An error occured"
+	__Analysis_Dump_except__
 
+
+__Analysis_Dump_exit__
 #try:
 #	result = calculator(a, op, b)
 #except ZeroDivisionError:

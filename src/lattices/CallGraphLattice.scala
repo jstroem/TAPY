@@ -3,9 +3,11 @@ package tapy.lattices
 import tapy.dfa._
 import tapy.cfg._
 
-// Any: Context sensitivity
-// Boolean (1): True = Function call, False = Constructor call
-// Boolean (2): True = Normal edge, False = Exception edge
+/**
+  * Any: Context sensitivity
+  * Boolean (1): True = Function call, False = Constructor call
+  * Boolean (2): True = Normal edge, False = Exception edge
+  */
 object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node, Boolean, Boolean)] {
 
   /* Getters */

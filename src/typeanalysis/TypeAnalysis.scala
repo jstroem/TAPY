@@ -127,12 +127,17 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
             case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
             case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
             case name =>
-              throw new NameError("Name '" + name + "' is not defined.")
+              if (name.startsWith("__Analysis_Dump_") && name.endsWith("__"))
+                ValueLattice.bottom
+              else
+                throw new NameError("Name '" + name + "' is not defined.")
           }
       
       node.updateStackFrame(solution, node.resultReg, value)
     } catch {
-      case e: NameError => node.setState(solution, StateLattice.bottom)
+      case e: NameError =>
+        log("ReadVariableNode", e.getMessage())
+        node.setState(solution, StateLattice.bottom)
     }
   }
   

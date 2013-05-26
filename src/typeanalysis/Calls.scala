@@ -122,10 +122,17 @@ trait Calls {
         initLabel match {
           case initLabel: BoundMethodObjectLabel =>
             tmp = handleFunctionArguments(callNode, initLabel.functionLabel, tmp, Some(ValueLattice.setObjectLabels(Set(initLabel.instance))))
+            
+            // Normal call edges
             tmp = AnalysisLattice.updateCallGraph(tmp,
               Set((null, callNode, null, initLabel.functionLabel.entryNode, false, true),
-                  (null, initLabel.functionLabel.exitNode, null, afterCallNode, false, true),
-                  (null, initLabel.functionLabel.exceptionalExitNode, null, afterCallNode, false, false)))
+                  (null, initLabel.functionLabel.exitNode, null, afterCallNode, false, true)))
+            
+            // Exception call edges
+            worklist.cfg.getExceptionSuccessors(callNode).foldLeft(tmp) {(acc, succ) =>
+              AnalysisLattice.updateCallGraph(acc, Set((null, initLabel.functionLabel.exceptionalExitNode, null, succ, false, false)))
+            }
+            
             callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
             
           case initLabel =>
@@ -143,19 +150,31 @@ trait Calls {
   }
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {
-    val tmp = handleFunctionArguments(callNode, functionLabel, solution)
-    AnalysisLattice.updateCallGraph(tmp,
+    var tmp = handleFunctionArguments(callNode, functionLabel, solution)
+    
+    // Normal call edges
+    tmp = AnalysisLattice.updateCallGraph(tmp,
       Set((null, callNode, null, functionLabel.entryNode, true, true),
-          (null, functionLabel.exitNode, null, afterCallNode, true, true),
-          (null, functionLabel.exceptionalExitNode, null, afterCallNode, true, false)))
+          (null, functionLabel.exitNode, null, afterCallNode, true, true)))
+          
+    // Exception call edges
+    worklist.cfg.getExceptionSuccessors(callNode).foldLeft(tmp) {(acc, succ) =>
+      AnalysisLattice.updateCallGraph(acc, Set((null, functionLabel.exceptionalExitNode, null, succ, true, false)))
+    }
   }
   
   def handleBoundMethodObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, methodLabel: BoundMethodObjectLabel, solution: Elt): Elt = {
-    val tmp = handleFunctionArguments(callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
-    AnalysisLattice.updateCallGraph(tmp,
+    var tmp = handleFunctionArguments(callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
+    
+    // Normal call edges
+    tmp = AnalysisLattice.updateCallGraph(tmp,
       Set((null, callNode, null, methodLabel.functionLabel.entryNode, true, true),
-          (null, methodLabel.functionLabel.exitNode, null, afterCallNode, true, true),
-          (null, methodLabel.functionLabel.exceptionalExitNode, null, afterCallNode, true, false)))
+          (null, methodLabel.functionLabel.exitNode, null, afterCallNode, true, true)))
+    
+    // Exception call edges
+    worklist.cfg.getExceptionSuccessors(callNode).foldLeft(tmp) {(acc, succ) =>
+      AnalysisLattice.updateCallGraph(acc, Set((null, methodLabel.functionLabel.exceptionalExitNode, null, succ, true, false)))
+    }
   }
   
   /* Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming */
@@ -231,13 +250,14 @@ trait Calls {
       
       if (value == ValueLattice.bottom) {
         // We know with certainty that we are dealing with an uncaught exception, since
-        // functions at least return None! As a consequence we set the result register to undefined.
+        // functions at least return None! We should not get here: Whenever an exception is not caught
+        // from a function, it is thrown to the nearest surrounding except/finally block.
         tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.setUndefined(UndefinedLattice.top))
         
       } else {
         tmp = node.updateStackFrame(tmp, node.resultReg, value)
       }
-      
+    
       // Clear the return registers:
       node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
       
