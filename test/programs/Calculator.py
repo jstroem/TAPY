@@ -22,7 +22,7 @@ def calculator(a, op, b):
 		#	result = "error"
 		#
 		# Variant 3:
-		raise IllegalOperatorException("Illegal operator")
+		raise Exception() # IllegalOperatorException("Illegal operator")
 	return result
 
 a = 10 # float(raw_input("First number: "))

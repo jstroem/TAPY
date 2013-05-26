@@ -52,6 +52,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     case node: FunctionDeclNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionOrUnboundMethodDeclNode(node, solution)))}
     case node: FunctionEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionEntryNode(node, solution)))}
     case node: ExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExitNode(node, solution)))}
+    case node: ExceptionalExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExceptionalExitNode(node, solution)))}
     
     // Calls
     case node: CallNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleCallNode(node, solution)))}
@@ -90,7 +91,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
    */
   def join(node: Node, solution: Elt): Elt = {
     val state = node match {
-      case node: ExceptNode =>
+      case ExceptNode(_,_,_) | ExceptionalExitNode(_,_,_) =>
         // Only join from predecessors where an exception was thrown for precision
         val predecessors = worklist.cfg.getExceptionPredecessors(node)
         predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
@@ -99,7 +100,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
           else
             StateLattice.leastUpperBound(acc, pred.getState(solution)))
         
-      case node =>
+      case _ =>
         val predecessors = worklist.cfg.getPredecessors(node) ++
           CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         

@@ -123,9 +123,9 @@ trait Calls {
           case initLabel: BoundMethodObjectLabel =>
             tmp = handleFunctionArguments(callNode, initLabel.functionLabel, tmp, Some(ValueLattice.setObjectLabels(Set(initLabel.instance))))
             tmp = AnalysisLattice.updateCallGraph(tmp,
-              Set((null, callNode, null, initLabel.functionLabel.entryNode, false),
-                  (null, initLabel.functionLabel.exitNode, null, afterCallNode, false),
-                  (null, initLabel.functionLabel.exceptionalExitNode, null, afterCallNode, false)))
+              Set((null, callNode, null, initLabel.functionLabel.entryNode, false, true),
+                  (null, initLabel.functionLabel.exitNode, null, afterCallNode, false, true),
+                  (null, initLabel.functionLabel.exceptionalExitNode, null, afterCallNode, false, false)))
             callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
             
           case initLabel =>
@@ -145,17 +145,17 @@ trait Calls {
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {
     val tmp = handleFunctionArguments(callNode, functionLabel, solution)
     AnalysisLattice.updateCallGraph(tmp,
-      Set((null, callNode, null, functionLabel.entryNode, true),
-          (null, functionLabel.exitNode, null, afterCallNode, true),
-          (null, functionLabel.exceptionalExitNode, null, afterCallNode, true)))
+      Set((null, callNode, null, functionLabel.entryNode, true, true),
+          (null, functionLabel.exitNode, null, afterCallNode, true, true),
+          (null, functionLabel.exceptionalExitNode, null, afterCallNode, true, false)))
   }
   
   def handleBoundMethodObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, methodLabel: BoundMethodObjectLabel, solution: Elt): Elt = {
     val tmp = handleFunctionArguments(callNode, methodLabel.functionLabel, solution, Some(ValueLattice.setObjectLabels(Set(methodLabel.instance)))) // TODO
     AnalysisLattice.updateCallGraph(tmp,
-      Set((null, callNode, null, methodLabel.functionLabel.entryNode, true),
-          (null, methodLabel.functionLabel.exitNode, null, afterCallNode, true),
-          (null, methodLabel.functionLabel.exceptionalExitNode, null, afterCallNode, true)))
+      Set((null, callNode, null, methodLabel.functionLabel.entryNode, true, true),
+          (null, methodLabel.functionLabel.exitNode, null, afterCallNode, true, true),
+          (null, methodLabel.functionLabel.exceptionalExitNode, null, afterCallNode, true, false)))
   }
   
   /* Sets the argument-registers given to the callNode on the functionObjectScope with the correct naming */

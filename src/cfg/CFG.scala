@@ -4,6 +4,7 @@ import java.io._
 import tapy.export._
 import scala.collection.JavaConversions._
 import java.util.IdentityHashMap
+import tapy.lattices._
 
 case class ControlFlowGraph(entryNodes: Set[Node],
                             exitNodes: Set[Node],
@@ -258,19 +259,32 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     }
   }
   
-  def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true): ControlFlowGraph = {
-    GraphvizExporter.export(generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.dot"))
+  def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true, callGraph: CallGraphLattice.Elt = CallGraphLattice.bottom): ControlFlowGraph = {
+    GraphvizExporter.export(generateGraphvizGraph(doCollapse, callGraph), new PrintStream(fileName + ".cfg.dot"))
     Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
     
     if (doMinify) {
-      GraphvizExporter.export(minify().generateGraphvizGraph(doCollapse), new PrintStream(fileName + ".cfg.min.dot"))
+      GraphvizExporter.export(minify().generateGraphvizGraph(doCollapse, callGraph), new PrintStream(fileName + ".cfg.min.dot"))
       Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.min.gif " + fileName + ".cfg.min.dot")
     }
   
     return this
   }
   
-  def generateGraphvizGraph(collapse : Boolean) : GraphvizExporter.Graph = {
+  def generateGraphvizGraph(collapse: Boolean, callGraph: CallGraphLattice.Elt): GraphvizExporter.Graph = {
+    callGraph.foldLeft(this) {(acc, tuple) =>
+      val (_, pred, _, succ, _, normalEdge) = tuple
+      if (Set(pred, succ) subsetOf acc.nodes)
+        if (normalEdge)
+          acc.connect(pred, succ)
+        else
+          acc.connectExcept(pred, succ)
+      else
+        acc
+    }.generateGraphvizGraph(collapse)
+  }
+  
+  def generateGraphvizGraph(collapse: Boolean): GraphvizExporter.Graph = {
     def nodeToString(node: Node): String = {
       if (node == null)
           return "null"
