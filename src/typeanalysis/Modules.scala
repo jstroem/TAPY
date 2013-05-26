@@ -27,9 +27,13 @@ trait Modules extends Environment {
         val moduleObject = ObjectLattice.updatePropertyValues(
           Set(("object", BuiltIn.objectValue),
               ("None", BuiltIn.noneValue),
+              ("list", ValueLattice.setObjectLabels(Set(BuiltIn.PyList.label))),
               ("float", BuiltIn.floatFunctionValue)))
+
+        
               
         node.updateHeap(solution,
+          BuiltIn.PyList.getHeapSet() ++ 
           Set((BuiltIn.objectLabel, ObjectLattice.bottom),
               (BuiltIn.floatFunctionLabel, ObjectLattice.bottom),
               (moduleLabel, moduleObject)))

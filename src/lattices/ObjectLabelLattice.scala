@@ -55,11 +55,14 @@ case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, all
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
-case class BuiltInClassObjectLabel(name: String) extends ObjectLabel() {
+case class BuiltInClassObjectLabel(name: String) extends CallableObjectLabel() {
   override def toString() = s"Built In Class $name"
 }
-case class BuiltInFunctionObjectLabel(name: String) extends ObjectLabel() {
+case class BuiltInFunctionObjectLabel(name: String, function: BuiltIn.BuiltInFunction) extends ObjectLabel() {
   override def toString() = s"Built In Function $name"
+}
+case class BuiltInInstanceObjectLabel[T](obj: T, classLabel: BuiltInClassObjectLabel) extends ObjectLabel() {
+  override def toString() = "Built In instance"
 }
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {

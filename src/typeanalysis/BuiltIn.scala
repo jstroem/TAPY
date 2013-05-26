@@ -32,39 +32,54 @@ object BuiltIn {
    * Functions
    */
   
-  val floatFunctionLabel = BuiltInFunctionObjectLabel("float")
+  val floatFunctionLabel = BuiltInFunctionObjectLabel("float", new BuiltInFunction(){
+    def execute(state: AnalysisLattice.Elt, args: List[Int]) : AnalysisLattice.Elt = {
+      state
+    }
+    var name = "float"
+  });
   val floatFunctionValue = ValueLattice.setObjectLabels(Set(floatFunctionLabel))
-  
+
+
   /* Utility functions */
   
   def objectOverwritten(node: Node, solution: Elt): Boolean = {
     Utils.findPropertyValueInScope(node, "object", solution) != BuiltIn.objectValue
   }
 
- // trait BuiltInClass[T] {
-	// 	def lookupSelf(state: AnalysisLattice.Elt, node: Node, selfReg: Int) : ObjectLabelLattice.Elt = {
-	// 		val stackFrame = StackFrame = AnalysisLattice.getStackFrame(node, state)
-	// 		val selfObject = StackFrameLattice.getRegisterValue(stackFrame, selfReg)
-	// 		if (ValueLattice.elementIsOnlyObjectLabels(selfObject)) {
-	// 			return ValueLattice.getObjectLabels(selfObject)
-	// 		} else {
-	// 			throw new TypeError("Builtin Method call with a self value that wasn't only objectlabels")
-	// 		}
-	// 	}
-	// }
+ trait BuiltInClass {
+		def lookupSelf(state: AnalysisLattice.Elt, node: Node, selfReg: Int) : ObjectLabelLattice.Elt = {
+			val stackFrame = AnalysisLattice.getStackFrame(node, state)
+			val selfObject = StackFrameLattice.getRegisterValue(stackFrame, selfReg)
+			if (ValueLattice.elementIsOnlyObjectLabels(selfObject)) {
+				return ValueLattice.getObjectLabels(selfObject)
+			} else {
+				throw new TypeError("Builtin Method call with a self value that wasn't only objectlabels")
+			}
+		}
 
-	// trait BuiltInFunction {
-	// 	def execute(state: AnalysisLattice.Elt, args: List[Int]) : ValueLattice.Elt
+    def getHeapSet() : Set[(ObjectLabel, ObjectLattice.Elt)]
+	}
 
-	// 	val name : String
-	// }
+	trait BuiltInFunction {
+		def execute(state: AnalysisLattice.Elt, args: List[Int]) : AnalysisLattice.Elt
+		var name : String
+	}
 
-	// object PyList(state: AnalysisLattice.Elt) extends BuiltInClass[PyList] {
+	object PyList extends BuiltInClass {
+    var label = BuiltInClassObjectLabel("list")
+    var objectInstance = ObjectLattice.bottom
 
-	// 	case object append extends BuiltInFunction {
-	// 		def execute(state: AnalysisLattice.Elt, node: Node, argReg: List[Int]) : ValueLattice.Elt = {
+    var appendFunctionLabel = BuiltInFunctionObjectLabel("append", new BuiltInFunction() {
+      def execute(state: AnalysisLattice.Elt, args: List[Int]) : AnalysisLattice.Elt = state
+      var name = "list append"
+    })
 
-	// 		}
-	// 	} 
-	// }
+    objectInstance = ObjectLattice.updatePropertyValue("append", ValueLattice.setObjectLabels(Set(appendFunctionLabel)), objectInstance)
+
+    def getHeapSet() = {
+      Set[(ObjectLabel, ObjectLattice.Elt)]((label, objectInstance),
+                                            (appendFunctionLabel, ObjectLattice.bottom))
+    }
+	}
 }
