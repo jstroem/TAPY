@@ -37,13 +37,11 @@ try:
 	# calculator results in amodb being undefined (but
 	# it should have been 10)
 	amodb = calculator(a, "%", b)
-	# __Analysis_Dump_try__
+	__Analysis_Dump_try__
 except:
 	err = "An error occured"
 	__Analysis_Dump_except__
 
-
-__Analysis_Dump_exit__
 #try:
 #	result = calculator(a, op, b)
 #except ZeroDivisionError:

@@ -256,39 +256,21 @@ trait ClassFunctionDecls extends Environment with Logger {
   }
   
   def handleExitNode(node: ExitNode, solution: Elt): Elt = {
-    node.entryNode match {
-      case entryNode: FunctionEntryNode =>
-        // Set the execution contexts to bottom: Joining at the callee site will ensure that the
-        // execution contexts at the after call node will be set to the execution contexts at the
-        // call node.
-        AnalysisLattice.setExecutionContexts(solution, node)
-        
-      case entryNode: ClassEntryNode =>
-        // Remove the variable object
-        AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
-        
-      case entryNode =>
-        throw new InternalError()
-    }
+    // Pop the current variable object
+    AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
   }
   
   /**
     * Does the exact same thing as handleExitNode at the moment.
     */
   def handleExceptionalExitNode(node: ExceptionalExitNode, solution: Elt): Elt = {
-    node.entryNode match {
-      case entryNode: FunctionEntryNode =>
-        // Set the execution contexts to bottom: Joining at the callee site will ensure that the
-        // execution contexts at the after call node will be set to the execution contexts at the
-        // call node.
-        AnalysisLattice.setExecutionContexts(solution, node)
-        
-      case entryNode: ClassEntryNode =>
-        // Remove the variable object
-        AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
-        
-      case entryNode =>
-        throw new InternalError()
-    }
+    val exception = node.getRegisterValue(solution, StackConstants.EXCEPTION)
+    if (exception == ValueLattice.bottom)
+      log("ExceptionalExitNode", "Infeasible path")
+    else
+      log("ExceptionalExitNode", "Uncaught exception: " + exception)
+    
+    // Pop the current variable object
+    AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
   }
 }

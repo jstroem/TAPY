@@ -9,5 +9,4 @@ trait Analysis[T] {
   
   def generateConstraint(node: Node): Constraint[T]
   def nodeDependencies(node: Node, solution: T): Set[Node]
-  def pp(node: Node, solution: T): Unit
 }

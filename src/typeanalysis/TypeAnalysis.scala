@@ -79,12 +79,6 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     return worklist.cfg.getSuccessors(node) ++ worklist.cfg.getExceptionSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
   }
   
-  var i = 0
-  def pp(node: Node, solution: Elt): Unit = {
-    HeapLattice.exportToFile(node.getHeap(solution), "solution-" + (i % 2))
-    i = i + 1
-  }
-  
   /**
    * Note that joinPredecessors does not join the state from __init__-ExitNodes to
    * their AfterCallNodes. This is handled by handleAfterCallNode().
@@ -93,7 +87,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     val state = node match {
       case ExceptNode(_,_,_) | ExceptionalExitNode(_,_,_) =>
         // Only join from predecessors where an exception was thrown for precision
-        val predecessors = worklist.cfg.getExceptionPredecessors(node)
+        val predecessors = worklist.cfg.getExceptionPredecessors(node) ++ CallGraphLattice.getExceptionPredecessors(AnalysisLattice.getCallGraph(solution), node)
         predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
           if (pred.getRegisterValue(solution, StackConstants.EXCEPTION) == ValueLattice.bottom)
             acc

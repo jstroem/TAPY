@@ -33,6 +33,10 @@ object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node, Boolea
     })
   }
   
+  def getExceptionPredecessors(el: CallGraphLattice.Elt, node: Node): Set[Node] = {
+    getPredecessors(el, node, ((_, pred, _, _, _, normal) => !normal))
+  }
+  
   def getFunctionCallPredecessors(el: CallGraphLattice.Elt, node: Node): Set[Node] = {
     getPredecessors(el, node, {(_, _, _, _, funcCall, _) => funcCall})
   }
