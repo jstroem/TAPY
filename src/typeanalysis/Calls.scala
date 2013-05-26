@@ -227,10 +227,16 @@ trait Calls {
       var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(node.getState(solution), state))
       
       // Get the returned values and store them
-      val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), StackConstants.RETURN)
-      val valueConstructor = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), StackConstants.RETURN_CONSTRUCTOR)
+      val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
       
-      tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.leastUpperBound(value, valueConstructor))
+      if (value == ValueLattice.bottom) {
+        // We know with certainty that we are dealing with an uncaught exception, since
+        // functions at least return None! As a consequence we set the result register to undefined.
+        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.setUndefined(UndefinedLattice.top))
+        
+      } else {
+        tmp = node.updateStackFrame(tmp, node.resultReg, value)
+      }
       
       // Clear the return registers:
       node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)

@@ -7,8 +7,13 @@ object StackFrameLattice extends MapLattice[Int, ValueLattice.Elt](ValueLattice)
 
   /* Getters */
   
-  def getRegisterValue(el: Elt, register: Int): ValueLattice.Elt =
-    get(el, register)
+  def getRegisterValue(el: Elt, reg: Int): ValueLattice.Elt =
+    get(el, reg)
+  
+  def getRegisterValues(el: Elt, regs: Set[Int]): ValueLattice.Elt =
+    regs.foldLeft(ValueLattice.bottom) {(acc, reg) =>
+      ValueLattice.leastUpperBound(acc, get(el, reg))
+    }
 
   /* Updaters */
     

@@ -30,6 +30,8 @@ abstract class Node(id: UUID) {
   
   def getStackFrame(el: AnalysisLattice.Elt): StackFrameLattice.Elt = AnalysisLattice.getStackFrame(this, el)
   
+  def getRegisterValues(el: AnalysisLattice.Elt, regs: Set[Int]): ValueLattice.Elt = StackFrameLattice.getRegisterValues(getStackFrame(el), regs)
+  
   def getRegisterValue(el: AnalysisLattice.Elt, reg: Int): ValueLattice.Elt = StackFrameLattice.getRegisterValue(getStackFrame(el), reg)
   def setRegisterValue(el: AnalysisLattice.Elt, reg: Int, value: ValueLattice.Elt = ValueLattice.bottom, strong: Boolean = false): AnalysisLattice.Elt = updateStackFrame(el, reg, value, strong)
   

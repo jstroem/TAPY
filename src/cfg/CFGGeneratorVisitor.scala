@@ -183,10 +183,15 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitReturn(node: Return): ControlFlowGraph = {
-    val expressionCfg = node.getInternalValue().accept(this)
-    val expressionRegister = Registers.last
-    
-    return expressionCfg.append(new ReturnNode(expressionRegister))
+    if (node.getInternalValue() == null) {
+      val noneRegister = Registers.next()
+      return new ControlFlowGraph(new ConstantNoneNode(noneRegister)).append(new ReturnNode(noneRegister))
+      
+    } else {
+      val expressionCfg = node.getInternalValue().accept(this)
+      val expressionRegister = Registers.last
+      return expressionCfg.append(new ReturnNode(expressionRegister))
+    }
   }
 
   override def visitDelete(node: Delete): ControlFlowGraph = {

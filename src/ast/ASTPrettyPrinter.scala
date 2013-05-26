@@ -141,7 +141,10 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitReturn(node: Return): String = {
-    return indent("return " + node.getInternalValue().accept(this))
+    if (node.getInternalValue() == null)
+      return indent("return")
+    else
+      return indent("return " + node.getInternalValue().accept(this))
   }
   
   override def visitDelete(node: Delete): String = {
