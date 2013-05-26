@@ -37,7 +37,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   
   def setExecutionContexts(el: Elt, node: Node, executionContexts: ExecutionContextLattice.Elt = ExecutionContextLattice.bottom): Elt =
     (ProgramStateLattice.setExecutionContext(getProgramState(el), node, executionContexts), getCallGraph(el))
-    
+  
   /* Updaters */
   
   def updateStackFrame(el: Elt, node: Node, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt =
@@ -74,5 +74,60 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
     val state = ProgramStateLattice.get(programState, node)
     val (heap, (stack, executionContext)) = state
     (callGraph, heap, stack, executionContext)
+  }
+  
+  /* Utilities */
+  
+  def diff(el1: Elt, el2: Elt, node: Node): String = {
+    var result = ""
+    
+    val (programState1, callGraph1) = el1
+    val (programState2, callGraph2) = el2
+    
+    if (callGraph1 != callGraph2) {
+      result = "Call graphs differ: " + (((callGraph1 union callGraph2) intersect callGraph1) intersect callGraph2) + ".\n"
+    }
+    
+    val state1 = node.getState(el1)
+    val state2 = node.getState(el2)
+    
+    val (heap1, stack1) = state1
+    val (heap2, stack2) = state2
+    
+    if (heap1 != heap2) {
+      result += "Heaps differ.\n"
+    }
+    
+    if (stack1 != stack2) {
+      val (stackFrame1, executionContext1) = stack1
+      val (stackFrame2, executionContext2) = stack2
+      
+      if (stackFrame1 != stackFrame2) {
+        result += "Stack frames differ.\n"
+        (stackFrame1, stackFrame2) match {
+          case (StackFrameLattice.Concrete(stackFrame1), StackFrameLattice.Concrete(stackFrame2)) =>
+            val keys1 = stackFrame1.keys
+            val keys2 = stackFrame2.keys
+            
+            if (keys1.toSet == keys2.toSet) {
+              result += "Stack frame key sets identical.\n"
+              keys1.foreach {(key) =>
+                val value1 = stackFrame1.get(key)
+                val value2 = stackFrame2.get(key)
+                
+                if (value1 != value2)
+                  result += "Stack frame values for register " + key + " differ:\n- " + value1 + "\n- " + value2 + ".\n"
+              }
+            }
+            
+          case _ =>
+        }
+      }
+      
+      if (executionContext1 != executionContext2)
+        result += "Execution context differ.\n"
+    }
+    
+    return result
   }
 }

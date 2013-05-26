@@ -72,7 +72,13 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   }
   
   def constraintWrapper(node: Node, solution: Elt, constraint: Elt => Elt): Elt = {
-    constraint(join(node, solution))
+    val newSolution = constraint(join(node, solution))
+    if (solution != newSolution) {
+      println("Solution changed for node: " + node)
+      println(AnalysisLattice.diff(solution, newSolution, node))
+      println()
+    }
+    newSolution
   }
   
   def nodeDependencies(node: Node, solution: Elt): Set[Node] = {
@@ -240,9 +246,11 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   def handleAssertNode(node: AssertNode, solution: Elt): Elt = {
     val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.reg)
     
-    if (ValueLattice.elementIsDefinatelyTruthValue(value, node.negate))
+    if (ValueLattice.elementIsDefinatelyTruthValue(value, node.negate)) {
+      log("AssertNode", "Infeasible path: " + value)
       node.setState(solution)
-    else
+    } else {
       solution
+    }
   }
 }
