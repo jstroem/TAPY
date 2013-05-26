@@ -45,7 +45,7 @@ abstract class Node(id: UUID) {
 }
 
 // Class and function declaration
-case class FunctionDeclNode(entry: FunctionEntryNode, exit: ExitNode, defaultArgRegs : List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class FunctionDeclNode(entry: FunctionEntryNode, exit: ExitNode, exceptionalExitNode: ExceptionalExitNode, defaultArgRegs : List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
 }
 case class ClassDeclNode(entry: ClassEntryNode, exit: ExitNode, bases: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {

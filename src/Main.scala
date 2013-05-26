@@ -40,22 +40,37 @@ object Main {
       new PrintStream(dir+fname+".ast").print(aspp)
   
       println("\n----------\n")
-      println("Pretty printing CFG of \"" + file + "\"\n")
-      val cfg = ast.accept(new CFGGeneratorVisitor("__main__")).exportToFile(dir + fname)
+      println("Generation CFG of \"" + file + "\"\n")
+      var now = System.currentTimeMillis();
+      val cfg = ast.accept(new CFGGeneratorVisitor("__main__"))
       var cfgMin = cfg.minify()
       cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
+      
+      println("\n----------\n")
+      println("Generation analysis result of \"" + file + "\"\n")
+      now = System.currentTimeMillis();
+      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin, dir).run()
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
+  
+      println("\n----------\n")
+      println("Pretty printing CFG of \"" + file + "\"\n")
+      now = System.currentTimeMillis();
+      cfg.exportToFile(dir + fname)
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
-      val solution = new Worklist[AnalysisLattice.Elt](new TypeAnalysis(cfgMin), AnalysisLattice, cfgMin, dir).run()
+      now = System.currentTimeMillis();
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
 
-      println("\n----------\n")
       if (cfgMin.exitNodes.size > 0) {
-        println("Pretty printing heap for the CFG exit node of \"" + file + "\"")
+        println("\n----------\n")
+        println("Pretty printing heap for the CFG exit node of \"" + file + "\"\n")
+        now = System.currentTimeMillis();
         HeapLattice.exportToFile(AnalysisLattice.getHeap(cfgMin.exitNodes.head, solution), dir + fname)
-      } else {
-        println("CFG has no exit node; nothing to print.\n")
+        println("...done in " + (System.currentTimeMillis() - now) + " ms")
       }
     } catch {
       case e: Exception => e.printStackTrace()

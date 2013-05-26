@@ -54,7 +54,14 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
           
         case node: FunctionEntryNode =>
           val (defaultArgCfg, defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
-          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, stmCfg.exitNodes.head.asInstanceOf[ExitNode], defaultArgRegs))
+          val (exitNode, exceptionalExitNode) = stmCfg.exitNodes.foldLeft((null: ExitNode, null: ExceptionalExitNode)) {(acc, node) =>
+            node match {
+              case node: ExitNode => (node, acc._2)
+              case node: ExceptionalExitNode => (acc._1, node)
+              case node => throw new InternalError()
+            }
+          }
+          acc.insert(stmCfg).append(defaultArgCfg).append(new FunctionDeclNode(node, exitNode, exceptionalExitNode, defaultArgRegs))
           
         case node: BreakNode =>
           acc.append(stmCfg).setExitNodes(Set()) // !

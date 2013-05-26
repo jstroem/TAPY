@@ -36,7 +36,7 @@ trait ClassFunctionDecls extends Environment {
     
     // Create labels
     val scopeLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
-    val functionLabel = FunctionObjectLabel(node, node.entry, node.exit, scopeLabel)
+    val functionLabel = FunctionObjectLabel(node, node.entry, node.exit, node.exceptionalExitNode, scopeLabel)
     val wrapperLabel = WrapperObjectLabel(functionLabel)
     
     // Create value lattice elements
@@ -64,7 +64,7 @@ trait ClassFunctionDecls extends Environment {
     
     // Create labels
     val scopeLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
-    val functionLabel = FunctionObjectLabel(node, node.entry, node.exit, scopeLabel)
+    val functionLabel = FunctionObjectLabel(node, node.entry, node.exit, node.exceptionalExitNode, scopeLabel)
     val wrapperLabel = WrapperObjectLabel(functionLabel)
     val methodLabel = UnboundMethodObjectLabel(functionLabel)
     

@@ -40,7 +40,7 @@ case class BoundMethodObjectLabel(instance: ObjectLabel, functionLabel: Function
 case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode) extends ObjectLabel() {
   override def toString() = s"Scope ${entryNode.funcDef.getInternalName()}"
 }
-case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
+case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, exceptionalExitNode: ExceptionalExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
 	override def toString() = s"Function ${entryNode.funcDef.getInternalName()}"
 }
 case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: CallNode) extends CallableObjectLabel() {
