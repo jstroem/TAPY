@@ -20,6 +20,8 @@ abstract class Node(id: UUID) {
     case _ => throw new InternalError()
   }
   
+  def setHeap(el: AnalysisLattice.Elt, heap: HeapLattice.Elt): AnalysisLattice.Elt = setState(el, StateLattice.setHeap(getState(el), heap))
+  
   def getObject(el: AnalysisLattice.Elt, label: ObjectLabel): ObjectLattice.Elt = AnalysisLattice.getHeapObject(this, label, el)
   
   def getProperty(el: AnalysisLattice.Elt, label: ObjectLabel, property: String): PropertyLattice.Elt = ObjectLattice.getProperty(getObject(el, label), property)

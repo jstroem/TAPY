@@ -25,6 +25,9 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
 	
 	/* Setters */
 	
+	def setHeap(el: Elt, heap: HeapLattice.Elt): Elt =
+	  (heap, getStack(el))
+	  
 	def setStack(el: Elt, stack: StackLattice.Elt): Elt =
 	  (getHeap(el), stack)
 	
