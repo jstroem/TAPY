@@ -1,0 +1,17 @@
+At first glance the global statement in Python seems rater straightforward to analyze, but it has some interesting quirks that are not that intuitive, 
+and thus deserves special handling. In this section we will go over these quirks and how this affected the analysis of this statement.
+
+The statement allows for a function to declare an identifier to be considered global for the entirety of the function body. 
+No matter where the global statement is stated within the function body it will take effect for the entire function body, 
+even for statements that are stated before the global statement. It should also be noted that the statement doesn't 
+have to be executed to take effect, so global statements in dead code also take effect.
+
+When an identifier has declared global, all variable lookups (both reads and writes) on that identifier are done directly in the global scope (module level) 
+without consideration for any scopes that might have been checked firsts under regular circumstances.
+
+Since the global statement can only move a variable from the enclosing function scope to the global scope and to or from any scopes in between 
+it is statically possible to determine the variable location in all cases, and thus we can make a strong update by marking the identifier as global. 
+
+Due to the fact that the global statement takes effect no matter where it is in the function body, it courses problems for the join function 
+since a situation where a variable X is marked as global in one state and not in the other can arise. In such a situation, the state where the variable is not marked as global is in principal incorrect, since the global statement changes the variable for the entire scope, so it has to do some fixing to change this. To avoid this, we chose an approach where we move the CFG node corresponding to the global statement, such that it will only appear before branching. That way the join function can stay the same.
+
