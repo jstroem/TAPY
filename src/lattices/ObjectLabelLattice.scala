@@ -61,7 +61,7 @@ case class BuiltInClassObjectLabel(name: String, klass: BuiltIn.BuiltInClass) ex
 case class BuiltInFunctionObjectLabel(name: String, function: BuiltIn.BuiltInFunction) extends CallableObjectLabel() {
   override def toString() = s"Built In Function ${name}"
 }
-case class BuiltInMethodObjectLabel(function: BuiltInFunctionObjectLabel) extends CallableObjectLabel() {
+case class BuiltInMethodObjectLabel(instance: ObjectLabel, function: BuiltInFunctionObjectLabel) extends CallableObjectLabel() {
  override def toString() = s"Built In Method: ${function}" 
 }
 

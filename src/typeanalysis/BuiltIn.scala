@@ -95,7 +95,10 @@ object BuiltIn {
     val valueReference = ValueLattice.setObjectLabels(Set(label))
 
     var appendFunctionLabel = BuiltInFunctionObjectLabel("append", new BuiltInFunction() {
-      def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt = state
+      def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt = {
+        println("list append called")
+        state
+      }
       var name = "list append"
     })
 

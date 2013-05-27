@@ -39,6 +39,7 @@ trait Calls extends Logger {
           val obj = HeapLattice.getObject(node.getHeap(solution), label)
           label match {
             case label: BuiltInFunctionObjectLabel => handleBuiltInFunctionCall(node, afterCallNode, label, acc)
+            case label: BuiltInMethodObjectLabel => handleBuiltInMethodCall(node, afterCallNode, label, acc)
             case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: BuiltInClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
@@ -102,7 +103,7 @@ trait Calls extends Logger {
               case valueLabel : BuiltInFunctionObjectLabel => 
                 val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
 
-                val methodLabel = BuiltInMethodObjectLabel(valueLabel)
+                val methodLabel = BuiltInMethodObjectLabel(instanceLabel, valueLabel)
                 val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
                 val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
 
@@ -153,6 +154,10 @@ trait Calls extends Logger {
     } else {
       throw new NotImplementedException("TypeError: Trying to call non-callable object")
     }
+  }
+
+  def handleBuiltInMethodCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInMethodObjectLabel, solution: Elt): Elt = {
+    label.function.function.execute(solution, ValueLattice.setObjectLabels(Set(label.instance)) :: callNode.argRegs.map((reg) => callNode.getRegisterValue(solution, reg)))
   }
   
   def handleBuiltInFunctionCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInFunctionObjectLabel, solution: Elt): Elt = {
