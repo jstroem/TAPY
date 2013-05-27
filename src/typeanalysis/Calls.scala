@@ -37,11 +37,11 @@ trait Calls extends Logger {
       } else {
         ValueLattice.getObjectLabels(function).foldLeft(tmp) {(acc, label) =>
           val obj = HeapLattice.getObject(node.getHeap(solution), label)
-          
           label match {
             case label: BuiltInFunctionObjectLabel => handleBuiltInFunctionCall(node, afterCallNode, label, acc)
             case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
+            case label: BuiltInClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
             case label: BoundMethodObjectLabel => handleBoundMethodObjectCall(node, afterCallNode, label, acc)
             case label: WrapperObjectLabel =>
@@ -67,13 +67,14 @@ trait Calls extends Logger {
     val instanceLabel = classLabel match {
       case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel(label, callNode)
       case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel(label, callNode)
+      case label: BuiltInClassObjectLabel => label.klass.createInstanceObjectLabel(label, callNode)
       case label => throw new InternalError()
     }
     
     val instanceValue = ValueLattice.setObjectLabels(Set(instanceLabel))
     
     var tmp = callNode.updateHeap(solution, instanceLabel, ObjectLattice.setProperty("__class__", PropertyLattice.setValue(ValueLattice.setObjectLabels(Set(classLabel)))))
-    
+
     tmp = ObjectLattice.getProperties(classObj) match {
       case PropertiesLattice.Top() => throw new NotImplementedException()
       case PropertiesLattice.Concrete(classProperties) =>
@@ -98,7 +99,15 @@ trait Calls extends Logger {
                 
                 val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
                 Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
-                
+              case valueLabel : BuiltInFunctionObjectLabel => 
+                val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
+
+                val methodLabel = BuiltInMethodObjectLabel(valueLabel)
+                val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
+                val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
+
+                val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
+                Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
               case valueLabel =>
                 throw new NotImplementedException()
             }
@@ -134,7 +143,8 @@ trait Calls extends Logger {
             }
             
             callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
-            
+          case initLabel: BuiltInMethodObjectLabel => 
+            callNode.updateStackFrame(initLabel.function.function.execute(tmp, List(instanceValue)), StackConstants.RETURN_CONSTRUCTOR, instanceValue)
           case initLabel =>
             throw new NotImplementedException("TypeError: Trying to call a non-function object")
         }
@@ -146,7 +156,7 @@ trait Calls extends Logger {
   }
   
   def handleBuiltInFunctionCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInFunctionObjectLabel, solution: Elt): Elt = {
-    label.function.execute(solution, callNode.argRegs)
+    label.function.execute(solution, callNode.argRegs.map((reg) => callNode.getRegisterValue(solution, reg)))
   }
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {
