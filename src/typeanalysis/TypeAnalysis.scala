@@ -82,12 +82,16 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   }
   
   def nodeDependencies(node: Node, solution: Elt): Set[Node] = {
-    return worklist.cfg.getSuccessors(node) ++ worklist.cfg.getExceptionSuccessors(node) ++ CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node)
+    return worklist.cfg.getSuccessors(node) ++ worklist.cfg.getExceptionSuccessors(node) ++
+        CallGraphLattice.getSuccessors(AnalysisLattice.getCallGraph(solution), node) ++
+        CallGraphLattice.getExceptionSuccessors(AnalysisLattice.getCallGraph(solution), node)
   }
   
   /**
    * Note that joinPredecessors does not join the state from __init__-ExitNodes to
    * their AfterCallNodes. This is handled by handleAfterCallNode().
+   * 
+   * Note that AfterCallNodes have special joins too.
    */
   def join(node: Node, solution: Elt): Elt = {
     val state = node match {
@@ -99,7 +103,28 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
             acc
           else
             StateLattice.leastUpperBound(acc, pred.getState(solution)))
+      
+      case AfterCallNode(_,_) =>
+        val callNodes = worklist.cfg.getPredecessors(node)
+        val exitNodes = CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         
+        val callNodesState = callNodes.foldLeft(StateLattice.bottom) {(acc, callNode) =>
+          if (exitNodes.size == 0) {
+            // This must be a constructor call, where no __init__ is defined.
+            // So we should NOT take the heap from the exit nodes!
+            StateLattice.leastUpperBound(acc, callNode.getState(solution))
+            
+          } else {
+            StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution)))
+          }
+        }
+        
+        val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
+          StateLattice.leastUpperBound(exitNode.getState(solution), acc)
+        }
+        
+        StateLattice.leastUpperBound(callNodesState, exitNodesState)
+      
       case _ =>
         val predecessors = worklist.cfg.getPredecessors(node) ++
           CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
@@ -130,9 +155,10 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
       }
       else {
         val value =
-          if (lookup != ValueLattice.bottom)
+          if (lookup != ValueLattice.bottom) {
+            log("ReadVariableNode", "Successfully read variable " + node.variable)
             lookup
-          else
+          } else
             node.variable match {
               case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
               case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
@@ -152,7 +178,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     catch {
         case e: NameError =>
           log("ReadVariableNode", e.getMessage())
-            node.setState(solution, StateLattice.bottom)
+          node.setState(solution, StateLattice.bottom)
     }
   }
   

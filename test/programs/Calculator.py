@@ -1,6 +1,6 @@
-class IllegalOperatorException(Exception):
-	def __init__(self, msg):
-		self.msg = msg
+#class IllegalOperatorException(Exception):
+#	def __init__(self, msg):
+#		self.msg = msg
 
 def calculator(a, op, b):
 	if (op == "+"):
@@ -26,10 +26,11 @@ def calculator(a, op, b):
 	return result
 
 try:
-	amodb  = 10
-	# aplusb = calculator(a, "+", b)
-	amodb  = calculator(10, "%", 20)
-	__Analysis_Dump_try__
+	# amodb  = 10
+	aplusb = calculator(10, "+", 20)
+	__Analysis_Dump_try1__
+	aminusb  = calculator(10, "-", 20)
+	__Analysis_Dump_try2__
 except:
 	err = "An error occured"
 	__Analysis_Dump_except__

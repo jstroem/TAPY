@@ -259,16 +259,7 @@ trait Calls extends Logger {
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
       log("AfterCallNode", "Returned value: " + value)
       
-      val oldValue = node.getRegisterValue(solution, node.resultReg)
-      if (value == ValueLattice.bottom) {
-        // We know with certainty that we are dealing with an uncaught exception, since
-        // functions at least return None! We should not get here: Whenever an exception is not caught
-        // from a function, it is thrown to the nearest surrounding except/finally block.
-        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.setUndefined(UndefinedLattice.top, oldValue))
-        
-      } else {
-        tmp = node.updateStackFrame(tmp, node.resultReg, ValueLattice.leastUpperBound(value, oldValue))
-      }
+      tmp = node.updateStackFrame(tmp, node.resultReg, value)
     
       // Clear the return registers:
       node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)

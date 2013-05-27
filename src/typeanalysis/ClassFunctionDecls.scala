@@ -258,6 +258,8 @@ trait ClassFunctionDecls extends Environment with Logger {
   }
   
   def handleExitNode(node: ExitNode, solution: Elt): Elt = {
+    log("ExitNode", "Handle exit node")
+    
     // Pop the current variable object
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
   }
