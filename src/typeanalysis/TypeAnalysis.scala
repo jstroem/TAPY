@@ -116,34 +116,61 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
     try {
       val lookup = Utils.findPropertyValueInScope(node, node.variable, solution)
-      val value =
-        if (lookup != ValueLattice.bottom)
-          lookup
-        else
-          node.variable match {
-            case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
-            case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
-            case "__BooleanLattice_Abstract__" => ValueLattice.setBooleanElt(BooleanLattice.Abstract())
-            case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
-            case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
-            case name =>
-              if (name.startsWith("__Analysis_Dump_") && name.endsWith("__"))
-                ValueLattice.bottom
-              else
-                throw new NameError("Name '" + name + "' is not defined.")
-          }
-      
-      node.updateStackFrame(solution, node.resultReg, value)
-    } catch {
-      case e: NameError =>
-        log("ReadVariableNode", e.getMessage())
-        node.setState(solution, StateLattice.bottom)
+      val prop = Utils.findPropertyInScope(node, node.variable, solution)
+
+      if (PropertyLattice.isGlobal(prop)) {
+        val getLast = {(l: List[ObjectLabel]) => l.last}
+        val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map(getLast)
+
+        if (varGlobalObjLabels.size != 1)
+          throw new NotImplementedException("assumption failed handleWriteVariableNode")
+
+        val globalValue = ObjectLattice.getPropertyValue(StateLattice.getHeapObject(node.getState(solution), varGlobalObjLabels.head), node.variable)
+        node.updateStackFrame(solution, node.resultReg, globalValue)
+      }
+      else {
+        val value =
+          if (lookup != ValueLattice.bottom)
+            lookup
+          else
+            node.variable match {
+              case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
+              case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
+              case "__BooleanLattice_Abstract__" => ValueLattice.setBooleanElt(BooleanLattice.Abstract())
+              case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
+              case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
+              case name =>
+                if (name.startsWith("__Analysis_Dump_") && name.endsWith("__"))
+                  ValueLattice.bottom
+                else
+                  throw new NameError("Name '" + name + "' is not defined.")
+            }
+
+        node.updateStackFrame(solution, node.resultReg, value)
+      }
+    }
+    catch {
+        case e: NameError =>
+          log("ReadVariableNode", e.getMessage())
+            node.setState(solution, StateLattice.bottom)
     }
   }
   
   def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
+    val lookup = Utils.findPropertyInScope(node, node.variable, solution)
     val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.valueReg)
-    Utils.writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
+
+    if (PropertyLattice.isGlobal(lookup)) {
+      val getLast = {(l: List[ObjectLabel]) => l.last}
+      val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map(getLast)
+
+      if (varGlobalObjLabels.size != 1)
+        throw new NotImplementedException("assumption failed handleWriteVariableNode")
+
+      Utils.writePropertyValueOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, value, solution, true)
+    }
+    else     
+      Utils.writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
   }
   
   /* Properties */
@@ -211,7 +238,6 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     }
   }
   
-  //TODO, can we use strong updates??
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
     // ObjectProperty representing a global variable
     val bottomGlobalProperty = PropertyLattice.setGlobal(GlobalLattice.Global())

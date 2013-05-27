@@ -13,6 +13,11 @@ object PropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(A
     val (_, (_, (modified, _))) = el
     modified == ModifiedLattice.top
   }
+
+  def isGlobal(el: Elt): Boolean = {
+    val (_, (_, (_, global))) = el
+    global == GlobalLattice.top
+  }
   
   /* Getters */
 
