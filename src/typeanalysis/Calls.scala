@@ -228,10 +228,17 @@ trait Calls extends Logger {
     try {
       // Join constructor call edges!
       val state = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StateLattice.bottom) {(acc, pred) =>
+        log("AfterCallNode", "Joining from " + pred)
+        
         // Check that __init__ returns None
-        val initReturnValue = StackFrameLattice.getRegisterValue(pred.getStackFrame(solution), StackConstants.RETURN)
-        if (!ValueLattice.elementIsOnlyNone(initReturnValue)) {
-          throw new TypeError("__init__() should return None (actual: " + initReturnValue + ")")
+        pred match {
+          case pred: ExitNode =>
+            val initReturnValue = StackFrameLattice.getRegisterValue(pred.getStackFrame(solution), StackConstants.RETURN)
+            if (!ValueLattice.elementIsOnlyNone(initReturnValue)) {
+              throw new TypeError("__init__() should return None (actual: " + initReturnValue + ")")
+            }
+            
+          case _ => // Happens when there is no __init__
         }
         
         // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
@@ -251,7 +258,9 @@ trait Calls extends Logger {
       node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
       
     } catch {
-      case e: TypeError => AnalysisLattice.setState(solution, node)
+      case e: TypeError =>
+        log("AfterCallNode", "TypeError: __init__() should return None")
+        AnalysisLattice.setState(solution, node)
     }
   }
   

@@ -7,4 +7,7 @@ class C(object):
 	def getX(self):
 		return self.x
 
+__Analysis_Dump_Here__
+
 c = C()
+x = c.getX()

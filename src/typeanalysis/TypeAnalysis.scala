@@ -102,14 +102,17 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
             StateLattice.leastUpperBound(acc, pred.getState(solution)))
       
       case AfterCallNode(_,_) =>
+        
         val callNodes = worklist.cfg.getPredecessors(node)
         val exitNodes = CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         
         val callNodesState = callNodes.foldLeft(StateLattice.bottom) {(acc, callNode) =>
+          log("Join", "Joining to after call node from call node " + callNode)
           StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution)))
         }
         
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
+        log("Join", "Joining to after call node from exit node " + exitNode)
           StateLattice.leastUpperBound(exitNode.getState(solution), acc)
         }
         

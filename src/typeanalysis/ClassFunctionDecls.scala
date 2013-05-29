@@ -149,6 +149,7 @@ trait ClassFunctionDecls extends Environment with Logger {
                 label match {
                   case label: NewStyleClassObjectLabel => false
                   case label: OldStyleClassObjectLabel => acc
+                  case BuiltIn.objectLabel => true
                   case _ =>
                     // Does not occur: value was checked above
                     throw new InternalError()
@@ -185,6 +186,7 @@ trait ClassFunctionDecls extends Environment with Logger {
     
     // Update lattice
     if (isDefinatelyNewStyleClassObject(node, node.bases, solution)) {
+      log("ClassDeclNode", "Class " + node.entry.classDef.getInternalName() + " is definately a new style class")
       val classObjectValue = ValueLattice.setObjectLabels(Set(newStyleClassObjectLabel))
       
       val result = node.updateHeap(solution, newStyleClassObjectLabel, classObject)
