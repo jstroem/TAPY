@@ -25,17 +25,15 @@ trait Modules extends Environment {
     var tmp = node.name match {
       case "__builtin__" =>
         val moduleObject = ObjectLattice.updatePropertyValues(
-          Set(("object", BuiltIn.objectValue),
-              ("None", BuiltIn.noneValue),
-              ("list", ValueLattice.setObjectLabels(Set(BuiltIn.PyList.label))),
+          Set(("None", BuiltIn.noneValue),
+              ("object", BuiltIn.PyObject.valueReference),
               ("float", BuiltIn.floatFunctionValue)))
 
         
               
         node.updateHeap(solution,
-          BuiltIn.PyList.getHeapSet() ++ 
-          Set((BuiltIn.objectLabel, ObjectLattice.bottom),
-              (BuiltIn.floatFunctionLabel, ObjectLattice.bottom),
+          BuiltIn.PyObject.getHeapSet() ++
+          Set((BuiltIn.floatFunctionLabel, ObjectLattice.bottom),
               (moduleLabel, moduleObject)))
             
       case _ =>
@@ -56,7 +54,7 @@ trait Modules extends Environment {
     if (!loadedModules.contains(moduleQualifiedName)) {
       // Add the module to the CFG
       loadedModules = loadedModules + moduleQualifiedName
-      
+
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))
       
       // Update the environment

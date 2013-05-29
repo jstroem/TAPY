@@ -72,14 +72,12 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   }
   
   def constraintWrapper(node: Node, solution: Elt, constraint: Elt => Elt): Elt = {
-    val newSolution = constraint(join(node, solution))
-    /*
-    if (solution != newSolution) {
+   val newSolution = constraint(join(node, solution))
+   /* if (solution != newSolution) {
       println("Solution changed for node: " + node)
       println(AnalysisLattice.diff(solution, newSolution, node))
       println()
-    }
-    */
+    }*/
     newSolution
   }
   

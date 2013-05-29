@@ -55,13 +55,17 @@ case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, all
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
-case class BuiltInClassObjectLabel(name: String) extends CallableObjectLabel() {
-  override def toString() = s"Built In Class $name"
+case class BuiltInClassObjectLabel(name: String, klass: BuiltIn.BuiltInClass) extends ClassObjectLabel() {
+  override def toString() = s"Built In Class ${name}"
 }
-case class BuiltInFunctionObjectLabel(name: String, function: BuiltIn.BuiltInFunction) extends ObjectLabel() {
-  override def toString() = s"Built In Function $name"
+case class BuiltInFunctionObjectLabel(name: String, function: BuiltIn.BuiltInFunction) extends CallableObjectLabel() {
+  override def toString() = s"Built In Function ${name}"
 }
-case class BuiltInInstanceObjectLabel[T](obj: T, classLabel: BuiltInClassObjectLabel) extends ObjectLabel() {
+case class BuiltInMethodObjectLabel(instance: ObjectLabel, function: BuiltInFunctionObjectLabel) extends CallableObjectLabel() {
+ override def toString() = s"Built In Method: ${function}" 
+}
+
+case class BuiltInInstanceObjectLabel(classLabel: BuiltInClassObjectLabel) extends CallableObjectLabel() {
   override def toString() = "Built In instance"
 }
 
