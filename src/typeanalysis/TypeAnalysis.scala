@@ -69,6 +69,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     // Misc
     case node: GlobalNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleGlobalNode(node, solution)))}
     case node: AssertNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleAssertNode(node, solution)))}
+    case node: HasAttributeNode => {(solution => constraintWrapper(node, solution, ((solution) => handleHasAttributeNode(node, solution))))}
     
     case node => {(solution) => constraintWrapper(node, solution, ((solution) => solution)) }
   }
@@ -309,5 +310,10 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     } else {
       solution
     }
+  }
+  
+  def handleHasAttributeNode(node: HasAttributeNode, solution: Elt): Elt = {
+    log("HasAttributeNode", "TODO")
+    node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
   }
 }
