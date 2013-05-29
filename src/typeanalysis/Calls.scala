@@ -100,6 +100,7 @@ trait Calls extends Logger {
                 
                 val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
                 Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
+                
               case valueLabel : BuiltInFunctionObjectLabel => 
                 val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
 
@@ -109,6 +110,7 @@ trait Calls extends Logger {
 
                 val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
                 Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
+                
               case valueLabel =>
                 throw new NotImplementedException()
             }
@@ -124,6 +126,8 @@ trait Calls extends Logger {
     val init = ObjectLattice.getPropertyValue(instanceObj, "__init__")
     if (init == ValueLattice.bottom) {
       // __init__ is not defined
+      tmp = AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, afterCallNode, false, true)))
+      
       callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
       
     } else if (ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](init)) {
@@ -264,7 +268,7 @@ trait Calls extends Logger {
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
       log("AfterCallNode", "Returned value: " + value)
       
-      tmp = node.updateStackFrame(tmp, node.resultReg, value)
+      tmp = node.updateStackFrame(tmp, node.resultReg, value, true)
     
       // Clear the return registers:
       node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
