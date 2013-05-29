@@ -90,6 +90,7 @@ object BuiltIn {
     }
   }
 
+/** Built in implementation of List. Mockup is used instead
 	object PyList extends BuiltInClass {
     val label = BuiltInClassObjectLabel("list", this)
     val valueReference = ValueLattice.setObjectLabels(Set(label))
@@ -121,5 +122,5 @@ object BuiltIn {
     def createInstanceObjectLabel(classLabel: BuiltInClassObjectLabel, callNode : Node) : ObjectLabel = {
       BuiltInInstanceObjectLabel(classLabel)
     }
-	}
+	}**/
 }
