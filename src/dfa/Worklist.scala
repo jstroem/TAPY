@@ -52,7 +52,7 @@ class Worklist[T] (analysis: Analysis[T], lattice: Lattice[T], var cfg: ControlF
     val file = path + name + ".py"
     val parser: BaseParser = new BaseParser(new ANTLRFileStream(path + name + ".py"), path + name + ".py", "ascii")
     val ast = parser.parseModule()
-    val cfg = ast.accept(new CFGGeneratorVisitor(name)).minify()
+    val cfg = ast.accept(new CFGGeneratorVisitor(name)).minify().normalize()
     if (cfg.exitNodes.size == 1) cfg else cfg.append(NoOpNode("Module Exit"))
   }
   

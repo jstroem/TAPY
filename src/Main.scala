@@ -43,7 +43,7 @@ object Main {
       println("\n----------\n")
       println("Generation CFG of \"" + file + "\"\n")
       var now = System.currentTimeMillis();
-      var cfgMin = ast.accept(new CFGGeneratorVisitor("__main__")).minify()
+      var cfgMin = ast.accept(new CFGGeneratorVisitor("__main__")).minify().normalize()
       cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
