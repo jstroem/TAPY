@@ -37,7 +37,7 @@ object BuiltIn {
 
   trait BuiltInFunction {
     def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt
-    var name : String
+    val name : String
   }
 
   /* Utility functions */
@@ -61,28 +61,42 @@ object BuiltIn {
     def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt = {
       state
     }
-    var name = "float"
+    val name = "float"
   });
   val floatFunctionValue = ValueLattice.setObjectLabels(Set(floatFunctionLabel))
 
   /** Classes **/
+  
   object PyObject extends BuiltInClass {
     val label = BuiltInClassObjectLabel("object", this)
     val valueReference = ValueLattice.setObjectLabels(Set(label))
 
-    var initFunctionLabel = BuiltInFunctionObjectLabel("__init__", new BuiltInFunction() {
-      var name = "object __init__"
+    val initFunctionLabel = BuiltInFunctionObjectLabel("__init__", new BuiltInFunction() {
+      val name = "object __init__"
+        
       def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt = {
+        println("__INIT__")
         state
       }
     })
 
+    val getAttributeFunctionLabel = BuiltInFunctionObjectLabel("__getattribute__", new BuiltInFunction() {
+      val name = "object __getattribute__"
+      
+      def execute(state: AnalysisLattice.Elt, args: List[ValueLattice.Elt]) : AnalysisLattice.Elt = {
+        println("__GETATTRIBUTE__")
+        state
+      }
+    })
 
-    val objectInstance = ObjectLattice.updatePropertyValues(Set(("__init__", ValueLattice.setObjectLabels(Set(initFunctionLabel)))))
+    val objectInstance = ObjectLattice.updatePropertyValues(
+      Set(("__init__", ValueLattice.setObjectLabels(Set(initFunctionLabel))),
+          ("__getattribute__", ValueLattice.setObjectLabels(Set(getAttributeFunctionLabel)))))
 
     def getHeapSet() = {
       Set[(ObjectLabel, ObjectLattice.Elt)]((label, objectInstance),
-                                            (initFunctionLabel, ObjectLattice.bottom))
+                                            (initFunctionLabel, ObjectLattice.bottom),
+                                            (getAttributeFunctionLabel, ObjectLattice.bottom))
     }
 
     def createInstanceObjectLabel(classLabel: BuiltInClassObjectLabel, callNode : Node) : ObjectLabel = {

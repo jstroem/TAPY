@@ -5,16 +5,19 @@ all: clean compile run
 clean:
 	rm -rf bin
 	rm -f test/*.gif
+	rm -f test/*.png
 	rm -f test/*.ast
 	rm -f test/*.dot
 	rm -f test/*.res.txt
 	rm -f test/*/*.dot
 	rm -f test/*/*.ast
 	rm -f test/*/*.gif
+	rm -f test/*/*.png
 	rm -f test/*/*.res.txt
 	rm -f test/*/*/*.dot
 	rm -f test/*/*/*.ast
 	rm -f test/*/*/*.gif
+	rm -f test/*/*/*.png
 	rm -f test/*/*/*.res.txt
 
 compile:

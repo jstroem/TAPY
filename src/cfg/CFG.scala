@@ -261,11 +261,11 @@ case class ControlFlowGraph(entryNodes: Set[Node],
   
   def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true, callGraph: CallGraphLattice.Elt = CallGraphLattice.bottom): ControlFlowGraph = {
     GraphvizExporter.export(generateGraphvizGraph(doCollapse, callGraph), new PrintStream(fileName + ".cfg.dot"))
-    Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.gif " + fileName + ".cfg.dot")
+    Runtime.getRuntime().exec("dot -Tpng -o " + fileName + ".cfg.png " + fileName + ".cfg.dot")
     
     if (doMinify) {
       GraphvizExporter.export(minify().generateGraphvizGraph(doCollapse, callGraph), new PrintStream(fileName + ".cfg.min.dot"))
-      Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".cfg.min.gif " + fileName + ".cfg.min.dot")
+      Runtime.getRuntime().exec("dot -Tpng -o " + fileName + ".cfg.min.png " + fileName + ".cfg.min.dot")
     }
   
     return this
