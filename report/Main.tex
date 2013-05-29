@@ -26,6 +26,7 @@
 \usepackage{relsize} 
 \usepackage{fancyvrb}
 \usepackage{tabularx}
+%\usepackage{microtype}
 \usepackage{rotating}
 \usepackage{framed}
 \usepackage{longtable}
@@ -47,33 +48,33 @@
 subrefformat=parens}
 \usepackage{lineno}
 \usepackage{minted}
-\providecommand{\inlinecode}[1]{\texttt{#1}}
+\providecommand{\inlinecode}[1]{\texttt{\allowbreak#1}}
 \providecommand{\todo}[1]{\addcontentsline{tdo}{todo}{\protect{#1}}\marginpar{\textcolor{red}{#1}}}
 \newcommand{\tab}[1]{\hspace{.2\textwidth}\rlap{#1}}
 \newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\\}
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
 \lstset{
-	backgroundcolor=\color{lbcolor},
-	tabsize=4,
-	rulecolor=,
-	language=matlab,
-        basicstyle=\scriptsize,
-        upquote=true,
-        aboveskip={1.5\baselineskip},
-        columns=fixed,
-        showstringspaces=false,
-        extendedchars=true,
-        breaklines=true,
-        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-        frame=single,
-        showtabs=false,
-        showspaces=false,
-        showstringspaces=false,
-        identifierstyle=\ttfamily,
-        keywordstyle=\color[rgb]{0,0,1},
-        commentstyle=\color[rgb]{0.133,0.545,0.133},
-        stringstyle=\color[rgb]{0.627,0.126,0.941},
+  backgroundcolor=\color{lbcolor},
+  tabsize=4,
+  rulecolor=,
+  language=matlab,
+  basicstyle=\scriptsize,
+  upquote=true,
+  aboveskip={1.5\baselineskip},
+  columns=fixed,
+  showstringspaces=false,
+  extendedchars=true,
+  breaklines=true,
+  prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+  frame=single,
+  showtabs=false,
+  showspaces=false,
+  showstringspaces=false,
+  identifierstyle=\ttfamily,
+  keywordstyle=\color[rgb]{0,0,1},
+  commentstyle=\color[rgb]{0.133,0.545,0.133},
+  stringstyle=\color[rgb]{0.627,0.126,0.941},
 }
 
 \makepagestyle{plain}
