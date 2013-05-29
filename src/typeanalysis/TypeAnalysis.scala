@@ -40,6 +40,9 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     
     case node: ReadPropertyNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleReadPropertyNode(node, solution)))}
     case node: WritePropertyNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleWritePropertyNode(node, solution)))}
+
+    case node: ReadIndexableNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleReadIndexableNode(node, solution)))}
+    case node: WriteIndexableNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleWriteIndexableNode(node, solution)))}
     
     // Operators
     case node: CompareOpNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleCompareOpNode(node, solution)))}
@@ -164,6 +167,9 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
               case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
               case "__BooleanLattice_Abstract__" => ValueLattice.setBooleanElt(BooleanLattice.Abstract())
               case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
+              case "__IntegerLattice_Abstract__" => ValueLattice.setIntegerElt(IntegerLattice.Abstract())
+              case "__NotImplementedLattice_Concrete__" => ValueLattice.setNotImplemented(NotImplementedLattice.top)
+              case "__EllipsisLattice_Concrete__" => ValueLattice.setEllipsis(EllipsisLattice.top)
               case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
               case name =>
                 if (name.startsWith("__Analysis_Dump_") && name.endsWith("__"))
@@ -264,6 +270,15 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     }
   }
   
+  /** Indexable values **/
+  def handleReadIndexableNode(node: ReadIndexableNode, solution: Elt): Elt = {
+    solution
+  }
+  
+  def handleWriteIndexableNode(node: WriteIndexableNode, solution: Elt): Elt = {
+    solution
+  }
+
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
     // ObjectProperty representing a global variable
     val bottomGlobalProperty = PropertyLattice.setGlobal(GlobalLattice.Global())

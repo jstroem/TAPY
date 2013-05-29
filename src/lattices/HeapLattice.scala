@@ -27,7 +27,7 @@ object HeapLattice extends MapLattice[ObjectLabel, ObjectLattice.Elt](ObjectLatt
   def exportToFile(el: Map[ObjectLabel, ObjectLattice.Elt], fileName: String): Unit = exportToFile(Concrete(el), fileName)
   def exportToFile(el: Elt, fileName: String): Unit = {
     GraphvizExporter.export(generateGraphvizGraph(el), new PrintStream(fileName + ".heap.dot"))
-    Runtime.getRuntime().exec("dot -Tgif -o " + fileName + ".heap.gif " + fileName + ".heap.dot")
+    Runtime.getRuntime().exec("dot -Tpng -o " + fileName + ".heap.png " + fileName + ".heap.dot")
   }
 
   /* Dot export */
