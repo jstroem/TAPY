@@ -27,10 +27,8 @@ trait Modules extends Environment {
         val moduleObject = ObjectLattice.updatePropertyValues(
           Set(("None", BuiltIn.noneValue),
               ("object", BuiltIn.objectValue)))
-
         
-              
-        node.updateHeap(solution,Set((moduleLabel, moduleObject)))
+        node.updateStackFrame(node.updateHeap(solution,Set((moduleLabel, moduleObject))), StackConstants.BUILTIN_MODULE, ValueLattice.setObjectLabels(Set(moduleLabel)), true)
             
       case _ =>
         node.updateHeap(solution, Set((moduleLabel, ObjectLattice.bottom)))

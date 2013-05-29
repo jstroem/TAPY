@@ -7,6 +7,7 @@ lib/cachedir/
 
 # graphviz specific
 *.gif
+*.png
 *.dot
 
 # sbt specific

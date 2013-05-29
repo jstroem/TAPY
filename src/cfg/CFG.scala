@@ -54,6 +54,11 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return new ControlFlowGraph(entryNodes, exitNodes ++ newExitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
   }
 
+  def addEntryNode(newEntryNode: Node): ControlFlowGraph = addEntryNodes(Set(newEntryNode))
+  def addEntryNodes(newEntryNodes: Set[Node]): ControlFlowGraph = {
+    return new ControlFlowGraph(entryNodes ++ newEntryNodes, exitNodes, exceptExitNodes, nodes, edges, exceptionEdges)
+  }
+
   def addExceptExitNodes(newExceptExitNodes: Set[Node]): ControlFlowGraph = {
     return new ControlFlowGraph(entryNodes, exitNodes, exceptExitNodes ++ newExceptExitNodes, nodes, edges, exceptionEdges)
   }
@@ -87,6 +92,26 @@ case class ControlFlowGraph(entryNodes: Set[Node],
       .removeEdges(node, getSuccessors(node))
       .removeExceptEdges(getExceptionPredecessors(node), node)
       .removeExceptEdges(node, getExceptionSuccessors(node))
+  }
+
+  def replace(node: Node, newPart: ControlFlowGraph) : ControlFlowGraph = {
+    val pred = getPredecessors(node)
+    val succ = getSuccessors(node)
+    val predExcept = getExceptionPredecessors(node)
+    val succExcept = getExceptionSuccessors(node)
+    var tmpCfg = removeNodeAndEdges(node).insert(newPart,pred,succ)
+                                         .connectExcept(predExcept,newPart.entryNodes)
+                                         .connectExcept(newPart.nodes,succExcept)
+    if (exitNodes.contains(node))
+      tmpCfg = tmpCfg.addExitNodes(newPart.exitNodes)
+
+    if (entryNodes.contains(node))
+      tmpCfg = tmpCfg.addEntryNodes(newPart.entryNodes)
+
+    if (exceptExitNodes.contains(node))
+      tmpCfg = tmpCfg.addExceptExitNodes(newPart.exceptExitNodes)
+
+    return tmpCfg
   }
   
   def removeNoOpNode(node: Node): ControlFlowGraph = node match {
@@ -257,6 +282,10 @@ case class ControlFlowGraph(entryNodes: Set[Node],
     return nodesToRemove.foldLeft(this) {(acc, node) => 
       acc.removeNoOpNode(node)
     }
+  }
+
+  def normalize(): ControlFlowGraph = {
+    return CFGNormalizer.normalize(this)
   }
   
   def exportToFile(fileName: String, doCollapse : Boolean = true, doMinify: Boolean = true, callGraph: CallGraphLattice.Elt = CallGraphLattice.bottom): ControlFlowGraph = {
