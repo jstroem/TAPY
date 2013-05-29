@@ -148,8 +148,14 @@ trait Calls extends Logger {
             }
             
             callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
-          case initLabel: BuiltInMethodObjectLabel => 
+            
+          case initLabel: BuiltInMethodObjectLabel =>
+            // Normal call edges
+            tmp = AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, afterCallNode, false, true)))
+            
+            // TODO: Call node arguments should be passed on
             callNode.updateStackFrame(initLabel.function.function.execute(tmp, List(instanceValue)), StackConstants.RETURN_CONSTRUCTOR, instanceValue)
+            
           case initLabel =>
             throw new NotImplementedException("TypeError: Trying to call a non-function object")
         }
