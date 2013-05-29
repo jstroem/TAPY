@@ -44,7 +44,12 @@ def onC(self,args):
 def onB(self,args):
 	print "onB", self, args
 
+def onB2(self,args):
+	print "onB2", self, args
+
+
 x.on("B", onB)
+x.on("B", onB2)
 x.on("C", onC)
 
 x.trigger("B", [1,2])
@@ -53,5 +58,6 @@ x.trigger("C", [1,2,3])
 x.off("B", onB)
 x.trigger("B", [1,2,3,4])
 
+x.off("B")
 x.off("C")
 x.trigger("C", [1,2,3,4,5])
