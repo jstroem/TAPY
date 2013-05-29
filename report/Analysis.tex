@@ -5,9 +5,9 @@ Inspired by TAJS we have a lattice for abstract values, $Value$, from which we b
 The concrete lattices follows below.
 
 \begin{eqnarray*}
-Value =&amp; Undefined \times None \times NotImplemented \times Ellipsis \\
-	   &amp; \times Boolean \times Integer \times Float \times Long \\
-       &amp; \times Complex \times String \times P(ObjectLabel)
+Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
+        & \times Boolean \times Integer \times Float \times Long \\
+        & \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
 
 The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$ lattices all contains two nodes, top and bottom. In Python when a function does not return a value, it is the constant \inlinecode{None}\cite{pyref.constants} which is returned, e.g.:
@@ -91,6 +91,6 @@ For this particular scope example we will have the following objects on the heap
 When entering the function (calling it) the scope object of the function a (or more precise, its label) will be pushed onto the current scope chain (which at the function call will be the list containing the \inlinecode{\_\_main\_\_} object). When the variable \inlinecode{x} is read, \inlinecode{x} is looked up in the scope chain starting from the head of it. For this particular example \inlinecode{x} is found on the \inlinecode{\_\_main\_\_} object. In the next chapter we describe our work towards handling functions including why we need these three different kinds of objects on the heap. Handling functions of course includes populating the call graph such that the CFG becomes interprocedural.
 
 \begin{eqnarray*}
-CallGraph =&amp; (Node \times Node) \\
-Analysis =&amp; (Node \rightarrow State) \times CallGraph
+CallGraph = & (Node \times Node) \\
+Analysis = & (Node \rightarrow State) \times CallGraph
 \end{eqnarray*}

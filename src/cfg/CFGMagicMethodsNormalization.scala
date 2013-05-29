@@ -13,7 +13,7 @@ import java.io._
 import tapy.constants
 
 object CFGMagicMethodsNormalization {
-  def insertGetAttribute(node: ReadPropertyNode): ControlFlowGraph = {
+  def insertGetAttr(node: ReadPropertyNode): ControlFlowGraph = {
     val tryHasAttrNode = new HasAttributeNode(node.baseReg, "__getattribute__", Registers.next())
     val tryIfNode = new IfNode(tryHasAttrNode.resultReg)
     val tryThenNode1 = new ReadPropertyNode(node.baseReg, "__getattribute__", Registers.next())
@@ -43,25 +43,5 @@ object CFGMagicMethodsNormalization {
       .connectExcept(Set[Node](tryThenNode1, tryThenNode2, tryThenNode3, tryThenNode4, tryElseNode), exceptNode)
     
     return result
-  }
-  
-  def insertSetAttr(node: WriteVariableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
-  }
-  
-  def insertDelAttr(node: DelVariableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
-  }
-  
-  def insertGetItem(node: ReadIndexableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
-  }
-  
-  def insertSetItem(node: WriteIndexableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
-  }
-  
-  def insertDelItem(node: DelIndexableNode): ControlFlowGraph = {
-    throw new NotImplementedException()
   }
 }

@@ -65,7 +65,6 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     // Exceptions
     case node: RaiseNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleRaiseNode(node, solution)))}
     case node: ExceptNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExceptNode(node, solution)))}
-    // case node: TryExceptElseEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleTryExceptElseEntryNode(node, solution)))}
     
     // Misc
     case node: GlobalNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleGlobalNode(node, solution)))}
@@ -76,11 +75,6 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
   
   def constraintWrapper(node: Node, solution: Elt, constraint: Elt => Elt): Elt = {
    val newSolution = constraint(join(node, solution))
-   /* if (solution != newSolution) {
-      println("Solution changed for node: " + node)
-      println(AnalysisLattice.diff(solution, newSolution, node))
-      println()
-    }*/
     newSolution
   }
   
@@ -112,14 +106,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         val exitNodes = CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         
         val callNodesState = callNodes.foldLeft(StateLattice.bottom) {(acc, callNode) =>
-          if (exitNodes.size == 0) {
-            // This must be a constructor call, where no __init__ is defined.
-            // So we should NOT take the heap from the exit nodes!
-            StateLattice.leastUpperBound(acc, callNode.getState(solution))
-            
-          } else {
-            StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution)))
-          }
+          StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution)))
         }
         
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
