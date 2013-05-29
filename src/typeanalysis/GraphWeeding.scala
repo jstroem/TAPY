@@ -9,11 +9,12 @@ object GraphFix {
       return seen
 
     return (g.getSuccessors(n) ++ g.getExceptionSuccessors(n)).foldLeft(Set[Node]()) ((acc, node) => {
-      acc ++ reachable(node, g, (seen+node))
+      acc ++ reachable(node, g, (seen+n)) + n
     })
   }
 
   def moveGlobal(g: ControlFlowGraph): ControlFlowGraph = {
+
     val entries = g.nodes.foldLeft (Set[Node]()) {(acc, n) => n match {
       case n: FunctionEntryNode => acc + n
       case n: ModuleEntryNode => acc + n
@@ -26,18 +27,16 @@ object GraphFix {
       case _ => false
     })
 
+
     entries.foldLeft (g) ((graph, entry) => {
       val globals = reachable(entry, graph).filter(globalFilter)
-
       globals.foldLeft(graph) ((cfg, global) => {
+        println("removing " + global)
         val normalSucc = cfg.getSuccessors(entry)
         val exceptSucc = cfg.getExceptionSuccessors(entry)
           cfg.removeNodeAndEdges(global)
-             .removeEdges(entry, normalSucc)
-             .removeExceptEdges(entry, exceptSucc)
-             .connect(entry, global)
-             .connect(global, normalSucc)
-             .connectExcept(global, exceptSucc)
+             .connect(cfg.getPredecessors(global), cfg.getSuccessors(global))
+            //.connectExcept(cfg.getExceptionPredecessors(global), cfg.getExceptionSuccessors(global))
       })
     })
   }
