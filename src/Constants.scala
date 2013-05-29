@@ -29,4 +29,5 @@ object StackConstants extends Enumeration {
 	val EXCEPTION = -3
 	val TRACE = -4
 	val EXCEPTION_TYPE = -5
+  val BUILTIN_MODULE = -6
 }
