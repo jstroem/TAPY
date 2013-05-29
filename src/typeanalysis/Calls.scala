@@ -38,11 +38,8 @@ trait Calls extends Logger {
         ValueLattice.getObjectLabels(function).foldLeft(tmp) {(acc, label) =>
           val obj = HeapLattice.getObject(node.getHeap(solution), label)
           label match {
-            case label: BuiltInFunctionObjectLabel => handleBuiltInFunctionCall(node, afterCallNode, label, acc)
-            case label: BuiltInMethodObjectLabel => handleBuiltInMethodCall(node, afterCallNode, label, acc)
             case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
-            case label: BuiltInClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
             case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
             case label: BoundMethodObjectLabel => handleBoundMethodObjectCall(node, afterCallNode, label, acc)
             case label: WrapperObjectLabel =>
@@ -68,7 +65,6 @@ trait Calls extends Logger {
     val instanceLabel = classLabel match {
       case label: NewStyleClassObjectLabel => NewStyleInstanceObjectLabel(label, callNode)
       case label: OldStyleClassObjectLabel => OldStyleInstanceObjectLabel(label, callNode)
-      case label: BuiltInClassObjectLabel => label.klass.createInstanceObjectLabel(label, callNode)
       case label => throw new InternalError()
     }
     
@@ -98,16 +94,6 @@ trait Calls extends Logger {
                 val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
                 val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
                 
-                val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
-                Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
-                
-              case valueLabel : BuiltInFunctionObjectLabel => 
-                val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
-
-                val methodLabel = BuiltInMethodObjectLabel(instanceLabel, valueLabel)
-                val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
-                val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
-
                 val tmp = callNode.updateHeap(acc, methodLabel, methodObject)
                 Utils.writePropertyValueOnObjectLabelToHeap(callNode, property, instanceLabel, methodValue, tmp)
                 
@@ -149,13 +135,6 @@ trait Calls extends Logger {
             
             callNode.updateStackFrame(tmp, StackConstants.RETURN_CONSTRUCTOR, instanceValue)
             
-          case initLabel: BuiltInMethodObjectLabel =>
-            // Normal call edges
-            tmp = AnalysisLattice.updateCallGraph(tmp, Set((null, callNode, null, afterCallNode, false, true)))
-            
-            // TODO: Call node arguments should be passed on
-            callNode.updateStackFrame(initLabel.function.function.execute(tmp, List(instanceValue)), StackConstants.RETURN_CONSTRUCTOR, instanceValue)
-            
           case initLabel =>
             throw new NotImplementedException("TypeError: Trying to call a non-function object")
         }
@@ -164,14 +143,6 @@ trait Calls extends Logger {
     } else {
       throw new NotImplementedException("TypeError: Trying to call non-callable object")
     }
-  }
-
-  def handleBuiltInMethodCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInMethodObjectLabel, solution: Elt): Elt = {
-    label.function.function.execute(solution, ValueLattice.setObjectLabels(Set(label.instance)) :: callNode.argRegs.map((reg) => callNode.getRegisterValue(solution, reg)))
-  }
-  
-  def handleBuiltInFunctionCall(callNode: CallNode, afterCallNode: AfterCallNode, label: BuiltInFunctionObjectLabel, solution: Elt): Elt = {
-    label.function.execute(solution, callNode.argRegs.map((reg) => callNode.getRegisterValue(solution, reg)))
   }
   
   def handleFunctionObjectCall(callNode: CallNode, afterCallNode: AfterCallNode, functionLabel: FunctionObjectLabel, solution: Elt): Elt = {

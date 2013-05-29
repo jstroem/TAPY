@@ -22,7 +22,7 @@ object ClassMRO {
    */
   def linearize(classLabel: ObjectLabel, state: StateLattice.Elt, indent: String = ""): Set[List[ObjectLabel]] = {
     val (name, bases) = classLabel match {
-      case BuiltIn.PyObject.label =>  ("object", List())
+      case BuiltIn.objectLabel =>  ("object", List())
       case NewStyleClassObjectLabel(_, entryNode, _, bases) => (entryNode.classDef.getInternalName(), bases)
     }
     

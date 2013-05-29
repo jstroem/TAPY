@@ -203,6 +203,13 @@ extends ProductLattice(
      string == StringLattice.bottom && objectLabels != ObjectLabelLattice.bottom) && (objectLabels.foldLeft(true) {(acc, objectLabel) => acc && manifest[T].erasure.isInstance(objectLabel)})
   }
 
+  def elementIsSubsciptable(el: Elt): Boolean = {
+    val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
+    (undefined == UndefinedLattice.bottom && none == NoneLattice.bottom && notImplemented == NotImplementedLattice.bottom && ellipsis == EllipsisLattice.bottom && 
+     boolean == BooleanLattice.bottom && integer == IntegerLattice.bottom && float == FloatLattice.bottom && long == LongLattice.bottom && complex == ComplexLattice.bottom && 
+     (string != StringLattice.bottom || objectLabels != ObjectLabelLattice.bottom))
+  }
+
   def elementIsDefinatelyTruthValue(el: Elt, which: Boolean): Boolean = {
     splitElement(el).foldLeft(true) {(acc, el) =>
       val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)

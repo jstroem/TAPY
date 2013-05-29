@@ -109,7 +109,7 @@ trait ClassFunctionDecls extends Environment with Logger {
                 label match {
                   case label: NewStyleClassObjectLabel => acc
                   case label: OldStyleClassObjectLabel => false
-                  case BuiltIn.PyObject.label => true
+                  case BuiltIn.objectLabel => true
                   case _ => throw new NotImplementedException("Using something that is not a class as base class.")
                 }
               }
@@ -213,7 +213,6 @@ trait ClassFunctionDecls extends Environment with Logger {
       objectLabel match {
       case objectLabel: NewStyleClassObjectLabel => objectLabel.entryNode
       case objectLabel: OldStyleClassObjectLabel => objectLabel.entryNode
-      case objectLabel : BuiltInClassObjectLabel => null
       case _ => throw new InternalError()
     }})
     handleClassOrFunctionEntryNode[ClassObjectLabel](node, entryNode, solution)

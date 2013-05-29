@@ -26,15 +26,11 @@ trait Modules extends Environment {
       case "__builtin__" =>
         val moduleObject = ObjectLattice.updatePropertyValues(
           Set(("None", BuiltIn.noneValue),
-              ("object", BuiltIn.PyObject.valueReference),
-              ("float", BuiltIn.floatFunctionValue)))
+              ("object", BuiltIn.objectValue)))
 
         
               
-        node.updateHeap(solution,
-          BuiltIn.PyObject.getHeapSet() ++
-          Set((BuiltIn.floatFunctionLabel, ObjectLattice.bottom),
-              (moduleLabel, moduleObject)))
+        node.updateHeap(solution,Set((moduleLabel, moduleObject)))
             
       case _ =>
         node.updateHeap(solution, Set((moduleLabel, ObjectLattice.bottom)))

@@ -6,7 +6,8 @@ object GraphvizExporter {
   var tab = "\t"
   def export(graph: Graph ,export:  java.io.PrintStream = System.out, clusters : Int = 0) = {
      export.println("digraph "+escape(graph.name())+" {")
-     export.println(tab + "graph [overlap=scalexy];");
+     export.println(tab + "overlap=scalexy;");
+     export.println(tab + "splines=false;");
      export.println(tab + "node [shape=record];")
      drawGraph( graph, export,clusters )
      export.println("}")

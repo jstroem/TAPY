@@ -28,6 +28,9 @@ case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEnt
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
+
+case class ObjectBuiltinObjectLabel() extends ClassObjectLabel()
+
 case class WrapperObjectLabel(label: FunctionObjectLabel) extends CallableObjectLabel() {
   override def toString() = s"Function Wrapper ${label.entryNode.funcDef.getInternalName()}"
 }
@@ -54,19 +57,6 @@ case class OldStyleInstanceObjectLabel(classLabel: OldStyleClassObjectLabel, all
   
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
-}
-case class BuiltInClassObjectLabel(name: String, klass: BuiltIn.BuiltInClass) extends ClassObjectLabel() {
-  override def toString() = s"Built In Class ${name}"
-}
-case class BuiltInFunctionObjectLabel(name: String, function: BuiltIn.BuiltInFunction) extends CallableObjectLabel() {
-  override def toString() = s"Built In Function ${name}"
-}
-case class BuiltInMethodObjectLabel(instance: ObjectLabel, function: BuiltInFunctionObjectLabel) extends CallableObjectLabel() {
- override def toString() = s"Built In Method: ${function}" 
-}
-
-case class BuiltInInstanceObjectLabel(classLabel: BuiltInClassObjectLabel) extends CallableObjectLabel() {
-  override def toString() = "Built In instance"
 }
 
 object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
@@ -103,7 +93,6 @@ object ObjectLabelLattice extends PowerSubSetLattice[ObjectLabel] {
               base match {
                 case base: NewStyleClassObjectLabel => acc && definatelyInheritsFrom(base, label, node, solution)
                 case base: OldStyleClassObjectLabel => acc && definatelyInheritsFrom(base, label, node, solution)
-                case base: BuiltInClassObjectLabel => false
                 case _ => throw new TypeError()
               }
           }
