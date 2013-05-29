@@ -15,7 +15,6 @@ import scala.collection.JavaConversions._
 object BuiltIn {
   type Elt = AnalysisLattice.Elt
 
-  
   /* Utility functions */
   
   def objectOverwritten(node: Node, solution: Elt): Boolean = {
@@ -25,8 +24,8 @@ object BuiltIn {
   /**
    * Values
    */
+  
   val noneValue = ValueLattice.setNone(NoneLattice.top)
   val objectLabel = ObjectBuiltinObjectLabel()
   val objectValue = ValueLattice.setObjectLabels(Set(objectLabel))
-
 }

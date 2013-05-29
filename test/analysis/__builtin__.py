@@ -1,0 +1,40 @@
+True = __BooleanLattice_Concrete_TRUE__
+False = __BooleanLattice_Concrete_FALSE__
+
+class BaseException(object):
+	def __init__(self, msg):
+		self.message = msg
+
+
+class Exception(BaseException): pass
+class StopIteration(Exception): pass
+class ArithmeticError(Exception): pass
+class ZeroDivisionError(ArithmeticError): pass
+
+class StandardError(Exception): pass
+class LookupError(StandardError): pass
+class AttributeError(StandardError): pass
+
+class IndexError(LookupError):
+	def __init__(self, msg):
+		self.message = msg
+
+def raw_input():
+	return __StringLattice_Abstract__
+
+
+class list(object):
+	def __init__(self):
+		self.__List_Elements__ = None
+
+	def append(self, x):
+		self.__List_Elements__ = x
+
+	def pop(i=0):
+		return self.__List_Elements__
+
+	def __getitem__(self, key):
+		if (__BooleanLattice_Abstract__):
+			raise IndexError("list index out of range");
+		else:
+			return self.__List_Elements__
