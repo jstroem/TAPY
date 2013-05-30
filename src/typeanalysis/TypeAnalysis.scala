@@ -96,11 +96,12 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     val state = node match {
       case ExceptNode(_,_,_) | ExceptionalExitNode(_,_,_) =>
         // Only join from predecessors where an exception was thrown for precision
+        println("-----JOIN-----")
         val predecessors = worklist.cfg.getExceptionPredecessors(node) ++ CallGraphLattice.getExceptionPredecessors(AnalysisLattice.getCallGraph(solution), node)
         predecessors.foldLeft(StateLattice.bottom) {(acc, pred) =>
           if (pred.getRegisterValue(solution, StackConstants.EXCEPTION) == ValueLattice.bottom)
             acc
-          else StateLattice.leastUpperBound(acc, pred.getState(solution))}
+          else { StateLattice.leastUpperBound(acc, pred.getState(solution)) }}
       
       case AfterCallNode(_,_) =>
         val callNodes = worklist.cfg.getPredecessors(node)
@@ -111,12 +112,13 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
           StateLattice.leastUpperBound(exitNode.getState(solution), acc) }
         
-        StateLattice.leastUpperBound(callNodesState, exitNodesState)
+        StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
       
       case _ =>
         val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
-        predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+        val tmp = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
           StateLattice.leastUpperBound(acc, pred.getState(solution)))
+        StateLattice.updateStackFrame(tmp, StackConstants.EXCEPTION, ValueLattice.bottom, true)
     }
     
     AnalysisLattice.setState(solution, node, state)
