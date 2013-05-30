@@ -96,12 +96,11 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     val state = node match {
       case ExceptNode(_,_,_) | ExceptionalExitNode(_,_,_) =>
         // Only join from predecessors where an exception was thrown for precision
-        println("-----JOIN-----")
         val predecessors = worklist.cfg.getExceptionPredecessors(node) ++ CallGraphLattice.getExceptionPredecessors(AnalysisLattice.getCallGraph(solution), node)
         predecessors.foldLeft(StateLattice.bottom) {(acc, pred) =>
           if (pred.getRegisterValue(solution, StackConstants.EXCEPTION) == ValueLattice.bottom)
             acc
-          else { StateLattice.leastUpperBound(acc, pred.getState(solution)) }}
+          else StateLattice.leastUpperBound(acc, pred.getState(solution))}
       
       case AfterCallNode(_,_) =>
         val callNodes = worklist.cfg.getPredecessors(node)
@@ -166,18 +165,23 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
     }
     
-    val objectsWithAttribute = ValueLattice.getObjectLabels(value).foldLeft(0) {(acc, label) =>
+    val (objectsWithAttribute, objectsWithoutAttribute) = ValueLattice.getObjectLabels(value).foldLeft((0, 0)) {(acc, label) =>
       val obj = node.getObject(solution, label)
       val attribute = ObjectLattice.getPropertyValue(obj, node.property)
       
-      if (attribute == ValueLattice.bottom || ValueLattice.elementMaybeUndefined(attribute)) acc else acc + 1
+      if (attribute == ValueLattice.bottom || attribute == ValueLattice.undefined)
+        (acc._1, acc._2 + 1)
+      else if (ValueLattice.elementMaybeUndefined(attribute) && attribute == ValueLattice.undefined)
+        (acc._1 + 1, acc._2 + 1)
+      else
+        (acc._1 + 1, acc._2)
     }
     
-    if (objectsWithAttribute == labels.size) {
+    if (objectsWithAttribute == labels.size && objectsWithoutAttribute == 0)
       return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(true), true)
-    } else if (objectsWithAttribute > 0)
-      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
-    else
+    else if (objectsWithAttribute == 0 && objectsWithoutAttribute == labels.size)
       return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
+    else
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
   }
 }

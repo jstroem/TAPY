@@ -5,4 +5,7 @@ class C(object):
 if (__BooleanLattice_Abstract__):
 	C.x = 10
 
-tens = C().x
+try:
+	tens = C().x
+except:
+	tens = 42l

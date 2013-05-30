@@ -10,6 +10,4 @@ c = C()
 try:
 	tens = c.x
 except:
-	# C definately has __getattr__, so tens
-	# should be undefined, 10, 10.0 at the exit node
 	tens = 42l

@@ -7,4 +7,7 @@ def __getattr__(self, name):
 if (__BooleanLattice_Abstract__):
 	C.__getattr__ = __getattr__
 
-ten = C().x
+try:
+	ten = C().x
+except:
+	ten = 42l
