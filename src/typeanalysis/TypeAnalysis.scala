@@ -168,12 +168,12 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
       val obj = node.getObject(solution, label)
       val attribute = ObjectLattice.getPropertyValue(obj, node.property)
       
-      if (ValueLattice.elementIsDefinatelyTruthValue(value, true)) acc + 1 else acc
+      if (attribute == ValueLattice.bottom || ValueLattice.elementMaybeUndefined(attribute)) acc else acc + 1
     }
     
-    if (objectsWithAttribute == labels.size)
+    if (objectsWithAttribute == labels.size) {
       return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(true), true)
-    else if (objectsWithAttribute > 0)
+    } else if (objectsWithAttribute > 0)
       return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
     else
       return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
