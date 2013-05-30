@@ -29,6 +29,8 @@ extends ProductLattice(
                     StringLattice,
                     ObjectLabelLattice)))))))))) with Logger {
   
+  def undefined = setUndefined()
+  
   /* Element utility functions */
 
   def toString(el: Elt) : String =
@@ -39,6 +41,9 @@ extends ProductLattice(
         case str => str
       }), ", ", true)
 
+  override def eltToString(elt: Elt, indent: String) : String =
+    indent + toString(elt)
+  
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
   def elementCompare(op: cmpopType, left: Elt, right: Elt) : Elt = {
     if (elementIsUniqueConcreteString(left) && elementIsUniqueConcreteString(right))
@@ -126,6 +131,10 @@ extends ProductLattice(
   /**
     * Element is only tests
     */
+  
+  def elementMaybeUndefined(el: Elt): Boolean = {
+    return getUndefined(el) == UndefinedLattice.top
+  }
   
   def elementIsOnlyNone(el: Elt): Boolean = {
     val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
@@ -373,7 +382,7 @@ extends ProductLattice(
     * Setters
     */
   
-  def setUndefined(undefined: UndefinedLattice.Elt, el: Elt = bottom): Elt = {
+  def setUndefined(undefined: UndefinedLattice.Elt = UndefinedLattice.top, el: Elt = bottom): Elt = {
     val (_, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
     ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }

@@ -14,11 +14,12 @@ import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph)
 extends Analysis[AnalysisLattice.Elt]
-with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions with Logger with ReadWrite {
+with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions with Logger with ReadWrite with PathSensivity {
   
   override type Elt = AnalysisLattice.Elt
   
-  override var environment = Environment.build(cfg)
+  override var environmentVariables = Environment.buildVariables(cfg)
+  override var environmentProperties = Environment.buildProperties(cfg)
   
   /* Analysis interface */
   
@@ -152,14 +153,29 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     }
   }
   
-  def handleAssertNode(node: AssertNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.reg)
+  def handleHasAttributeNode(node: HasAttributeNode, solution: Elt): Elt = {
+    val value = node.getRegisterValue(solution, node.baseReg)
+    val labels = ValueLattice.getObjectLabels(value)
     
-    if (ValueLattice.elementIsDefinatelyTruthValue(value, node.negate)) {
-      log("AssertNode", "Infeasible path: " + value)
-      node.setState(solution)
-    } else {
-      solution
+    if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](value)) {
+      if (labels.size == 0)
+        return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
+      else
+        return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
     }
+    
+    val objectsWithAttribute = ValueLattice.getObjectLabels(value).foldLeft(0) {(acc, label) =>
+      val obj = node.getObject(solution, label)
+      val attribute = ObjectLattice.getPropertyValue(obj, node.property)
+      
+      if (ValueLattice.elementIsDefinatelyTruthValue(value, true)) acc + 1 else acc
+    }
+    
+    if (objectsWithAttribute == labels.size)
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(true), true)
+    else if (objectsWithAttribute > 0)
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
+    else
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
   }
 }

@@ -4,11 +4,9 @@ import tapy.constants._
 
 object CFGNormalizer {
 	def normalize(cfg : ControlFlowGraph): ControlFlowGraph = {
-		println("test");
 		cfg.nodes.foldLeft(cfg)((cfg,node) => node match {
 			case node: ReadIndexableNode => handleReadIndexableNode(node, cfg)
 			case node: WriteIndexableNode => handleWriteIndexableNode(node, cfg)
-			// case node: ReadPropertyNode => handleReadPropertyNode(node, cfg)
 			case _ => cfg
 		})
 	}

@@ -36,8 +36,8 @@ trait Modules extends Environment with Logger {
     
     tmp = AnalysisLattice.setExecutionContexts(tmp, node, Set((List(), moduleLabel)))
     
-    environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
-      Utils.writePropertyValueOnObjectLabelToHeap(node, variable, moduleLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
+    this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+      Utils.writePropertyValueOnObjectLabelToHeap(node, variable, moduleLabel, ValueLattice.undefined, acc)
     }
   }
   
@@ -52,7 +52,8 @@ trait Modules extends Environment with Logger {
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))
       
       // Update the environment
-      environment = environment ++ Environment.build(moduleCfg)
+      this.environmentVariables = this.environmentVariables ++ Environment.buildVariables(moduleCfg)
+      this.environmentProperties = this.environmentProperties ++ Environment.buildProperties(moduleCfg)
       
       // Combine the newly constructed CFG with the current one
       val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes)

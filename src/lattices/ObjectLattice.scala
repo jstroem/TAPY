@@ -63,6 +63,13 @@ object PropertyLattice extends ProductLattice(ValueLattice, PropertyOptionsLatti
     val (value, (absent, (modified, _))) = el
     (value, (absent, (modified, global)))
   }
+  
+  /* Other */
+  
+  override def eltToString(elt: Elt, indent: String) : String = {
+    val (a, b) = elt
+    indent + ValueLattice.eltToString(a, "") + "\n"
+  }
 }
 
 /*

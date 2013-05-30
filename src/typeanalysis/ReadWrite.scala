@@ -115,32 +115,24 @@ trait ReadWrite extends Exceptions with Logger {
       val base = node.getRegisterValue(solution, node.baseReg)
       val labels = ValueLattice.getObjectLabels(base)
       
-      var tmp = solution
+      var res = solution
       
       if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
         if (!transformReadPropertyNode(node)) {
-          tmp = Exceptions.raiseNewBuiltInException(node, "AttributeError", tmp, true)
+          res = Exceptions.raiseNewBuiltInException(node, "AttributeError", res, true)
         }
       }
       
-      val value = labels.foldLeft(ValueLattice.bottom) {(acc, label) =>
-        val basePropertyValue = node.getPropertyValue(solution, label, node.property)
-        ValueLattice.leastUpperBound(basePropertyValue, acc)
-      }
-      
-      println("- Reading property: " + node.property + ". Builtin module: " + node.getRegisterValue(solution, StackConstants.BUILTIN_MODULE))
-      println("- Reading property: " + node.property + ". Builtin module: " + node.getRegisterValue(tmp, StackConstants.BUILTIN_MODULE))
-      
-      if (value != ValueLattice.bottom) {
-        log("ReadPropertyNode", "Successfully read attribute " + node.property)
+      return labels.foldLeft(res) {(acc, label) =>
+        var tmp = acc
         
-      } else {
-        if (!transformReadPropertyNode(node)) {
-          tmp = Exceptions.raiseNewBuiltInException(node, "AttributeError", tmp, true)
+        val value = node.getPropertyValue(solution, label, node.property)
+        if ((value == ValueLattice.bottom || ValueLattice.elementMaybeUndefined(value)) && !transformReadPropertyNode(node)) {
+          tmp = Exceptions.raiseNewBuiltInException(node, "AttributeError", acc, true)
         }
+        
+        node.updateStackFrame(tmp, node.resultReg, value, false)
       }
-      
-      return node.updateStackFrame(tmp, node.resultReg, value)
       
     } catch {
       case e: UnexpectedValueException =>
@@ -207,15 +199,5 @@ trait ReadWrite extends Exceptions with Logger {
   
   def handleWriteIndexableNode(node: WriteIndexableNode, solution: Elt): Elt = {
     solution
-  }
-
-  
-  /**
-    * Other
-    */
-  
-  def handleHasAttributeNode(node: HasAttributeNode, solution: Elt): Elt = {
-    log("HasAttributeNode", "TODO")
-    node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
   }
 }

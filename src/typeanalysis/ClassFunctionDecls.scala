@@ -174,7 +174,9 @@ trait ClassFunctionDecls extends Environment with Logger {
     val className = node.entry.classDef.getInternalName()
     
     val classObjectScopeChain = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution))
-    val classObject = ObjectLattice.setScopeChain(classObjectScopeChain)
+    val classObject = this.environmentProperties.foldLeft(ObjectLattice.setScopeChain(classObjectScopeChain)) {(acc, property) =>
+      ObjectLattice.updatePropertyValue(property, ValueLattice.undefined, acc)
+    }
     
     // Create labels
     val bases = node.bases.map{(baseName) =>
@@ -244,8 +246,8 @@ trait ClassFunctionDecls extends Environment with Logger {
             (scopeChain, scopeObjectLabel)})
         val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
         
-        environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
-          Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
+        this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+          Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
         }
         
       } else {

@@ -41,6 +41,7 @@ class ZeroDivisionError(ArithmeticError): pass
 class StandardError(Exception): pass
 class LookupError(StandardError): pass
 class AttributeError(StandardError): pass
+class TypeError(StandardError): pass
 
 class IndexError(LookupError):
 	def __init__(self, msg):
