@@ -1,3 +1,9 @@
-x = [1,2,3]
-__Analysis_Dump_test__
-y = x[0]
+class C(object):
+	def __getattr__(self, name):
+		return 20
+
+if (__BooleanLattice_Abstract__):
+	C.x = 10
+
+c = C()
+x = c.x

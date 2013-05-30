@@ -8,7 +8,7 @@ object CFGNormalizer {
 		cfg.nodes.foldLeft(cfg)((cfg,node) => node match {
 			case node: ReadIndexableNode => handleReadIndexableNode(node, cfg)
 			case node: WriteIndexableNode => handleWriteIndexableNode(node, cfg)
-			case node: ReadPropertyNode => handleReadPropertyNode(node, cfg)
+			// case node: ReadPropertyNode => handleReadPropertyNode(node, cfg)
 			case _ => cfg
 		})
 	}
@@ -33,7 +33,7 @@ object CFGNormalizer {
 
 		val getItemReg = Registers.next()
 		val truePathCfg = new ControlFlowGraph(AssertNode(hasGetItemReg))
-									   .append(ReadPropertyNode(node.baseReg, "__getitem__", getItemReg))
+									   .append(ReadPropertyNode(node.baseReg, "__getitem__", getItemReg, false))
 									   .append(CallNode(getItemReg, List(node.propertyReg)))
 									   .append(AfterCallNode(node.resultReg))
 
@@ -41,7 +41,7 @@ object CFGNormalizer {
 		val typeErrorRefReg = Registers.next() 
 		val typeErrorObjReg = Registers.next()
 		val falsePathCfg = new ControlFlowGraph(AssertNode(hasGetItemReg,true))
-										.append(ReadPropertyNode(StackConstants.BUILTIN_MODULE, "TypeError", typeErrorRefReg))
+										.append(ReadPropertyNode(StackConstants.BUILTIN_MODULE, "TypeError", typeErrorRefReg, false))
 										.append(CallNode(typeErrorRefReg, List()))
 										.append(AfterCallNode(typeErrorObjReg))
 										.append(RaiseNode(Some(typeErrorObjReg)))
@@ -69,7 +69,7 @@ object CFGNormalizer {
 
 		val setItemReg = Registers.next()
 		val truePathCfg = new ControlFlowGraph(AssertNode(hasSetItemReg))
-									   .append(ReadPropertyNode(node.baseReg, "__setitem__", setItemReg))
+									   .append(ReadPropertyNode(node.baseReg, "__setitem__", setItemReg, false))
 									   .append(CallNode(setItemReg, List(node.propertyReg,node.valueReg)))
 									   .append(AfterCallNode(Registers.next()))
 
@@ -77,7 +77,7 @@ object CFGNormalizer {
 		val typeErrorRefReg = Registers.next() 
 		val typeErrorObjReg = Registers.next()
 		val falsePathCfg = new ControlFlowGraph(AssertNode(hasSetItemReg,true))
-										.append(ReadPropertyNode(StackConstants.BUILTIN_MODULE, "TypeError", typeErrorRefReg))
+										.append(ReadPropertyNode(StackConstants.BUILTIN_MODULE, "TypeError", typeErrorRefReg, false))
 										.append(CallNode(typeErrorRefReg, List()))
 										.append(AfterCallNode(typeErrorObjReg))
 										.append(RaiseNode(Some(typeErrorObjReg)))
@@ -85,28 +85,80 @@ object CFGNormalizer {
 		return cfg.replace(node, ifCfg.append(Set(truePathCfg,falsePathCfg)))
 	}
 
-	def handleReadPropertyNode(node: ReadPropertyNode, cfg: ControlFlowGraph) : ControlFlowGraph = {
-		/** 
-		ReadPropertyNode unrolling to: 				<<ifPropertyCfg>>
+	
+	/**
+	 * ReadPropertyNode normalized to:
+	 * try:
+	 *   <res> = ReadProperty(baseReg, property)
+	 * except:
+	 *   <1> = HasAttribute(baseReg, "__getattr__")
+	 *   if <1>:
+	 *     assert(<1>)
+	 *     <2> = ReadProperty(baseReg, "__getattr__")
+	 *     <3> = StringConstant(property)
+	 *     <res> = Call(<2>, [<3>])
+	 *   else:
+	 *     assertNot(<1>)
+	 *     <4> = ReadProperty(BUILTIN_MODULE, "AttributeError")
+	 *     <5> = Call(<4>, [])
+	 *     Raise(<5>)
+	 */
+  def getReadPropertyNodeCfg(node: ReadPropertyNode, cfg: ControlFlowGraph) : ControlFlowGraph = {
+    val hasGetAttrReg = Registers.next()
+    val ifCfg = new ControlFlowGraph(HasAttributeNode(node.baseReg, "__getattr__", hasGetAttrReg))
+      .append(IfNode(hasGetAttrReg))
 
-		<1> = HasAttribute(baseReg, property)
-		If <1>:										<<ifPropertyExistCfg>>
-			Assert(<1>)
-			<res> = ReadProperty(baseReg, property)
-		else:										<<ifPropertyNotExistCfg>>
-			AssertNot(<1>)
-			<2> = HasAttribute(baseReg, "__getattr__")
-			if <2>:									<<ifGetAttrExistCfg>>
-				assert(<2>)
-				<3> = ReadProperty(baseReg, "__getattr__")
-				<4> = StringConstant(property)
-				<res> = Call(<3>, [<4>])
-			else:									<<ifGetAttrNotExistCfg>>
-				assertNot(<2>)
-				<5> = ReadProperty(BUILT_IN, "AttributeError")
-				<6> = Call(<5>,[])
-				Raise <6>
-		**/
+    val getAttrReg = Registers.next()
+    val propertyValueReg = Registers.next() 
+    val ifGetAttrExistCfg = new ControlFlowGraph(AssertNode(hasGetAttrReg))
+      .append(ReadPropertyNode(node.baseReg, "__getattr__", getAttrReg, false))
+      .append(ConstantStringNode(propertyValueReg, node.property))
+      .append(CallNode(getAttrReg, List(propertyValueReg)))
+      .append(AfterCallNode(node.resultReg))
+
+    val attributeErrorReg = Registers.next()
+    val attributeErrorObjReg = Registers.next()
+    val ifGetAttrNotExistCfg = new ControlFlowGraph(AssertNode(hasGetAttrReg,true))
+      .append(ReadPropertyNode(StackConstants.BUILTIN_MODULE, "AttributeError", attributeErrorReg, false))
+      .append(CallNode(attributeErrorReg, List()))
+      .append(AfterCallNode(attributeErrorObjReg))
+      .append(RaiseNode(Some(attributeErrorObjReg)))
+
+    var exceptCfg = new ControlFlowGraph(ExceptNode(List(), List()))
+      .append(ifCfg)
+      .append(Set(ifGetAttrExistCfg, ifGetAttrNotExistCfg))
+    exceptCfg = exceptCfg.connectExcept(exceptCfg.nodes, cfg.getExceptionSuccessors(node))
+    
+    return new ControlFlowGraph(node).insert(exceptCfg).connectExcept(node, exceptCfg.entryNodes).addExitNodes(exceptCfg.exitNodes)
+  }
+  
+  
+  def handleReadPropertyNode(node: ReadPropertyNode, cfg: ControlFlowGraph) : ControlFlowGraph = {
+    return cfg.replace(node, getReadPropertyNodeCfg(node, cfg))
+  }
+	
+	
+  /** 
+  ReadPropertyNode unrolling to:        <<ifPropertyCfg>>
+
+  <1> = HasAttribute(baseReg, property)
+  If <1>:                   <<ifPropertyExistCfg>>
+    Assert(<1>)
+    <res> = ReadProperty(baseReg, property)
+  else:                   <<ifPropertyNotExistCfg>>
+    AssertNot(<1>)
+    <2> = HasAttribute(baseReg, "__getattr__")
+    if <2>:                 <<ifGetAttrExistCfg>>
+      assert(<2>)
+      <3> = ReadProperty(baseReg, "__getattr__")
+      <4> = StringConstant(property)
+      <res> = Call(<3>, [<4>])
+    else:                 <<ifGetAttrNotExistCfg>>
+      assertNot(<2>)
+      <5> = ReadProperty(BUILT_IN, "AttributeError")
+      <6> = Call(<5>,[])
+      Raise <6>
+	def handleReadPropertyNode(node: ReadPropertyNode, cfg: ControlFlowGraph) : ControlFlowGraph = {
 		var hasPropertyReg = Registers.next()
 		val ifPropertyCfg = new ControlFlowGraph(HasAttributeNode(node.baseReg, node.property, hasPropertyReg))
 										 .append(IfNode(hasPropertyReg))
@@ -141,7 +193,5 @@ object CFGNormalizer {
 														  ifPropertyNotExistCfg.append(Set(ifGetAttrExistCfg, 
 														  								   ifGetAttrNotExistCfg)))))
 	}
-
-	
-
+  **/
 }

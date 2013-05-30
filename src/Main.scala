@@ -58,6 +58,7 @@ object Main {
       println("Pretty printing CFG of \"" + file + "\"\n")
       now = System.currentTimeMillis();
       cfgMin.exportToFile(dir + fname, true, false, AnalysisLattice.getCallGraph(solution))
+      worklist.cfg.exportToFile(dir + fname + ".full", true, false, AnalysisLattice.getCallGraph(solution))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
       println("\n----------\n")

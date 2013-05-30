@@ -4,6 +4,7 @@ import tapy.dfa._
 import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
 import tapy.cfg._
+import tapy.typeanalysis._
 
 object ValueLattice
 extends ProductLattice(
@@ -26,7 +27,7 @@ extends ProductLattice(
                   ComplexLattice, 
                   new ProductLattice(
                     StringLattice,
-                    ObjectLabelLattice)))))))))) {
+                    ObjectLabelLattice)))))))))) with Logger {
   
   /* Element utility functions */
 
@@ -488,6 +489,22 @@ extends ProductLattice(
   def getObjectLabels(v: Elt): ObjectLabelLattice.Elt = {
     val (_, _, _, _, _, _, _, _, _, _, objectLabels) = ValueLattice.unpackElement(v)
     objectLabels
+  }
+  
+  /**
+    * Throws an UnexpectedValueException if the value given is not exactly one object label.
+    */
+  def getSingleObjectLabel(v: Elt): ObjectLabel = {
+    if (!elementIsOnlyObjectLabels[ObjectLabel](v)) {
+      throw new UnexpectedValueException("Value not only object labels (actual: " + v + ")")
+    }
+    
+    val labels = getObjectLabels(v)
+    if (labels.size != 1) {
+      throw new UnexpectedValueException("Value not exactly one object label (actual: " + v + ")")
+    }
+    
+    return labels.head
   }
   
   /* Pack and unpack */

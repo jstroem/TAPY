@@ -248,14 +248,12 @@ trait Calls extends Logger {
       
       var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(node.getState(solution), state))
       
-      // Get the returned values and store them
+      // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
       log("AfterCallNode", "Returned value: " + value)
-      
-      tmp = node.updateStackFrame(tmp, node.resultReg, value, true)
-    
-      // Clear the return registers:
-      node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
+
+      // Store the returned values and clear the return registers
+      node.updateStackFrames(tmp, Set((node.resultReg, value), (StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
       
     } catch {
       case e: TypeError =>

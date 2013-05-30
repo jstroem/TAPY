@@ -12,8 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Exceptions extends Logger {
-  type Elt = AnalysisLattice.Elt
+trait Exceptions extends Logger with Modules {
   
   def handleRaiseNode(node: RaiseNode, solution: Elt): Elt = {
     try {
@@ -56,7 +55,7 @@ trait Exceptions extends Logger {
   }
   
   def handleExceptNode(node: ExceptNode, solution: Elt): Elt = {
-    val exceptionValue = node.getRegisterValue(solution, constants.StackConstants.EXCEPTION)
+    val exceptionValue = node.getRegisterValue(solution, StackConstants.EXCEPTION)
     
     if (exceptionValue == ValueLattice.bottom) {
       // Nothing to catch (i.e. infeasible path)
@@ -74,6 +73,34 @@ trait Exceptions extends Logger {
       } else {
         throw new NotImplementedException()
       }
+    }
+  }
+  
+  object Exceptions {
+    
+    /**
+      * Throws an UnexpectedValueException if the class has not been loaded yet.
+      */
+    def getNewBuiltinException(node: Node, exceptionType: String, solution: Elt): (NewStyleInstanceObjectLabel, ObjectLattice.Elt) = {
+      val builtinModule = Modules.getBuiltinModuleObject(node, solution)
+      val classLabel = ValueLattice.getSingleObjectLabel(ObjectLattice.getPropertyValue(builtinModule, exceptionType))
+      
+      classLabel match {
+        case classLabel: NewStyleClassObjectLabel =>
+          (NewStyleInstanceObjectLabel(classLabel, node), ObjectLattice.bottom)
+        
+        case _ =>
+          throw new InternalError()
+      }
+    }
+    
+    /**
+      * Throws an UnexpectedValueException if the class has not been loaded yet.
+      */
+    def raiseNewBuiltInException(node: Node, exceptionType: String, solution: Elt, strong: Boolean): Elt = {
+      val (label, obj) = getNewBuiltinException(node, exceptionType, solution)
+      val tmp = node.updateHeap(solution, label, obj)
+      node.setRegisterValue(tmp, StackConstants.EXCEPTION, ValueLattice.setObjectLabels(Set(label)), strong)
     }
   }
 }

@@ -2,10 +2,13 @@ package tapy.lattices
 
 import tapy.dfa._
 
+
+object PropertyOptionsLattice extends ProductLattice(AbsentLattice, new ProductLattice(ModifiedLattice, GlobalLattice))
+
 /*
  * Object Property Lattice 
  */
-object PropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, new ProductLattice(ModifiedLattice, GlobalLattice))) {
+object PropertyLattice extends ProductLattice(ValueLattice, PropertyOptionsLattice) {
   
   /* Getters */
   

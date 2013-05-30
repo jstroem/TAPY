@@ -12,7 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Modules extends Environment {
+trait Modules extends Environment with Logger {
   var worklist: Worklist[AnalysisLattice.Elt]
   
   var loadedModules: Set[String] = Set()
@@ -71,5 +71,17 @@ trait Modules extends Environment {
       }
     } else
       tmp
+  }
+  
+  object Modules {
+    
+    /**
+      * Throws an UnexpectedValueException if the class has not been loaded yet.
+      */
+    def getBuiltinModuleObject(node: Node, solution: Elt): ObjectLattice.Elt = {
+      val value = node.getRegisterValue(solution, StackConstants.BUILTIN_MODULE)
+      val label = ValueLattice.getSingleObjectLabel(value)
+      return node.getObject(solution, label)
+    }
   }
 }
