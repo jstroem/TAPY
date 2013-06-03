@@ -117,7 +117,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         val tmp = StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
         StateLattice.setExecutionContext(tmp, callNodesExecutionContexts)
         
-      case ClassExitNode(_,_) =>
+      case ClassExitNode(_,_,_) =>
         val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         val tmp = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
           StateLattice.leastUpperBound(acc, pred.getState(solution)))
