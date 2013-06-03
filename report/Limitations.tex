@@ -16,7 +16,7 @@ Each of these features present a great deal of complexity so to be able to go in
 \todo{Exceptions, Imports}
 
 \subsection{Function decorators}
-In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this is when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
+In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this are when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
 
 \section{Numbers}
 The size of an integer in Python depends on the system you're on. If you're running python on a x64 machine you will be able to create integers in the interval $[-2^{63}-2;2^{63}-1]$, whereas a x86 machine would limit your integers to the interval $[-2^{31}-2;2^{31}-1]$. These limitations are described in The Python Language Reference data model\cite{pyref.datamodel} in section 3.2. In our analysis we assume that our target machine is a x86 and the integers is then limited to 32-bits.
@@ -25,4 +25,4 @@ The size of an integer in Python depends on the system you're on. If you're runn
 Python uses magic methods to give the developer flexibility to do, among other things, operation overloading on custom classes. These methods make simple operations such as binary and unary operations hard to emulate in the control flow graph since its not just one operation but could potentially be a method call with side-effects.
 \todo{emulate in the cfg? :S}
 
-We have choosen to focus on the magic methods that are used when properties on an object is accessed. These methods are called \_\_getattribute\_\_ and \_\_getattr\_\_. A complete list and description on the magic methods can be found in The Python Language Reference data model\cite{pyref.datamodel} in section 3.4.
+We have chosen to focus on the magic methods that are used when properties on an object is accessed. These methods are called \_\_getattribute\_\_ and \_\_getattr\_\_. A complete list and description on the magic methods can be found in The Python Language Reference data model\cite{pyref.datamodel} in section 3.4.
