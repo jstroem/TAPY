@@ -1,16 +1,17 @@
 \chapter{Dynamic features in Python}
 As mentioned Python is a dynamically typed language, and therefore has a lot in common with JavaScript. 
-In this section we present some of its interesting dynamic features, together with a bunch of common runtime errors. 
+In this section we present some of its interesting dynamic features, together with a selection of common runtime errors. 
 
+\todo{Fix ref}
 Classes are declared using the \inlinecode{class} keyword, supports multiple inheritance and can be modified further after creation. 
-The code in  Listing \ref{code:personExample1} declares an empty \inlinecode{Student} class that inherits from \inlinecode{Person}, 
+The code in Listing \ref{code:personExample1} declares an empty \inlinecode{Student} class that inherits from \inlinecode{Person}, 
 which in turn inherits from \inlinecode{object}. In line 14 a function \inlinecode{addGrade} is added to the \inlinecode{Student} 
 class and in line 11 the attribute grades is set to an empty dictionary on the $s1$ object. Therefore we can call the \inlinecode{addGrade} 
 function on the \inlinecode{s1} object without getting a runtime error. However, since we forgot to set the grades attribute on the $s2$ object, 
 we get the following runtime error from line 13: \inlinecode{AttributeError:\ 'Student' object has no attribute 'grades'}. 
 
 Notice that the receiver object is given implicitly as a first argument to the \inlinecode{addGrade} function. 
-In case we had forgot to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 12:
+In case we had forgotten to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 12:
 \inlinecode{TypeError:\ addGrade() takes exactly 2 arguments (3 given)}. 
 
 Another interesting aspect with regards to parameter passing is that Python supports unpacking of argument lists. 
@@ -33,7 +34,8 @@ s1.grades = {}
 s1.addGrade('math', 10)
 s2.addGrade('math', 7)
   \end{minted}
-  \caption{Magic method example in Python}\label{code:personExample1}
+  \caption{Magic method example in Python}
+  \label{code:personExample1}
 \end{listing}
 
 We wouldn't be able to change line 11 into \inlinecode{s1['grades'] = \{\}}. This would result in the following error: 
