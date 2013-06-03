@@ -1,7 +1,7 @@
 \chapter{Monotoneframework implementation}
 
-To get started on the implementation we have made a brief implemtation of the monotone framework that is decoupled from the actual analysis.
-This implementation counts commonly used lattice structures, the worklist algorithm, a graph structure and an analysis interface (or trait in scala-lingo).
+To get started on the implementation we have made a brief implementation of the monotone framework that is decoupled from the actual analysis.
+This implementation counts commonly used lattice structures, the work list algorithm, a graph structure and an analysis interface (or trait in scala-lingo).
 
 \section{Lattices}
 
@@ -38,13 +38,8 @@ so it is able to lookup the needed information in the lattice element.
 This approach follows the notation very nicely, and as such makes the implementation a simple task when the constraints have been formulated formally.
 
 \section{Worklist}
-Our worklist implementation hasn't seen any optimizations and as such is just the straightforward implementation.
-First it generates constraint functions for each of the nodes in the controlflow graph, adding each node to a worklist as it goes along.
-It then starts recursing (scala benefits from tail call optimization to prevent the stack from exploding) on the list, popping one node from the list a time.
-When a node is popped the corresponding constraint function is applied to the solution. Using scalas builtin structual equallity, the result is compared to the input and
-if they differ all nodes that depends on the popped node are added to the worklist.
+Our work list implementation hasn't seen any optimizations and as such is just the straightforward implementation. First it generates constraint functions for each of the nodes in the controlflow graph, adding each node to a work list as it goes along. It then starts recursion (scala benefits from tail call optimization to prevent the stack from exploding) on the list, popping one node from the list at a time. When a node is popped the corresponding constraint function is applied to the solution. Using scalas built-in structural equality, the result is compared to the input and if they differ all nodes that depends on the popped node are added to the work list.
 
-A simple optimization would be to focus on finding a fixed point for a strongly connected component of the controlflow graph
-before continuing with the strongly connected components that depend on it.
+A simple optimization would be to focus on finding a fixed point for a strongly connected component of the control flow graph before continuing with the strongly connected components that depend on it.
 
 
