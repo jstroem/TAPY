@@ -58,12 +58,7 @@ object Main {
       println("Pretty printing CFG of \"" + file + "\"\n")
       now = System.currentTimeMillis();
       cfgMin.exportToFile(dir + fname, true, false, AnalysisLattice.getCallGraph(solution))
-      println("...done in " + (System.currentTimeMillis() - now) + " ms")
-      
-      println("\n----------\n")
-      println("Pretty printing analysis result of \"" + file + "\"\n")
-      now = System.currentTimeMillis();
-      new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
+      worklist.cfg.exportToFile(dir + fname + ".full", true, false, AnalysisLattice.getCallGraph(solution))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
 
       if (cfgMin.exitNodes.size > 0) {
@@ -96,6 +91,12 @@ object Main {
           
         case _ =>
       }
+      
+      println("\n----------\n")
+      println("Pretty printing analysis result of \"" + file + "\"\n")
+      now = System.currentTimeMillis();
+      new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
     } catch {
       case e: Exception => e.printStackTrace()
     }

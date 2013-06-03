@@ -4,6 +4,7 @@ import tapy.dfa._
 import tapy.exceptions._
 import org.python.antlr.ast.cmpopType
 import tapy.cfg._
+import tapy.typeanalysis._
 
 object ValueLattice
 extends ProductLattice(
@@ -26,7 +27,9 @@ extends ProductLattice(
                   ComplexLattice, 
                   new ProductLattice(
                     StringLattice,
-                    ObjectLabelLattice)))))))))) {
+                    ObjectLabelLattice)))))))))) with Logger {
+  
+  def undefined = setUndefined()
   
   /* Element utility functions */
 
@@ -38,6 +41,9 @@ extends ProductLattice(
         case str => str
       }), ", ", true)
 
+  override def eltToString(elt: Elt, indent: String) : String =
+    indent + toString(elt)
+  
   /** Used to guess the comparison result in a CompareNode given 2 valueElements. **/
   def elementCompare(op: cmpopType, left: Elt, right: Elt) : Elt = {
     if (elementIsUniqueConcreteString(left) && elementIsUniqueConcreteString(right))
@@ -125,6 +131,10 @@ extends ProductLattice(
   /**
     * Element is only tests
     */
+  
+  def elementMaybeUndefined(el: Elt): Boolean = {
+    return getUndefined(el) == UndefinedLattice.top
+  }
   
   def elementIsOnlyNone(el: Elt): Boolean = {
     val (undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
@@ -372,7 +382,7 @@ extends ProductLattice(
     * Setters
     */
   
-  def setUndefined(undefined: UndefinedLattice.Elt, el: Elt = bottom): Elt = {
+  def setUndefined(undefined: UndefinedLattice.Elt = UndefinedLattice.top, el: Elt = bottom): Elt = {
     val (_, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels) = unpackElement(el)
     ValueLattice.packElement(undefined, none, notImplemented, ellipsis, boolean, integer, float, long, complex, string, objectLabels)
   }
@@ -488,6 +498,22 @@ extends ProductLattice(
   def getObjectLabels(v: Elt): ObjectLabelLattice.Elt = {
     val (_, _, _, _, _, _, _, _, _, _, objectLabels) = ValueLattice.unpackElement(v)
     objectLabels
+  }
+  
+  /**
+    * Throws an UnexpectedValueException if the value given is not exactly one object label.
+    */
+  def getSingleObjectLabel(v: Elt): ObjectLabel = {
+    if (!elementIsOnlyObjectLabels[ObjectLabel](v)) {
+      throw new UnexpectedValueException("Value not only object labels (actual: " + v + ")")
+    }
+    
+    val labels = getObjectLabels(v)
+    if (labels.size != 1) {
+      throw new UnexpectedValueException("Value not exactly one object label (actual: " + v + ")")
+    }
+    
+    return labels.head
   }
   
   /* Pack and unpack */

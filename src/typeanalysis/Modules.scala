@@ -12,7 +12,7 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Modules extends Environment {
+trait Modules extends Environment with Logger {
   var worklist: Worklist[AnalysisLattice.Elt]
   
   var loadedModules: Set[String] = Set()
@@ -36,8 +36,8 @@ trait Modules extends Environment {
     
     tmp = AnalysisLattice.setExecutionContexts(tmp, node, Set((List(), moduleLabel)))
     
-    environment.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
-      Utils.writePropertyValueOnObjectLabelToHeap(node, variable, moduleLabel, ValueLattice.setUndefined(UndefinedLattice.top), acc)
+    this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+      Utils.writePropertyValueOnObjectLabelToHeap(node, variable, moduleLabel, ValueLattice.undefined, acc)
     }
   }
   
@@ -52,7 +52,8 @@ trait Modules extends Environment {
       val moduleCfg = worklist.getCFG(ASTPrettyPrinter.implodeStringList(node.names, "\\", false))
       
       // Update the environment
-      environment = environment ++ Environment.build(moduleCfg)
+      this.environmentVariables = this.environmentVariables ++ Environment.buildVariables(moduleCfg)
+      this.environmentProperties = this.environmentProperties ++ Environment.buildProperties(moduleCfg)
       
       // Combine the newly constructed CFG with the current one
       val newCfg = worklist.cfg.insert(moduleCfg, Set[Node](), worklist.cfg.entryNodes)
@@ -71,5 +72,17 @@ trait Modules extends Environment {
       }
     } else
       tmp
+  }
+  
+  object Modules {
+    
+    /**
+      * Throws an UnexpectedValueException if the class has not been loaded yet.
+      */
+    def getBuiltinModuleObject(node: Node, solution: Elt): ObjectLattice.Elt = {
+      val value = node.getRegisterValue(solution, StackConstants.BUILTIN_MODULE)
+      val label = ValueLattice.getSingleObjectLabel(value)
+      return node.getObject(solution, label)
+    }
   }
 }

@@ -46,7 +46,7 @@ object AnalysisLattice extends ProductLattice(ProgramStateLattice, CallGraphLatt
   def updateStackFrames(el: Elt, node: Node, pairs: Set[(Int, ValueLattice.Elt)], strong: Boolean = false): Elt =
     pairs.foldLeft(el) {(acc, pair) =>
       val (register, value) = pair
-      updateStackFrame(el, node, register, value, strong)
+      updateStackFrame(acc, node, register, value, strong)
     }
   
   def updateHeap(el: Elt, node: Node, label: ObjectLabel, obj: ObjectLattice.Elt): Elt =

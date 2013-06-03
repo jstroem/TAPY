@@ -119,7 +119,7 @@ case class ReadVariableNode(variable: String, resultReg: Int, builtin : Boolean 
     else s"${reg(resultReg)} = $variable\t(ReadVariableNode)"
   }
 }
-case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ReadPropertyNode(baseReg: Int, property: String, resultReg: Int, transform: Boolean = true, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"${reg(resultReg)} = ${reg(baseReg)}.$property\t(ReadPropertyNode)"
 }
 case class ReadIndexableNode(baseReg: Int, propertyReg: Int, resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {

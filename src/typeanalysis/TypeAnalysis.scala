@@ -14,11 +14,12 @@ import scala.collection.JavaConversions._
 
 class TypeAnalysis(cfg: ControlFlowGraph)
 extends Analysis[AnalysisLattice.Elt]
-with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions with Logger {
+with ClassFunctionDecls with Calls with Constants with Operators with Modules with Environment with Exceptions with Logger with ReadWrite with PathSensivity {
   
   override type Elt = AnalysisLattice.Elt
   
-  override var environment = Environment.build(cfg)
+  override var environmentVariables = Environment.buildVariables(cfg)
+  override var environmentProperties = Environment.buildProperties(cfg)
   
   /* Analysis interface */
   
@@ -69,6 +70,7 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     // Misc
     case node: GlobalNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleGlobalNode(node, solution)))}
     case node: AssertNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleAssertNode(node, solution)))}
+    case node: HasAttributeNode => {(solution => constraintWrapper(node, solution, ((solution) => handleHasAttributeNode(node, solution))))}
     
     case node => {(solution) => constraintWrapper(node, solution, ((solution) => solution)) }
   }
@@ -95,178 +97,30 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
       case ExceptNode(_,_,_) | ExceptionalExitNode(_,_,_) =>
         // Only join from predecessors where an exception was thrown for precision
         val predecessors = worklist.cfg.getExceptionPredecessors(node) ++ CallGraphLattice.getExceptionPredecessors(AnalysisLattice.getCallGraph(solution), node)
-        predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+        predecessors.foldLeft(StateLattice.bottom) {(acc, pred) =>
           if (pred.getRegisterValue(solution, StackConstants.EXCEPTION) == ValueLattice.bottom)
             acc
-          else
-            StateLattice.leastUpperBound(acc, pred.getState(solution)))
+          else StateLattice.leastUpperBound(acc, pred.getState(solution))}
       
       case AfterCallNode(_,_) =>
-        
         val callNodes = worklist.cfg.getPredecessors(node)
         val exitNodes = CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         
         val callNodesState = callNodes.foldLeft(StateLattice.bottom) {(acc, callNode) =>
-          log("Join", "Joining to after call node from call node " + callNode)
-          StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution)))
-        }
-        
+          StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution))) }
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
-        log("Join", "Joining to after call node from exit node " + exitNode)
-          StateLattice.leastUpperBound(exitNode.getState(solution), acc)
-        }
+          StateLattice.leastUpperBound(exitNode.getState(solution), acc) }
         
-        StateLattice.leastUpperBound(callNodesState, exitNodesState)
+        StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
       
       case _ =>
-        val predecessors = worklist.cfg.getPredecessors(node) ++
-          CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
-        
-        predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+        val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
+        val tmp = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
           StateLattice.leastUpperBound(acc, pred.getState(solution)))
+        StateLattice.updateStackFrame(tmp, StackConstants.EXCEPTION, ValueLattice.bottom, true)
     }
     
     AnalysisLattice.setState(solution, node, state)
-  }
-  
-  /* Variables */
-  
-  def handleReadVariableNode(node: ReadVariableNode, solution: Elt): Elt = {
-    try {
-      val lookup = Utils.findPropertyValueInScope(node, node.variable, solution)
-      val prop = Utils.findPropertyInScope(node, node.variable, solution)
-
-      if (PropertyLattice.isGlobal(prop)) {
-        val getLast = {(l: List[ObjectLabel]) => l.last}
-        val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map(getLast)
-
-        if (varGlobalObjLabels.size != 1)
-          throw new NotImplementedException("assumption failed handleWriteVariableNode")
-
-        val globalValue = ObjectLattice.getPropertyValue(StateLattice.getHeapObject(node.getState(solution), varGlobalObjLabels.head), node.variable)
-        node.updateStackFrame(solution, node.resultReg, globalValue)
-      }
-      else {
-        val value =
-          if (lookup != ValueLattice.bottom) {
-            log("ReadVariableNode", "Successfully read variable " + node.variable)
-            lookup
-          } else
-            node.variable match {
-              case "__BooleanLattice_Concrete_TRUE__" => ValueLattice.setBoolean(true)
-              case "__BooleanLattice_Concrete_FALSE__" => ValueLattice.setBoolean(false)
-              case "__BooleanLattice_Abstract__" => ValueLattice.setBooleanElt(BooleanLattice.Abstract())
-              case "__StringLattice_Abstract__" => ValueLattice.setStringElt(StringLattice.Abstract())
-              case "__IntegerLattice_Abstract__" => ValueLattice.setIntegerElt(IntegerLattice.Abstract())
-              case "__NotImplementedLattice_Concrete__" => ValueLattice.setNotImplemented(NotImplementedLattice.top)
-              case "__EllipsisLattice_Concrete__" => ValueLattice.setEllipsis(EllipsisLattice.top)
-              case "__Analysis_Register_EXCEPTION__" => StackFrameLattice.getRegisterValue(node.getStackFrame(solution), constants.StackConstants.EXCEPTION)
-              case name =>
-                if (name.startsWith("__Analysis_Dump_") && name.endsWith("__"))
-                  ValueLattice.bottom
-                else
-                  throw new NameError("Name '" + name + "' is not defined.")
-            }
-
-        node.updateStackFrame(solution, node.resultReg, value)
-      }
-    }
-    catch {
-        case e: NameError =>
-          log("ReadVariableNode", e.getMessage())
-          node.setState(solution, StateLattice.bottom)
-    }
-  }
-  
-  def handleWriteVariableNode(node: WriteVariableNode, solution: Elt): Elt = {
-    val lookup = Utils.findPropertyInScope(node, node.variable, solution)
-    val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.valueReg)
-
-    if (PropertyLattice.isGlobal(lookup)) {
-      val getLast = {(l: List[ObjectLabel]) => l.last}
-      val varGlobalObjLabels = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map(getLast)
-
-      if (varGlobalObjLabels.size != 1)
-        throw new NotImplementedException("assumption failed handleWriteVariableNode")
-
-      Utils.writePropertyValueOnObjectLabelToHeap(node, node.variable, varGlobalObjLabels.head, value, solution, true)
-    }
-    else     
-      Utils.writePropertyValueOnVariableObjects(node, node.variable, value, solution, true)
-  }
-  
-  /* Properties */
-  
-  def handleReadPropertyNode(node: ReadPropertyNode, solution: Elt): Elt = {
-    try {
-      val base = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.baseReg)
-      
-      if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
-        throw new NotImplementedException("Trying to access property on a non-object")
-        
-      } else {
-        val value = ValueLattice.getObjectLabels(base).foldLeft(ValueLattice.bottom) {(acc, baseLabel) =>
-          val basePropertyValue = node.getPropertyValue(solution, baseLabel, node.property)
-          ValueLattice.leastUpperBound(basePropertyValue, acc)
-        }
-        
-        node.updateStackFrame(solution, node.resultReg, value)
-      }
-    } catch {
-      case e: NotImplementedException => AnalysisLattice.setState(solution, node)
-    }
-  }
-  
-  def handleWritePropertyNode(node: WritePropertyNode, solution: Elt): Elt = {
-    try {
-      val base = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.baseReg)
-      val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.valueReg)
-      
-      if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](base)) {
-        throw new NotImplementedException("Trying to write a property on something that is not an object.")
-        
-      } else {
-        ValueLattice.getObjectLabels(base).foldLeft(solution) {(acc, baseLabel) =>
-          if (baseLabel.isInstanceOf[NewStyleClassObjectLabel] || baseLabel.isInstanceOf[OldStyleClassObjectLabel]) {
-            // If value is a function, we must wrap that function in a unbound method...
-            // First we write all the non-object values
-            val tmp = Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, ValueLattice.setObjectLabels(Set(), value), acc)
-            
-            // Second we write all the object values
-            ValueLattice.getObjectLabels(value).foldLeft(tmp) {(acc, valueLabel) =>
-              valueLabel match {
-                case valueLabel: FunctionObjectLabel =>
-                  val functionValue = ValueLattice.setObjectLabels(Set(valueLabel))
-                  
-                  val methodLabel = UnboundMethodObjectLabel(valueLabel)
-                  val methodValue = ValueLattice.setObjectLabels(Set(methodLabel))
-                  val methodObject = ObjectLattice.updatePropertyValue("*function*", functionValue)
-                  
-                  val tmp = node.updateHeap(acc, methodLabel, methodObject)
-                  Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, methodValue, tmp)
-                  
-                case valueLabel =>
-                  throw new NotImplementedException()
-              }
-            }
-            
-          } else {
-            Utils.writePropertyValueOnObjectLabelToHeap(node, node.property, baseLabel, value, acc)
-          }
-        }
-      }
-    } catch {
-      case e: NotImplementedException => AnalysisLattice.setState(solution, node) 
-    }
-  }
-  
-  /** Indexable values **/
-  def handleReadIndexableNode(node: ReadIndexableNode, solution: Elt): Elt = {
-    solution
-  }
-  
-  def handleWriteIndexableNode(node: WriteIndexableNode, solution: Elt): Elt = {
-    solution
   }
 
   def handleGlobalNode(node: GlobalNode, solution: Elt): Elt = {
@@ -300,14 +154,34 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     }
   }
   
-  def handleAssertNode(node: AssertNode, solution: Elt): Elt = {
-    val value = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.reg)
+  def handleHasAttributeNode(node: HasAttributeNode, solution: Elt): Elt = {
+    val value = node.getRegisterValue(solution, node.baseReg)
+    val labels = ValueLattice.getObjectLabels(value)
     
-    if (ValueLattice.elementIsDefinatelyTruthValue(value, node.negate)) {
-      log("AssertNode", "Infeasible path: " + value)
-      node.setState(solution)
-    } else {
-      solution
+    if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](value)) {
+      if (labels.size == 0)
+        return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
+      else
+        return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
     }
+    
+    val (objectsWithAttribute, objectsWithoutAttribute) = ValueLattice.getObjectLabels(value).foldLeft((0, 0)) {(acc, label) =>
+      val obj = node.getObject(solution, label)
+      val attribute = ObjectLattice.getPropertyValue(obj, node.property)
+      
+      if (attribute == ValueLattice.bottom || attribute == ValueLattice.undefined)
+        (acc._1, acc._2 + 1)
+      else if (ValueLattice.elementMaybeUndefined(attribute) && attribute == ValueLattice.undefined)
+        (acc._1 + 1, acc._2 + 1)
+      else
+        (acc._1 + 1, acc._2)
+    }
+    
+    if (objectsWithAttribute == labels.size && objectsWithoutAttribute == 0)
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(true), true)
+    else if (objectsWithAttribute == 0 && objectsWithoutAttribute == labels.size)
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBoolean(false), true)
+    else
+      return node.setRegisterValue(solution, node.resultReg, ValueLattice.setBooleanElt(BooleanLattice.top), true)
   }
 }

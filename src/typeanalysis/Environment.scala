@@ -3,10 +3,12 @@ package tapy.typeanalysis
 import tapy.cfg._
 
 trait Environment {
-  var environment: Map[Node, Set[String]]
+  var environmentVariables: Map[Node, Set[String]]
+  var environmentProperties: Set[String]
+  // var environmentProperties: Map[Int, Set[String]]
   
   object Environment {
-    def build(g: ControlFlowGraph): Map[Node, Set[String]] = {
+    def buildVariables(g: ControlFlowGraph): Map[Node, Set[String]] = {
       def getVarName = {(n: Node) => n match {
         case WriteVariableNode(s,_,_) => s
         case FunctionDeclNode(entry, _, _, _, _) => entry.funcDef.getInternalName()
@@ -26,6 +28,47 @@ trait Environment {
         acc + (n -> vars)
       })
     }
+    
+    def buildProperties(g: ControlFlowGraph): Set[String] = {
+      val entries = g.nodes.foldLeft (Set[Node]()) {(acc, n) => n match {
+        case n: FunctionEntryNode => acc + n
+        case n: ModuleEntryNode => acc + n
+        case n: ClassEntryNode => acc + n
+        case _ => acc
+      }}
+  
+      entries.foldLeft (Set[String]()) ({(acc, n) =>
+        reachable(n, g).foldLeft(acc) {(acc, r) =>
+          r match {
+            case WritePropertyNode(_, s, _, _) => acc + s
+            case _ => acc
+          }
+        }
+      })
+    }
+    
+    /*
+    def buildProperties(g: ControlFlowGraph): Map[Int, Set[String]] = {
+      val entries = g.nodes.foldLeft (Set[Node]()) {(acc, n) => n match {
+        case n: FunctionEntryNode => acc + n
+        case n: ModuleEntryNode => acc + n
+        case n: ClassEntryNode => acc + n
+        case _ => acc
+      }}
+  
+      entries.foldLeft (Map[Int, Set[String]]()) ({(acc, n) =>
+        reachable(n, g).foldLeft(acc) {(acc, r) =>
+          r match {
+            case WritePropertyNode(reg, s, _, _) =>
+              val value = acc.getOrElse(reg, Set()) + s
+              acc + (reg -> value)
+            case _ =>
+              acc
+          }
+        }
+      })
+    }
+    */
   
     private def reachable(n: Node, g: ControlFlowGraph): Set[Node] = reachable(n, g, Set[Node]())
     private def reachable(n: Node, g: ControlFlowGraph, seen: Set[Node]): Set[Node] = {

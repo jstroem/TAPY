@@ -2,10 +2,13 @@ package tapy.lattices
 
 import tapy.dfa._
 
+
+object PropertyOptionsLattice extends ProductLattice(AbsentLattice, new ProductLattice(ModifiedLattice, GlobalLattice))
+
 /*
  * Object Property Lattice 
  */
-object PropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(AbsentLattice, new ProductLattice(ModifiedLattice, GlobalLattice))) {
+object PropertyLattice extends ProductLattice(ValueLattice, PropertyOptionsLattice) {
   
   /* Getters */
   
@@ -59,6 +62,13 @@ object PropertyLattice extends ProductLattice(ValueLattice, new ProductLattice(A
   def setGlobal(global: GlobalLattice.Elt, el: Elt = bottom): Elt = {
     val (value, (absent, (modified, _))) = el
     (value, (absent, (modified, global)))
+  }
+  
+  /* Other */
+  
+  override def eltToString(elt: Elt, indent: String) : String = {
+    val (a, b) = elt
+    indent + ValueLattice.eltToString(a, "") + "\n"
   }
 }
 

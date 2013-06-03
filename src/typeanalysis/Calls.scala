@@ -12,51 +12,59 @@ import tapy.exceptions._
 import tapy.constants
 import scala.collection.JavaConversions._
 
-trait Calls extends Logger {
+trait Calls extends Exceptions with Logger {
   var worklist: Worklist[AnalysisLattice.Elt]
   
-  type Elt = AnalysisLattice.Elt
-  
   def handleCallNode(node: CallNode, solution: Elt): Elt = {
-    val afterCallNode = worklist.cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
-    
-    // Clear the return registers
-    val tmp = node.updateStackFrames(solution, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
-    
     try {
-      val function: ValueLattice.Elt = StackFrameLattice.getRegisterValue(node.getStackFrame(solution), node.functionReg)
+      val afterCallNode = worklist.cfg.getSuccessors(node).head.asInstanceOf[AfterCallNode]
       
-      if (function == ValueLattice.bottom) {
-        // TypeError: Potentially trying to call a non-object
-        throw new NotImplementedException()
-        
-      } else if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](function)) {
-        // TypeError: Potentially trying to call a non-object
-        throw new NotImplementedException()
-        
-      } else {
-        ValueLattice.getObjectLabels(function).foldLeft(tmp) {(acc, label) =>
-          val obj = HeapLattice.getObject(node.getHeap(solution), label)
-          label match {
-            case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
-            case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
-            case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
-            case label: BoundMethodObjectLabel => handleBoundMethodObjectCall(node, afterCallNode, label, acc)
-            case label: WrapperObjectLabel =>
-              label.label match {
-                case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
-                // case label: UnboundMethodObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
-              }
-              
-            case _ =>
-              throw new NotImplementedException("Trying to call a non-callable object")
-          }
+      // Clear the return registers
+      var res = node.updateStackFrames(solution, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
+    
+      val function = node.getRegisterValue(solution, node.functionReg)
+      val labels = ValueLattice.getObjectLabels(function)
+      
+      if (!ValueLattice.elementIsOnlyObjectLabels[ObjectLabel](function)) {
+        res = Exceptions.raiseNewBuiltInException(node, "TypeError", res, true)
+      }
+      
+      if (labels.size > 1) {
+        throw new NotImplementedException("Possibly calling more than one function not implemented")
+      }
+      
+      val result = labels.foldLeft(res) {(acc, label) =>
+        val obj = HeapLattice.getObject(node.getHeap(solution), label)
+        label match {
+          case label: NewStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
+          case label: OldStyleClassObjectLabel => handleClassObjectCall(node, afterCallNode, label, obj, acc)
+          case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
+          case label: BoundMethodObjectLabel => handleBoundMethodObjectCall(node, afterCallNode, label, acc)
+          case label: WrapperObjectLabel =>
+            label.label match {
+              case label: FunctionObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
+              // case label: UnboundMethodObjectLabel => handleFunctionObjectCall(node, afterCallNode, label, acc)
+            }
+            
+          case _ =>
+            throw new TypeError("Trying to call a non-callable object")
         }
       }
       
+      result
+      
     } catch {
+      case e: UnexpectedValueException =>
+        log("CallNode", e.getMessage())
+        node.setState(solution)
+        
+      case e: TypeError =>
+        log("CallNode", e.getMessage())
+        node.setState(solution)
+        
       case e: NotImplementedException =>
-        AnalysisLattice.setState(tmp, node)
+        log("CallNode", e.getMessage())
+        node.setState(solution)
     }
   }
   
@@ -248,14 +256,12 @@ trait Calls extends Logger {
       
       var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(node.getState(solution), state))
       
-      // Get the returned values and store them
+      // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
       log("AfterCallNode", "Returned value: " + value)
-      
-      tmp = node.updateStackFrame(tmp, node.resultReg, value, true)
-    
-      // Clear the return registers:
-      node.updateStackFrames(tmp, Set((StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
+
+      // Store the returned values and clear the return registers
+      node.updateStackFrames(tmp, Set((node.resultReg, value), (StackConstants.RETURN, ValueLattice.bottom), (StackConstants.RETURN_CONSTRUCTOR, ValueLattice.bottom)), true)
       
     } catch {
       case e: TypeError =>
