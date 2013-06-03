@@ -235,26 +235,30 @@ trait Calls extends Exceptions with Logger {
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
     try {
       // Join constructor call edges!
-      val state = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StateLattice.bottom) {(acc, pred) =>
+      var stack = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StackLattice.bottom) {(acc, pred) =>
         log("AfterCallNode", "Joining from " + pred)
         
         // Check that __init__ returns None
         pred match {
-          case pred: ExitNode =>
+          case pred: FunctionExitNode =>
             val initReturnValue = StackFrameLattice.getRegisterValue(pred.getStackFrame(solution), StackConstants.RETURN)
             if (!ValueLattice.elementIsOnlyNone(initReturnValue)) {
               throw new TypeError("__init__() should return None (actual: " + initReturnValue + ")")
             }
             
-          case _ => // Happens when there is no __init__
+          case _ =>
+            // Happens when there is no __init__
+            // If there is no __init__ then constructor call predecessors should be empty
+            throw new InternalError()
         }
         
-        // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
-        val predState = StateLattice.updateStackFrame(pred.getState(solution), StackConstants.RETURN, ValueLattice.bottom, true)
-        StateLattice.leastUpperBound(acc, predState)
+        StackLattice.leastUpperBound(acc, pred.getStack(solution))
       }
+      stack = StackLattice.leastUpperBound(node.getStack(solution), stack)
+      stack = StackLattice.updateStackFrame(stack, StackConstants.RETURN, ValueLattice.bottom, true)
       
-      var tmp = AnalysisLattice.setState(solution, node, StateLattice.leastUpperBound(node.getState(solution), state))
+      // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
+      var tmp = node.setStack(solution, stack)
       
       // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))

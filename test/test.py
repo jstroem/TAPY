@@ -1,10 +1,10 @@
 class C(object):
-	def __getattr__(self, name):
-		return 20.0
+	a = 10
 
-c = C()
+def foo(x):
+	def bar(y):
+		return x+y
+	return bar
 
-#if (__BooleanLattice_Abstract__):
-#	c.x = 10
-
-x = c.x
+x = foo(1)
+y = x(2)

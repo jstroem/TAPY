@@ -29,6 +29,7 @@ abstract class Node(id: UUID) {
   def getPropertyValue(el: AnalysisLattice.Elt, label: ObjectLabel, property: String): ValueLattice.Elt = PropertyLattice.getValue(getProperty(el, label, property))
   
   def getStack(el: AnalysisLattice.Elt): StackLattice.Elt = AnalysisLattice.getStack(this, el)
+  def setStack(el: AnalysisLattice.Elt, stack: StackLattice.Elt): AnalysisLattice.Elt = AnalysisLattice.setStack(el, this, stack)
   
   def getStackFrame(el: AnalysisLattice.Elt): StackFrameLattice.Elt = AnalysisLattice.getStackFrame(this, el)
   
@@ -49,11 +50,15 @@ abstract class Node(id: UUID) {
 }
 
 // Class and function declaration
-case class FunctionDeclNode(entry: FunctionEntryNode, exit: ExitNode, exceptionalExitNode: ExceptionalExitNode, defaultArgRegs : List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class FunctionDeclNode(entry: FunctionEntryNode, exit: FunctionExitNode, exceptionalExitNode: ExceptionalExitNode, defaultArgRegs : List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
 }
-case class ClassDeclNode(entry: ClassEntryNode, exit: ExitNode, bases: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
+case class ClassDeclNode(entry: ClassEntryNode, exit: ClassExitNode, bases: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassDecl(${entry.classDef.getInternalName()})"
+}
+
+case class ExceptionalExitNode(name: String, entryNode: Node, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ExceptionalExitNode($name)"
 }
 
 // Class and function entries/exits
@@ -63,7 +68,11 @@ case class ClassEntryNode(note: String, bases: List[String], classDef: org.pytho
 case class FunctionEntryNode(note: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"FunctionEntryNode($note)"
 }
-case class ExitNode(note: String, entryNode: Node, id: UUID = UUID.randomUUID()) extends Node(id) {
+
+case class ClassExitNode(note: String, entryNode: ClassEntryNode, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"ExitNode($note)"
+}
+case class FunctionExitNode(note: String, entryNode: FunctionEntryNode, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ExitNode($note)"
 }
 
@@ -159,10 +168,6 @@ case class IfNode(conditionReg: Int, id: UUID = UUID.randomUUID()) extends Node(
 // Return statement: return result
 case class ReturnNode(resultReg: Int, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"return ${reg(resultReg)}\t(ReturnNode)"
-}
-
-case class ExceptionalExitNode(name: String, entryNode: Node, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"ExceptionalExitNode($name)"
 }
 
 // Function invokation and Object creation calls; result = [base.]function(arguments)

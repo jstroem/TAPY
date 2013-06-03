@@ -16,13 +16,13 @@ abstract class ClassObjectLabel() extends ObjectLabel()
 case class ModuleScopeObjectLabel(label: String) extends ObjectLabel() {
   override def toString() = s"Scope $label"
 }
-case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
+case class NewStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ClassExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
   override def toString() = s"New Style Class ${entryNode.classDef.getInternalName()}"
   
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
     ObjectLabelLattice.definatelyInheritsFrom(this, labels, node, solution)
 }
-case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
+case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEntryNode, exitNode: ClassExitNode, bases: List[Set[ObjectLabel]]) extends ClassObjectLabel() {
   override def toString() = s"Old Style Class ${entryNode.classDef.getInternalName()}"
   
   def definatelyInheritsFrom(labels: Set[ObjectLabel], node: Node, solution: AnalysisLattice.Elt): Boolean =
@@ -40,10 +40,10 @@ case class UnboundMethodObjectLabel(functionLabel: FunctionObjectLabel) extends 
 case class BoundMethodObjectLabel(instance: ObjectLabel, functionLabel: FunctionObjectLabel) extends CallableObjectLabel() {
   override def toString() = s"Bound Method ${functionLabel.entryNode.funcDef.getInternalName()}"
 }
-case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode) extends ObjectLabel() {
+case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: FunctionExitNode) extends ObjectLabel() {
   override def toString() = s"Scope ${entryNode.funcDef.getInternalName()}"
 }
-case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: ExitNode, exceptionalExitNode: ExceptionalExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
+case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: FunctionExitNode, exceptionalExitNode: ExceptionalExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
 	override def toString() = s"Function ${entryNode.funcDef.getInternalName()}"
 }
 case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: Node) extends CallableObjectLabel() {

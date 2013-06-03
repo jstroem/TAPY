@@ -85,8 +85,12 @@ trait Environment {
           // continue taking the environment from where the class ends
           acc + getClassExitNode(node, g)
           
-        case node: ExitNode =>
-          // A function or class ends: Don't take the outer environment
+        case node: ClassExitNode =>
+          // A class ends: Don't take the outer environment
+          acc
+          
+        case node: FunctionExitNode =>
+          // A function ends: Don't take the outer environment
           acc
         
         case _ =>
@@ -102,7 +106,7 @@ trait Environment {
       val succs = g.getSuccessors(node)
       
       val res = succs.foldLeft(Set[Node]()) ((acc, succ) => succ match {
-        case succ: ExitNode =>
+        case succ: ClassExitNode =>
           if (depth == 0) acc + succ else acc + getClassExitNode(succ, g, depth - 1)
           
         case succ: ClassEntryNode =>

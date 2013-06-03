@@ -23,6 +23,9 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
   
   def getVariableObjects(el: Elt): Set[ObjectLabel] =
     StackLattice.getVariableObjects(getStack(el))
+    
+  def getExecutionContexts(el: Elt): ExecutionContextLattice.Elt =
+    StackLattice.getExecutionContext(getStack(el))
   
   /* Setters */
   

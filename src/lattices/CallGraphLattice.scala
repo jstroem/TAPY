@@ -27,7 +27,7 @@ object CallGraphLattice extends PowerSubSetLattice[(Any, Node, Any, Node, Boolea
         true
       else
         pred match {
-          case pred: ExitNode => false
+          case pred: FunctionExitNode => false
           case pred => true
         }
     })

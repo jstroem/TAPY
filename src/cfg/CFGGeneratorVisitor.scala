@@ -48,15 +48,15 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode =>
           // The class body are evaluated at declaration time, so we need to connect it (contrary to functions)
-          val classDeclNode = new ClassDeclNode(node, stmCfg.exitNodes.head.asInstanceOf[ExitNode], namesToList(node.classDef.getInternalBases().toList))
+          val classDeclNode = new ClassDeclNode(node, stmCfg.exitNodes.head.asInstanceOf[ClassExitNode], namesToList(node.classDef.getInternalBases().toList))
           val afterClassDeclNode = new NoOpNode("After-class-decl")
           acc.append(classDeclNode).append(stmCfg)
           
         case node: FunctionEntryNode =>
           val (defaultArgCfg, defaultArgRegs) = generateDefaultArguments(node.funcDef.getInternalArgs())
-          val (exitNode, exceptionalExitNode) = stmCfg.exitNodes.foldLeft((null: ExitNode, null: ExceptionalExitNode)) {(acc, node) =>
+          val (exitNode, exceptionalExitNode) = stmCfg.exitNodes.foldLeft((null: FunctionExitNode, null: ExceptionalExitNode)) {(acc, node) =>
             node match {
-              case node: ExitNode => (node, acc._2)
+              case node: FunctionExitNode => (node, acc._2)
               case node: ExceptionalExitNode => (acc._1, node)
               case node => throw new InternalError()
             }
@@ -151,7 +151,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     println("visitFunctionDef")
     
     val entryNode = FunctionEntryNode(node.getInternalName(), node)
-    val exitNode = ExitNode(node.getInternalName(), entryNode)
+    val exitNode = FunctionExitNode(node.getInternalName(), entryNode)
     val exceptionalExitNode = ExceptionalExitNode(node.getInternalName(), entryNode)
     
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
@@ -176,7 +176,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     println("visitClassDef")
     
     val entryNode = ClassEntryNode(node.getInternalName(), namesToList(node.getInternalBases().toList), node)
-    val exitNode = ExitNode(node.getInternalName(), entryNode)
+    val exitNode = ClassExitNode(node.getInternalName(), entryNode)
     
     val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
     return bodyCfg.append(exitNode)

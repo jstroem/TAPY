@@ -60,7 +60,8 @@ trait Modules extends Environment with Logger {
       worklist.setCFG(newCfg, moduleCfg)
     }
     
-    val tmp = Utils.writePropertyValueOnVariableObjects(node, moduleName, ValueLattice.setObjectLabels(Set(ModuleScopeObjectLabel(moduleQualifiedName))), solution, true)
+    val tmp = Utils.writePropertyValueOnVariableObjects(node, moduleName,
+      ValueLattice.setObjectLabels(Set(ModuleScopeObjectLabel(moduleQualifiedName))), solution, true)
     
     if (node.isImplicit) {
       // Copy variables from imported module

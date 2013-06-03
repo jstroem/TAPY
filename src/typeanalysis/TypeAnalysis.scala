@@ -53,9 +53,10 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
     // ClassFunctionDecls
     case node: ClassDeclNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleClassDeclNode(node, solution)))}
     case node: ClassEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleClassEntryNode(node, solution)))}
+    case node: ClassExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleClassExitNode(node, solution)))}
     case node: FunctionDeclNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionOrUnboundMethodDeclNode(node, solution)))}
     case node: FunctionEntryNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionEntryNode(node, solution)))}
-    case node: ExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExitNode(node, solution)))}
+    case node: FunctionExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleFunctionExitNode(node, solution)))}
     case node: ExceptionalExitNode => {(solution) => constraintWrapper(node, solution, ((solution) => handleExceptionalExitNode(node, solution)))}
     
     // Calls
@@ -106,13 +107,22 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         val callNodes = worklist.cfg.getPredecessors(node)
         val exitNodes = CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         
+        val callNodesExecutionContexts = callNodes.foldLeft(ExecutionContextLattice.bottom) {(acc, callNode) =>
+          ExecutionContextLattice.leastUpperBound(acc, callNode.getExecutionContexts(solution)) }
         val callNodesState = callNodes.foldLeft(StateLattice.bottom) {(acc, callNode) =>
           StateLattice.leastUpperBound(acc, StateLattice.setStack(StateLattice.bottom, callNode.getStack(solution))) }
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
           StateLattice.leastUpperBound(exitNode.getState(solution), acc) }
         
-        StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
-      
+        val tmp = StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
+        StateLattice.setExecutionContext(tmp, callNodesExecutionContexts)
+        
+      case ClassExitNode(_,_) =>
+        val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
+        val tmp = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>
+          StateLattice.leastUpperBound(acc, pred.getState(solution)))
+        StateLattice.updateStackFrame(tmp, StackConstants.EXCEPTION, ValueLattice.bottom, true)
+        
       case _ =>
         val predecessors = worklist.cfg.getPredecessors(node) ++ CallGraphLattice.getPredecessorsExceptConstructorReturn(AnalysisLattice.getCallGraph(solution), node)
         val tmp = predecessors.foldLeft(StateLattice.bottom)((acc, pred) =>

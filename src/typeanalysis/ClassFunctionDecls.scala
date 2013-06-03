@@ -46,6 +46,7 @@ trait ClassFunctionDecls extends Environment with Logger {
     
     // Generate scope-object scope chain
     val scopeChain = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution))
+    log("FunctionDeclNode", "Scope chain of " + node.entry.funcDef.getInternalName() + " is " + scopeChain.toString())
     
     // Create objects
     val scopeObject = ObjectLattice.setScopeChain(scopeChain)
@@ -209,7 +210,25 @@ trait ClassFunctionDecls extends Environment with Logger {
   }
   
   def handleFunctionEntryNode(node: FunctionEntryNode, solution: Elt): Elt = {
-    handleClassOrFunctionEntryNode[FunctionScopeObjectLabel](node, ((objectLabel: FunctionScopeObjectLabel) => objectLabel.entryNode), solution)
+    val (scopeObjectLabel, scopeObject) = handleClassOrFunctionEntryNode[FunctionScopeObjectLabel](node, ((objectLabel: FunctionScopeObjectLabel) => objectLabel.entryNode), solution)
+      
+    if (scopeObjectLabel != null) {
+      // Take the current variable object and append it to the scope chain, and
+      // set the variable object to the function scope object, such that
+      // local declarations will be written onto that object.
+      val scopeChains = ObjectLattice.getScopeChain(scopeObject)
+      val executionContexts: Set[(List[ObjectLabel], ObjectLabel)] =
+        scopeChains.map((scopeChain) => (scopeChain, scopeObjectLabel))
+      val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+      
+      this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+        Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
+      }
+      
+    } else {
+      // Exception: TODO
+      AnalysisLattice.setState(solution, node)
+    }
   }
   
   def handleClassEntryNode(node: ClassEntryNode, solution: Elt): Elt = {
@@ -219,13 +238,31 @@ trait ClassFunctionDecls extends Environment with Logger {
       case objectLabel: OldStyleClassObjectLabel => objectLabel.entryNode
       case _ => throw new InternalError()
     }})
-    handleClassOrFunctionEntryNode[ClassObjectLabel](node, entryNode, solution)
+    val (scopeObjectLabel, scopeObject) = handleClassOrFunctionEntryNode[ClassObjectLabel](node, entryNode, solution)
+      
+    if (scopeObjectLabel != null) {
+      // Take the current variable object and append it to the scope chain, and
+      // set the variable object to the function scope object, such that
+      // local declarations will be written onto that object.
+      val executionContexts: Set[(List[ObjectLabel], ObjectLabel)] =
+        ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map({(scopeChain) =>
+          (scopeChain, scopeObjectLabel)})
+      val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+      
+      this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
+        Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
+      }
+      
+    } else {
+      // Exception: TODO
+      AnalysisLattice.setState(solution, node)
+    }
   }
   
-  def handleClassOrFunctionEntryNode[T <: ObjectLabel: Manifest](node: Node, entryNode: T => Node, solution: Elt): Elt = {
+  def handleClassOrFunctionEntryNode[T <: ObjectLabel: Manifest](node: Node, entryNode: T => Node, solution: Elt): (ObjectLabel, ObjectLattice.Elt) = {
     val heap = node.getHeap(solution)
     if (heap != null) {
-      val (scopeObjectLabel, scopeObject) = heap.foldLeft((null.asInstanceOf[T]: T, null: ObjectLattice.Elt)) {(acc, entry) =>
+      return heap.foldLeft((null.asInstanceOf[T]: T, null: ObjectLattice.Elt)) {(acc, entry) =>
         if (acc._1 == null && acc._2 == null) {
           val (objectLabel, obj) = entry
           if (manifest[T].erasure.isInstance(objectLabel)) { // GG :-)
@@ -236,34 +273,23 @@ trait ClassFunctionDecls extends Environment with Logger {
           } else acc
         } else acc
       }
-      
-      if (scopeObjectLabel != null) {
-        // Take the current variable object and append it to the scope chain, and
-        // set the variable object to the function scope object, such that
-        // local declarations will be written onto that object.
-        val executionContexts: Set[(List[ObjectLabel], ObjectLabel)] =
-          ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map({(scopeChain) =>
-            (scopeChain, scopeObjectLabel)})
-        val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
-        
-        this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
-          Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
-        }
-        
-      } else {
-        // Exception: TODO
-        AnalysisLattice.setState(solution, node)
-      }
     } else {
-      // TODO: Why is heap null?
-      AnalysisLattice.setState(solution, node)
+      return (null, null)
     }
   }
   
-  def handleExitNode(node: ExitNode, solution: Elt): Elt = {
+  def handleFunctionExitNode(node: FunctionExitNode, solution: Elt): Elt = {
     log("ExitNode", "Handle exit node")
     
-    // Pop the current variable object
+    // Update the execution contexts
+    // Note: This is done in the after call node for function exit
+    solution
+  }
+  
+  def handleClassExitNode(node: ClassExitNode, solution: Elt): Elt = {
+    log("ExitNode", "Handle exit node")
+    
+    // Update the execution contexts
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
   }
   
@@ -277,7 +303,11 @@ trait ClassFunctionDecls extends Environment with Logger {
     else
       log("ExceptionalExitNode", "Uncaught exception: " + exception)
     
-    // Pop the current variable object
+    // Update the execution contexts.
+    // Note: This is done in the after call node now.
+    /*
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
+    */
+    solution
   }
 }
