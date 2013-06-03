@@ -1,7 +1,9 @@
 \chapter{Limitations}
 
-\section{Language functionality}
-Python is a general purpose programming language and quite popular, it has been developed and extended and holds a lot of functionality, some of these functionalities is not used that often. In our analysis we have decided to exclude some of these language functionalities;
+Rather than going with the latest version of Python, we will be working on version 2.7. This version is still predominantly used in the wild and we were only able to find a ready-to-use parser for 2.7 which, given the scope of this project, was a huge selling point. The magic methods remain unchanged in the 3.x family, so extending this proof of concept for a more recent version is straightforward.
+
+\section{Language features}
+Python is a general purpose programming language and quite popular, it has been developed and extended and holds a lot of different functionality, some of these functionalities is not used that often. In our analysis we have decided to exclude some of these language functionalities;
 
 \begin{itemize}
 	\item Lambda expressions
@@ -9,9 +11,12 @@ Python is a general purpose programming language and quite popular, it has been 
 	\item Yield expressions
 \end{itemize}
 
+Each of these features present a great deal of complexity so to be able to go in depth with the magic methods these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
+
+\todo{Exceptions, Imports}
+
 \subsection{Function decorators}
 In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this is when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
-
 
 \section{Numbers}
 The size of an integer in Python depends on the system your on. If your running python on a x64 machine you will be able to create integers in the interval $[-2^{63}-2;2^{63}-1]$, where on a x86 machine your integers would be limited to the interval $[-2^{31}-2;2^{31}-1]$. These limitations is also described in The Python Language Reference data model\cite{pyref.datamodel} in section 3.2. In our analysis we assume that our target machine is a x86 and the integers is then limited to 32-bits.

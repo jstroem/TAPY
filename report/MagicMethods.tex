@@ -13,14 +13,14 @@ Because of the limited time of our project we have not been able to support both
 \subsection{Transforming the CFG}
 Since each single attribute access possibly involves method calls, we normalize the CFG in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadProperty(<base>,prop)}, into the following CFG piece:
 
-\begin{listing}[H]
-	\begin{center}
-		\includegraphics[width=0.75\textwidth]{images/readproperty.png}
-	\end{center}
-	\vspace{-10pt}
-	\caption{The normalization of a read property node.}
-	\label{fig:ReadPropertyCFG}
-\end{listing}
+%\begin{listing}[H]
+%	\begin{center}
+%		\includegraphics[width=0.75\textwidth]{images/readproperty.png}
+%	\end{center}
+%	\vspace{-10pt}
+%	\caption{The normalization of a read property node.}
+%	\label{fig:ReadPropertyCFG}
+%\end{listing}
 
 As can be seen from the normalized CFG of read property nodes the only challenge there is in order for our analysis to handle the magic method \inlinecode{\_\_getattr\_\_}, is that we need to handle exceptions in our analysis. We return to this in the following section. First, we want to note the following thing about our normalization: If an attribute is definately set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular property. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadPropertyNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}.
 
