@@ -1,0 +1,12 @@
+digraph {
+	overlap=scalexy;
+	node [shape=record];
+	"1" [shape=record label="&lt;1&gt; = ReadAttributeNode('Exception')"];
+	"2" [shape=record label="CallNode(&lt;1&gt;, [])"];
+	"3" [shape=record label="&lt;2&gt; = AfterCallNode()"];
+	"4" [shape=record label="RaiseNode(&lt;2&gt;)"];
+	"1" -> "2" [style="solid" label=""];
+	"2" -> "3" [style="solid" label=""];
+	"3" -> "4" [style="solid" label=""];
+
+}

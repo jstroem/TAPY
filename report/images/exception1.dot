@@ -1,0 +1,23 @@
+digraph ControlFlowGraph {
+	overlap=scalexy;
+	node [shape=record];
+	"d25d3b63-a03b-4367-9caf-a7ffc1458ee8" [shape=record label="&lt;9&gt; = foo	(ReadVariableNode)\n_ = &lt;9&gt;()	(CallNode)"];
+	"89b7ab86-407d-469b-a18a-742b588dc080" [shape=record label="&lt;5&gt; = x	(ReadVariableNode)\n&lt;6&gt; = &lt;5&gt;.a	(ReadPropertyNode)\nresult = &lt;6&gt;	(WriteVariableNode)\n&lt;7&gt; = result	(ReadVariableNode)\nreturn &lt;7&gt;	(ReturnNode)"];
+	"78d648cc-c347-44e6-b890-1d57f950f423" [shape=record label="&lt;10&gt; = _	(AfterCallNode)\ny = &lt;10&gt;	(WriteVariableNode)"];
+	"4bdc015a-2629-4931-8239-454d2f3d79f3" [shape=record label="except:  as \n&lt;11&gt; = 'An error occured'	(ConstantStringNode)\nerr = &lt;11&gt;	(WriteVariableNode)"];
+	"2e24f1be-f20d-4256-9744-08b3ffb7065a" [shape=record label="ExitNode(foo)"];
+	"3c4ea1c3-ffa4-49ca-b200-30e89808d2e7" [shape=record label="ExceptionalExitNode(foo)"];
+	"17b59d59-b6b5-413f-a5ee-a6c655798e1a" [shape=record label="Module Exit	(NoOpNode)"];
+	"9159149e-21b4-4d9b-989c-06438b6086b8" [shape=record label="FunctionEntryNode(foo)"];
+	"9159149e-21b4-4d9b-989c-06438b6086b8" -> "89b7ab86-407d-469b-a18a-742b588dc080" [style="solid" label=""];
+	"4bdc015a-2629-4931-8239-454d2f3d79f3" -> "17b59d59-b6b5-413f-a5ee-a6c655798e1a" [style="solid" label=""];
+	"d25d3b63-a03b-4367-9caf-a7ffc1458ee8" -> "9159149e-21b4-4d9b-989c-06438b6086b8" [style="solid" label=""];
+	"d25d3b63-a03b-4367-9caf-a7ffc1458ee8" -> "78d648cc-c347-44e6-b890-1d57f950f423" [style="solid" label=""];
+	"78d648cc-c347-44e6-b890-1d57f950f423" -> "17b59d59-b6b5-413f-a5ee-a6c655798e1a" [style="solid" label=""];
+	"89b7ab86-407d-469b-a18a-742b588dc080" -> "2e24f1be-f20d-4256-9744-08b3ffb7065a" [style="solid" label=""];
+	"2e24f1be-f20d-4256-9744-08b3ffb7065a" -> "78d648cc-c347-44e6-b890-1d57f950f423" [style="solid" label=""];
+	"3c4ea1c3-ffa4-49ca-b200-30e89808d2e7" -> "4bdc015a-2629-4931-8239-454d2f3d79f3" [style="dashed" label=""];
+	"d25d3b63-a03b-4367-9caf-a7ffc1458ee8" -> "4bdc015a-2629-4931-8239-454d2f3d79f3" [style="dashed" label=""];
+	"89b7ab86-407d-469b-a18a-742b588dc080" -> "3c4ea1c3-ffa4-49ca-b200-30e89808d2e7" [style="dashed" label=""];
+	"78d648cc-c347-44e6-b890-1d57f950f423" -> "4bdc015a-2629-4931-8239-454d2f3d79f3" [style="dashed" label=""];
+}

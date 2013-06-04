@@ -1,0 +1,32 @@
+digraph {
+	overlap=scalexy;
+	node [shape=record];
+	"1" [shape=record label="&lt;res&gt;=ReadPropertyNode(&lt;base&gt;,prop)"];
+	"2" [shape=record label="&lt;1&gt;=HasAttributeNode(&lt;base&gt;,'__getattr__')"];
+	"3" [shape=record label="IfNode(&lt;1&gt;)"];
+	"4" [shape=record label="AssertNode(&lt;1&gt;)"];
+	"5" [shape=record label="&lt;2&gt;=ReadPropertyNode(&lt;base&gt;,'__getattr__')"];
+	"6" [shape=record label="&lt;3&gt;=StringConstantNode(prop)"];
+	"7" [shape=record label="CallNode(&gt;2&lt;, [&lt;3&gt;])"];
+	"8" [shape=record label="&lt;res&gt;=AfterCallNode()"];
+	"9" [shape=record label="RefuteNode(&lt;1&gt;)"];
+	"10" [shape=record label="&lt;4&gt;=ReadPropertyNode(BUILTIN, 'AttributeError')"];
+	"11" [shape=record label="CallNode(&lt;4&gt;, [])"];
+	"12" [shape=record label="&lt;5&gt;=AfterCallNode()"];
+	"13" [shape=record label="RaiseNode(&lt;5&gt;)"];
+	"14" [shape=record label="(former successor)"];
+	"1" -> "2" [style="dashed" label=""];
+	"2" -> "3" [style="solid" label=""];
+	"3" -> "4" [style="solid" label=""];
+	"3" -> "9" [style="solid" label=""];
+	"4" -> "5" [style="solid" label=""];
+	"5" -> "6" [style="solid" label=""];
+	"6" -> "7" [style="solid" label=""];
+	"7" -> "8" [style="solid" label=""];
+	"9" -> "10" [style="solid" label=""];
+	"10" -> "11" [style="solid" label=""];
+	"11" -> "12" [style="solid" label=""];
+	"12" -> "13" [style="solid" label=""];
+	"1" -> "14" [style="solid" label=""];
+	"8" -> "14" [style="solid" label=""];
+}
