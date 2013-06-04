@@ -19,6 +19,11 @@ clean:
 	rm -f test/*/*/*.gif
 	rm -f test/*/*/*.png
 	rm -f test/*/*/*.res.txt
+	rm -f report/code-examples/*.dot
+	rm -f report/code-examples/*.ast
+	rm -f report/code-examples/*.gif
+	rm -f report/code-examples/*.png
+	rm -f report/code-examples/*.res.txt
 
 compile:
 	mkdir -p bin

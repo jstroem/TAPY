@@ -1,6 +1,9 @@
 \chapter{Introduction}
-Python is a dynamically typed, general purpose programming language that supports both object-oriented, imperative and functional programming styles. 
-Python exploits a lot of its functionality through Magic Methods (implicit method and function calls); this makes it harder to predict the outcome of simple statements and expressions. 
+Python is a dynamically typed, general purpose programming language that supports both object-oriented, imperative and functional programming styles. Because of its dynamic nature it has a lot of similar features to JavaScript, which makes it difficult to statically analyze. This is further complicated by Python's so called magic methods, which results in implicit method and function calls; this makes it harder to predict the outcome of otherwise relatively simple statements and expressions, as e.g. an attribute lookup.
 
-Because of its dynamic nature and little tool support it can be difficult to develop and maintain larger programs. 
-In this report we present our work towards developing a conservative type analysis for Python version 2.7 in Scala.
+As a consequence of these dynamic features and also the little tool support available to Python developers it can be difficult to develop and maintain larger programs written in Python. In this report we present our work towards developing a conservative type analysis for Python version 2.7.5 in Scala.
+
+\subsection{Aims}
+The aim of our project is to develop a type analyzer for Python which will be able to analyze simple Python programs that uses some of the features, like magic methods, that distincts static analysis of Python from other dynamically typed languages as e.g. JavaScript. Especially, we wish to be able to analyze programs that uses the magic methods \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. As this should already indicate, our type analyzer should therefore also be able to handle among others declaration and instantiation of classes together with exceptions.
+
+In the following chapter we will dive into a few example programs that illustrates some interesting dynamic features of Python to the reader that is not familiar with Python. The chapters following that will present our control flow graph and lattice, together with our work towards handling language features like functions, classes, exceptions and magic methods.

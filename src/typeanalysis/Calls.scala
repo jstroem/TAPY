@@ -246,10 +246,7 @@ trait Calls extends Exceptions with Logger {
               throw new TypeError("__init__() should return None (actual: " + initReturnValue + ")")
             }
             
-          case _ =>
-            // Happens when there is no __init__
-            // If there is no __init__ then constructor call predecessors should be empty
-            throw new InternalError()
+          case _ => // Happens when there is no __init__
         }
         
         StackLattice.leastUpperBound(acc, pred.getStack(solution))

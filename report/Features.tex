@@ -1,30 +1,26 @@
 \chapter{Dynamic features in Python}
-As mentioned Python is a dynamically typed language, and therefore has a lot in common with JavaScript. 
-In this section we present some of its interesting dynamic features, together with a selection of common runtime errors. 
+As mentioned Python is a dynamically typed language, and therefore has a lot in common with JavaScript. In this section we present some of its interesting dynamic features, together with a selection of common runtime errors.
 
 \todo{Fix ref}
 Classes are declared using the \inlinecode{class} keyword, supports multiple inheritance and can be modified further after creation. 
-The code in Listing \ref{code:personExample1} declares an empty \inlinecode{Student} class that inherits from \inlinecode{Person}, 
-which in turn inherits from \inlinecode{object}. In line 14 a function \inlinecode{addGrade} is added to the \inlinecode{Student} 
-class and in line 11 the attribute grades is set to an empty dictionary on the $s1$ object. Therefore we can call the \inlinecode{addGrade} 
-function on the \inlinecode{s1} object without getting a runtime error. However, since we forgot to set the grades attribute on the $s2$ object, 
-we get the following runtime error from line 13: \inlinecode{AttributeError:\ 'Student' object has no attribute 'grades'}. 
+The code in example \ref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the builtin class \inlinecode{object}.
 
-Notice that the receiver object is given implicitly as a first argument to the \inlinecode{addGrade} function. 
-In case we had forgotten to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 12:
+In line 8 a function \inlinecode{addGrade} is written to the \inlinecode{addGrade} attribute of the \inlinecode{Student} class. Since it is written onto a class it will be wrapped in an unbound method; this will ensure that the function can be called as a method on instance objects; especially, the receiver object will be implicitly passed to the \inlinecode{self}\footnote{The first argument is not required to be called \inlinecode{self}, but it is considered bad pratice to name it otherwise.} argument (eliminating the purpose of having the \inlinecode{this} keyword as in e.g. JavaScript).
+
+In line 9 the attribute grades is set to an empty dictionary on the $s1$ object. Therefore we can call the (bound) method \inlinecode{addGrade} on the \inlinecode{s1} object without getting a runtime error. However, since we forgot to set the grades attribute on the $s2$ object, we will get the following runtime error from line 11: \inlinecode{AttributeError:\ 'Student' object has no attribute 'grades'}. 
+
+Recall that the receiver object is given implicitly as a first argument to the \inlinecode{addGrade} method. 
+In case we had forgotten to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 10:
 \inlinecode{TypeError:\ addGrade() takes exactly 2 arguments (3 given)}. 
 
-Another interesting aspect with regards to parameter passing is that Python supports unpacking of argument lists. 
-For instance we could have provided the arguments to the \inlinecode{addGrade} function in line 12 by means of a dictionary instead: 
+Another interesting aspect with regards to parameter passing is that Python supports unpacking of argument lists. For instance we could have provided the arguments to the \inlinecode{addGrade} function in line 10 by means of a dictionary instead: 
 \inlinecode{s1.addGrade(**\{ 'course': 'math', grade: 10\})}.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
-class Person(object):
+class Student(object):
   def __init__(self, name):
     self.name = name
-class Student(Person):
-  pass
 s1 = Student('Foo')
 s2 = Student('Bar')
 def addGrade(self, course, grade):
@@ -35,19 +31,19 @@ s1.addGrade('math', 10)
 s2.addGrade('math', 7)
   \end{minted}
   \caption{Magic method example in Python}
-  \label{code:personExample1}
+  \label{code:Features1}
 \end{listing}
 
-We wouldn't be able to change line 11 into \inlinecode{s1['grades'] = \{\}}. This would result in the following error: 
+However, we wouldn't be able to change line 9 into \inlinecode{s1['grades'] = \{\}} (as is possible in JavaScript). This would result in the following error: 
 \inlinecode{TypeError:\ 'Student' object does not support item assignment}, while trying to access \inlinecode{s1['grades']} would result in the following error: 
-\inlinecode{TypeError:\ 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the built-in functions 
-\inlinecode{getattr(obj, attr)} and \inlinecode{setattr(obj, attr, val)}. 
+\inlinecode{TypeError:\ 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the builtin functions 
+\inlinecode{getattr(obj, attr)} and \inlinecode{setattr(obj, attr, val)}.
 
-But Python also allows the programmer to customize the behavior when indexing into an object by supplying special functions 
+Python do however allow the programmer to customize the behavior when indexing into an object by supplying the magic methods
 \inlinecode{\_\_setitem\_\_} and \inlinecode{\_\_getitem\_\_}, giving the programmer much more freedom. 
-As an example consider the new Student class in Listing \ref{code:personExample2}. 
-With this implementation we could set the grades attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}}, 
-and get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} or \inlinecode{s1['math']}.
+As an example consider the new Student class in example \ref{code:Features2}. 
+With this implementation we could set the grades attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}} (due to the implementation of \inlinecode{\_\_setitem\_\_}), 
+and get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} (due to \inlinecode{\_\_getattr\_\_}) or \inlinecode{s1['math']} (due to \inlinecode{\_\_getitem\_\_}).
 
 \begin{listing}[H]
 \begin{minted}[linenos]{python}
@@ -63,5 +59,7 @@ class Student(Person):
       return "<no such grade>"
 \end{minted}
 	\caption{Magic method example in python}
-	\label{code:personExample2}
+	\label{code:Features2}
 \end{listing}
+
+As mentioned in the introduction we want our type analyzer to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when dereferencing attributes on class instances. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.
