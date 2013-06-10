@@ -1,10 +1,8 @@
 class C(object):
-	a = 10
+	pass
 
-def foo(x):
-	def bar(y):
-		return x+y
-	return bar
-
-x = foo(1)
-y = x(2)
+i = 0
+while (True):
+	x = C()
+	x.a = i
+	i = i + 1
