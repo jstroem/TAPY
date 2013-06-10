@@ -114,6 +114,10 @@ with ClassFunctionDecls with Calls with Constants with Operators with Modules wi
         val exitNodesState = exitNodes.foldLeft(StateLattice.bottom) {(acc, exitNode) =>
           StateLattice.leastUpperBound(exitNode.getState(solution), acc) }
         
+        println()
+        println("New execution context after AfterCallNode: " + callNodesExecutionContexts)
+        println()
+        
         val tmp = StateLattice.updateStackFrame(StateLattice.leastUpperBound(callNodesState, exitNodesState), StackConstants.EXCEPTION, ValueLattice.bottom, true)
         StateLattice.setExecutionContext(tmp, callNodesExecutionContexts)
         

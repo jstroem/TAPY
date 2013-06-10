@@ -288,6 +288,10 @@ trait ClassFunctionDecls extends Environment with Logger {
   
   def handleClassExitNode(node: ClassExitNode, solution: Elt): Elt = {
     log("ExitNode", "Handle exit node")
+
+    println()
+    println("New execution context after ClassExitNode: " + ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
+    println()
     
     // Update the execution contexts
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
