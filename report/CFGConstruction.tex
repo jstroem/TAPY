@@ -79,9 +79,10 @@ If no exceptions happens during execution the \inlinecode{\_\_exit\_\_} method i
 where \inlinecode{None} is passed as arguments.
 
 \section{CFG construction of function and method calls}
+\label{CFG calls}
 \textit{CFG$_{\textit{cond}}$} is the control flow graph that results from the condition. If the condition is the boolean \inlinecode{True}, 
 \textit{CFG$_{\textit{cond}}$} will be the control flow graph consisting of a single node, namely \textit{ConstantBooleanNode}. 
-Inspired from TAJS, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register (\textit{reg$_{\textit{cond}}$} in figure \ref{fig:callCfg}) 
+Inspired from TAJS \cite{tajs}, Type Analyzer for JavaScript, our \textit{ConstantBooleanNode} holds a result register (\textit{reg$_{\textit{cond}}$} in figure \ref{fig:callCfg}) 
 together with the actual constant value, \inlinecode{True} in this case.
 
 The other nodes \textit{ConstantIntNode}, \textit{ConstantFloatNode}, \textit{ConstantLongNode}, \textit{ConstantComplexNode}, \textit{ConstantStringNode}, 

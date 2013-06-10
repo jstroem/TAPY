@@ -85,10 +85,12 @@ In our implementation of the type analyzer we found it benefitial to distinguish
 The $Stack$ lattice is defined as:
 
 \begin{equation*}
-Stack = (TempVar \rightarrow Value) \times P(ObjectLabel^{*})
+Stack = (Register \rightarrow Value) \times P(ObjectLabel^{*})
 \end{equation*}
 
-For each temporary variable we specify the value of that particular temporary variable. The power set $P(ObjectLabel^{*})$ specifies the scope chain $ObjectLabel^{*}$. The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
+For each register, which can be thought of as an temporary variable, we specify the value of that particular register. Recall that we use registers in our intermediate representation, see e.g. figure \ref{fig:callCfg} in section \label{CFG calls} about CFG construction of function and method calls.
+
+The power set $P(ObjectLabel^{*})$ specifies the objects on the scope chain $ObjectLabel^{*}$, i.e. the runtime stack. The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
 
 The scope chain specifies where to look in case of e.g. reading a variable that is not present on the variable object. The following simple example can be used to illustrate this:
 
@@ -114,6 +116,6 @@ For this particular scope example we will have the following objects on the heap
 When entering the function (calling it) the scope object of the function a (or more precise, its label) will be pushed onto the current scope chain (which at the function call will be the list containing the \inlinecode{\_\_main\_\_} object). When the variable \inlinecode{x} is read, \inlinecode{x} is looked up in the scope chain starting from the head of it. For this particular example \inlinecode{x} is found on the \inlinecode{\_\_main\_\_} object. In the next chapter we describe our work towards handling functions including why we need these three different kinds of objects on the heap. Handling functions of course includes populating the call graph such that the CFG becomes interprocedural.
 
 \begin{eqnarray*}
-CallGraph = & (Node \times Node) \\
+CallGraph = & P(Node \times Node) \\
 Analysis = & (Node \rightarrow State) \times CallGraph
 \end{eqnarray*}
