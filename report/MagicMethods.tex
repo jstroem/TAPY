@@ -15,7 +15,7 @@ def readAttribute(x, a):
   __getattr__ = lookup(x, '__getattr__')
 
   try:
-    if (isset(__getattribute__)):
+    if isset(__getattribute__):
       # __getattribute__ is called if defined
       return __getattribute__(x, a)
     else:

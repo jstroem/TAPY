@@ -101,7 +101,7 @@ C.setX = setX
 
 We can handle this quite easily in our analysis by just updating the scope chains at class entry: we push the relevant class object on the heap (whether it is a new or an old style class) onto each current scope chain. As a result when we write to a variable like \inlinecode{x} inside the class it will be written to the head of each scope chain, i.e. the class heap object, which is exactly what we want.
 
-This is however not quite enough in order to support methods since our CFG does not distinguish between function and method declarations. Thus \inlinecode{getX} will appear as a function declaration in our CFG, even though it is actually a method. We handle this at function declaration time by checking whether the head of the scope chain is a class object. In that case we wrap the function in an unbound method object, which is merely just a pointer to the function object. Otherwise we proceed as we would otherwise have handled a function declaration as explained in section TODO\todo{Fix section}.
+This is however not quite enough in order to support methods since our CFG does not distinguish between function and method declarations. Thus \inlinecode{getX} will appear as a function declaration in our CFG, even though it is actually a method. We handle this at function declaration time by checking whether the head of the scope chain is a class object. In that case we wrap the function in an unbound method object, which is merely just a pointer to the function object. Otherwise we proceed as we would otherwise have handled a function declaration as explained in section \ref{Functions} about functions.
 
 We wrap the function in an unbound method object for at least two reasons:
 
@@ -127,7 +127,7 @@ C.foo.prop = 0 # AttributeError
 
 \begin{enumerate}
 \setcounter{enumi}{1}
-	\item When creating a class instance the unbound methods of the class are turned into bound methods on the instance object (we concentrate on this in the following section, Handling object creations\todo{Add ref to section?}).
+	\item When creating a class instance the unbound methods of the class are turned into bound methods on the instance object (we concentrate on this in the following section, Handling object creations).
 \end{enumerate}
 
 Fields and methods can also be added to a class after declaration time as was illustrated in example \ref{code:FieldAndMethodOnClass}. In our CFG this is represented by a \textit{WriteVariableNode}, so what we do in this case is very simular to what we do inbetween the class entry and exit nodes: if the object being written to is a class object, and the value being written is a function, then we wrap it in an unbound method object. Otherwise we just write the value to the property of the object as we would normally have done.
@@ -159,7 +159,7 @@ C.foo()
 
 Contrary to e.g. JavaScript, class instances are not created using the \inlinecode{new} keyword as can be seen from the above example. This means that we can't necessarily distinguish a function call from an object creation.
 
-At each function call (i.e. \textit{ClassNode} in our CFG) we therefore investigate which kind of object label on the heap we are calling\footnote{It is of course a \inlinecode{TypeError} whenever the value being called is something that is not only a function object, a function wrapper object, a class object, or a method object}. If we happen to call a new style class object on the heap, we create a new style instance object on the heap, representing the newly created instance (likewise for old style classes). In particular, we do not modify the call graph as we do for function calls unless the magic method \inlinecode{\_\_init\_\_} has been implemented on the class (see the following section, Supporting constructor calls\todo{Insert reference to section}, on how we handle this).
+At each function call (i.e. \textit{ClassNode} in our CFG) we therefore investigate which kind of object label on the heap we are calling\footnote{It is of course a \inlinecode{TypeError} whenever the value being called is something that is not only a function object, a function wrapper object, a class object, or a method object}. If we happen to call a new style class object on the heap, we create a new style instance object on the heap, representing the newly created instance (likewise for old style classes). In particular, we do not modify the call graph as we do for function calls unless the magic method \inlinecode{\_\_init\_\_} has been implemented on the class (see the following section, Supporting constructor calls, on how we handle this).
 
 Of course we wish generate the class instance objects conservatively. Consider the following code:
 
