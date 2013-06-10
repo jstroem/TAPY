@@ -251,11 +251,16 @@ trait Calls extends Exceptions with Logger {
         
         StackLattice.leastUpperBound(acc, pred.getStack(solution))
       }
+      stack = StackLattice.setExecutionContext(stack)
       stack = StackLattice.leastUpperBound(node.getStack(solution), stack)
       stack = StackLattice.updateStackFrame(stack, StackConstants.RETURN, ValueLattice.bottom, true)
-      
+
       // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
       var tmp = node.setStack(solution, stack)
+
+      println()
+      println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
+      println()
       
       // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))

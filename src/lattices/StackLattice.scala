@@ -21,7 +21,7 @@ object StackLattice extends ProductLattice(StackFrameLattice, ExecutionContextLa
   
   /* Setters */
     
-  def setExecutionContext(el: Elt, executionContexts: ExecutionContextLattice.Elt): Elt =
+  def setExecutionContext(el: Elt, executionContexts: ExecutionContextLattice.Elt = ExecutionContextLattice.bottom): Elt =
     (getStackFrame(el), executionContexts)
   
   def updateStackFrame(el: Elt, register: Int, value: ValueLattice.Elt, strong: Boolean = false): Elt =

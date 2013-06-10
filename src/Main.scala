@@ -91,12 +91,13 @@ object Main {
           
         case _ =>
       }
-      
+      /*
       println("\n----------\n")
       println("Pretty printing analysis result of \"" + file + "\"\n")
       now = System.currentTimeMillis();
       new PrintStream(dir+fname+".res.txt").print(AnalysisLattice.eltToString(solution, ""))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
+      */
     } catch {
       case e: Exception => e.printStackTrace()
     }
