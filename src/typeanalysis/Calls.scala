@@ -257,6 +257,10 @@ trait Calls extends Exceptions with Logger {
 
       // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
       var tmp = node.setStack(solution, stack)
+
+      println()
+      println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
+      println()
       
       // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))
