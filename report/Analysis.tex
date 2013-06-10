@@ -1,7 +1,7 @@
 \chapter{The Analysis Lattice}
 Inspired by TAJS we have a lattice for abstract values, $Value$, from which we build a lattice for abstract objects, $Object$. These two lattices are the main building blocks for the lattice of abstract states, $State$. Our analysis lattice is the lattice which for each program point (i.e. for each CFG node) tells the abstract state of that program point. Furthermore the analysis lattice tells the call graph of the CFG.
 
-\subsection{Abstract Values}
+\section{Abstract Values}
 The concrete lattices follows below.
 
 \begin{eqnarray*}
@@ -10,7 +10,7 @@ Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
         & \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
 
-The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$ lattices all contains two nodes, top and bottom. In Python when a function does not return a value, it is the constant \inlinecode{None}\cite{pyref.constants} which is returned, e.g.:
+The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$ lattices all contains two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python, this constnat is used when indexing using intervals. In Python when a function does not contain a return statement, the constant \inlinecode{None}\cite{pyref.constants} is returned by default, e.g.:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -34,7 +34,7 @@ a() is None // true
 Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in figure \ref{fig:latticeInteger}. The $Float$, $Long$ and $String$ lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object on the heap, which we model in the $Value$ lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
 
 
-\subsection{Abstract State}
+\section{Abstract State}
 We use the following lattice to model abstract state:
 
 \begin{equation*}
@@ -50,7 +50,7 @@ Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*}
 Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Thus the object lattice is the product between object values and a scope chain modelled as a list of object labels.
 
 
-\subsection{The Heap}
+\section{The Heap}
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
@@ -58,7 +58,7 @@ Heap = (ObjectLabel \rightarrow Object)
 The heap is modelled by a map from object labels to an object value. We found it benefitial to distinguish between different types of objects but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label object, e.g. function object, which besides its name also holds a reference to the CFG node that is the entry node for that function.
 
 
-\subsection{The Stack}
+\section{The Stack}
 The $Stack$ lattice is defined as:
 
 \begin{equation*}
