@@ -51,7 +51,7 @@ In the following sections the $Heap$ and $Stack$ lattice will be described, but 
 Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*})
 \end{equation*}
 
-Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Thus the object lattice is the product between object values and a scope chain modelled as a list of object labels.
+Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability mark variables as global is needed, idicating that writes to this varible should be done in the global variable scope object. Thus the object lattice is the product between object values, a scope chain modelled as a list of object labels and a global flag.
 
 
 \section{The Heap}
