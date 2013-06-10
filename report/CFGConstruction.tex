@@ -59,7 +59,7 @@ The CFG for the for-loop example \ref{code:forExample} can been seen in figure \
 
 For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
 
-\section{CFG cunstruction of With statements}
+\section{CFG construction of With statements}
 With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used alot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
 
 \begin{listing}[H]
@@ -111,8 +111,6 @@ a function register and a list of arguments registers.
 
 Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the control flow graph found in figure \ref{fig:callCfg} 
 (where the numbers to the left represent the result registers of the nodes).
-
-\todo{Tilfoeje afsnit om \_\_getattribute\_\_ og \_\_getattr\_\_, samt hvordan disse haandteres.}
 
 So far we have primarily been concerned with putting constants into registers and reading e.g. variables. 
 In order to support writing we have three different nodes: \textit{WriteVariableNode}, \textit{WritePropertyNode}, 

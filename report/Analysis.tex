@@ -1,8 +1,8 @@
 \chapter{The Analysis Lattice}
-Inspired by TAJS we have a lattice for abstract values, $Value$, from which we build a lattice for abstract objects, $Object$. These two lattices are the main building blocks for the lattice of abstract states, $State$. Our analysis lattice is the lattice which for each program point (i.e. for each CFG node) tells the abstract state of that program point. Furthermore the analysis lattice tells the call graph of the CFG.
+Inspired by TAJS \cite{tajs} we have a lattice for abstract values, $Value$, from which we build a lattice for abstract objects, $Object$. These two lattices are the main building blocks for the lattice of abstract states, $State$. Our analysis lattice is the lattice which for each program point (i.e. for each CFG node) tells the abstract state of that program point. Furthermore the analysis lattice tells the call graph of the CFG.
 
 \section{Abstract Values}
-The concrete lattices follows below.
+The concrete lattice for abstract values follows below.
 
 \begin{eqnarray*}
 Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
@@ -10,7 +10,7 @@ Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
         & \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
 
-The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$ lattices all contains two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python, this constnat is used when indexing using intervals. In Python when a function does not contain a return statement, the constant \inlinecode{None}\cite{pyref.constants} is returned by default, e.g.:
+The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$\footnote{\inlinecode{NotImplemented}, \inlinecode{Ellipsis} and \inlinecode{None} are examples of builtin constants. See \cite{pyref.constants} for a complete list of builtin constants in Python.} lattices all contains two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python; this constant can be used when indexing using intervals (also known as slicing). In Python when a function does not contain a return statement, the constant \inlinecode{None} is returned by default, e.g.:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -31,7 +31,11 @@ a() is None // true
 	\vspace{-10pt}
 \end{wrapfigure}
 
-Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in figure \ref{fig:latticeInteger}. The $Float$, $Long$ and $String$ lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object on the heap, which we model in the $Value$ lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
+Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. As lists in Python can only be indexed using integers our lattices does not have to keep track of whether a particular number is an unsigned integer or not, as the $Num$ lattice for TAJS does (page 8, \cite{tajs}). To TAJS it is crucial to have this distinction because the behavior of associative arrays distincts based on whether a unsigned integer or not is used to index with. For the similar reason our $String$ lattice does not distinct between unsigned integer strings and not unsigned integer strings, as the $String$ lattice for TAJS does.
+
+Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in figure \ref{fig:latticeInteger}. The $Float$, $Long$ and $String$ lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object on the heap, which we model in the $Value$ lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
+
+The notion of object labels will be described in section \ref{The Heap} about the heap.
 
 
 \section{Abstract State}
@@ -51,12 +55,31 @@ Having made special lattices for the 'primitive' objects there is still a need t
 
 
 \section{The Heap}
+\label{The Heap}
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
 
-The heap is modelled by a map from object labels to an object value. We found it benefitial to distinguish between different types of objects but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label object, e.g. function object, which besides its name also holds a reference to the CFG node that is the entry node for that function.
+The heap is modelled by a map from object labels to an object value. During the execution of a program there may be infinitely many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
 
+As an illustrative example consider the following very simple program:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class C(): pass
+x = []
+for y in range(0,2):
+	x.append(C())
+x[0].a = 'a'
+x[1].b = 'b'
+	\end{minted}
+\end{listing}
+
+At runtime this example would of course generate two different \inlinecode{C} objects with attributes \inlinecode{a} and \inlinecode{b}, respectively. Using the object label abstraction only a single \inlinecode{C} object would be created on the heap. As a consequence, when writing to the property \inlinecode{a} in line 5, this is in principle done on each object originating from the same allocation site\footnote{In order to deal with this conservatively, it must of course be a weak update. We discuss strong and weak updates in the chapter about functions.}. Thus an analysis for this code should conclude at the end that the attribute \inlinecode{a} of an object originating from line 4 might be undefined or \inlinecode{'a'} (similar for \inlinecode{b}).
+
+As a side note we mention that the approach taken here is quite similar to the one taken in the Static Analysis course\footnote{See \url{http://cs.au.dk/SA}.}, where a bunch of points-to analyses for TIP (Tiny Imperative Language) was described. There, \textit{Targets} was introduced as the possible set of allocations sites, which for TIP is the pointer targets \inlinecode{malloc-i} for a given program (page 74, \cite{sa}).
+
+In our implementation of the type analyzer we found it benefitial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
 
 \section{The Stack}
 The $Stack$ lattice is defined as:
@@ -65,7 +88,7 @@ The $Stack$ lattice is defined as:
 Stack = (TempVar \rightarrow Value) \times P(ObjectLabel^{*})
 \end{equation*}
 
-For each temporary variable we specify the value of that particular temporary variable. The power set $P(ObjectLabel^{*})$ specifies the scope chain ($ObjectLabel^{*}$). The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
+For each temporary variable we specify the value of that particular temporary variable. The power set $P(ObjectLabel^{*})$ specifies the scope chain $ObjectLabel^{*}$. The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
 
 The scope chain specifies where to look in case of e.g. reading a variable that is not present on the variable object. The following simple example can be used to illustrate this:
 
