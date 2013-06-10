@@ -15,7 +15,7 @@ The value lattice is used to tell the value of a temporary variable (see the lat
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): pass
-a() is None // true
+a() is None # true
 	\end{minted}
 	\caption{Constant None}\label{code:NoneExample}
 \end{listing}
@@ -59,8 +59,7 @@ Having made special lattices for the 'primitive' objects there is still a need t
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
-
-The heap is modelled by a map from object labels to an object value. During the execution of a program there may be infinitely many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
+The heap is modelled by a map from object labels to an object value. During the execution of a program there may be unbounded many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
 
 As an illustrative example consider the following very simple program:
 
