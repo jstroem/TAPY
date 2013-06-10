@@ -6,8 +6,6 @@ Ellipsis = __EllipsisLattice_Concrete__
 
 #Built-in classes
 class list(object):
-	def __init__(self):
-		self.__List_Elements__ = None
 
 	def append(self, x):
 		self.__List_Elements__ = x
@@ -28,10 +26,6 @@ class list(object):
 			raise TypeError("list indices must be integers")
 
 class dict(object):
-	def __init__(self):
-		self.__Dict_Element_Values__ = None
-		self.__Dict_Element_Keys__ = None
-
 	def __getitem__(self, key):
 		if (__BooleanLattice_Abstract__):
 			raise KeyError("")

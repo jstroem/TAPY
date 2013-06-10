@@ -6,8 +6,6 @@ Ellipsis = __EllipsisLattice_Concrete__
 
 #Built-in classes
 class list(object):
-	def __init__(self):
-		self.__List_Elements__ = None
 
 	def append(self, x):
 		self.__List_Elements__ = x
@@ -17,7 +15,7 @@ class list(object):
 
 	def __getitem__(self, key):
 		if (__BooleanLattice_Abstract__):
-			raise IndexError("list index out of range");
+			raise IndexError("list index out of range")	
 		else:
 			return self.__List_Elements__
 
@@ -26,6 +24,17 @@ class list(object):
 			self.__List_Elements__ = value
 		else:
 			raise TypeError("list indices must be integers")
+
+class dict(object):
+	def __getitem__(self, key):
+		if (__BooleanLattice_Abstract__):
+			raise KeyError("")
+		else:
+			return self.__Dict_Element_Values__
+
+	def __setitem__(self, key, value):
+		self.__Dict_Element_Values__ = value
+		self.__Dict_Element_Keys__ = key
 
 ## Exceptions
 class BaseException(object):
@@ -47,6 +56,10 @@ class IndexError(LookupError):
 	def __init__(self, msg):
 		self.message = msg
 
+class KeyError(LookupError):
+	def __init__(self, msg):
+		self.message = msg
+
 ## Built in functions
 def raw_input():
 	return __StringLattice_Abstract__
@@ -54,3 +67,9 @@ def raw_input():
 #Workround int should be a class
 def int(el):
 	return __IntegerLattice_Abstract__
+
+def len(el):
+	if (__BooleanLattice_Abstract__):
+		return __IntegerLattice_Abstract__
+	else:
+		raise TypeError("object of type __ has no len()")

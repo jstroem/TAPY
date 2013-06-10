@@ -19,7 +19,7 @@ D().x # 'A'
 Since \inlinecode{D} extends \inlinecode{B} and \inlinecode{C}, which in turn extends the old style class \inlinecode{A}, \inlinecode{D} is itself an old style class. Therefore, evaluating \inlinecode{D().x} will result in \inlinecode{'A'}. If we instead had declared \inlinecode{A} as a new style class \inlinecode{class A(object): ...}, evaluating \inlinecode{D().x} would result in \inlinecode{'C'}.
 
 
-\subsection{Class declarations}
+\section{Class declarations}
 To start with we must take care of class declarations. In the CFG we have the following nodes related to this: \textit{ClassDeclNode}, \textit{ClassEntryNode}, and \textit{ClassExitNode}. Consider a class declaration like \inlinecode{class C(B1,...,Bn):<body>}. For this particular code we create a class declaration node in our CFG which holds the name of the class and the names of the baseclasses, i.e. \inlinecode{C}, and \inlinecode{B1}, ..., \inlinecode{Bn}. Furthermore we create a class entry node which we make the successor of the class declaration node. Then the inductively created CFG for the piece of code appearing at \inlinecode{<body>} will be inserted after the class entry node, and finally, we create a class exit node and make it the successor of the exit node of the inductively created \inlinecode{<body>} CFG.
 
 More or less, the purpose of the three different kinds of nodes is the following:
@@ -30,7 +30,7 @@ More or less, the purpose of the three different kinds of nodes is the following
 	\item The class exit node, \textit{ClassExitNode}, reverts the execution contexts to what they were before visiting the class entry node (by popping the newly created class object from each of the execution contexts).
 \end{itemize}
 
-\subsubsection{Creating the class objects on the heap}
+\subsection{Creating the class objects on the heap}
 As mentioned our type analysis creates one or more class object on the heap whenever a class declaration node is meet. More precisely:
 
 \begin{itemize}
@@ -81,7 +81,7 @@ Recall that the baseclasses \inlinecode{B1}, ..., \inlinecode{Bn} are just varia
 
 In the same way we conclude that a class is definately an old style class.
 
-\subsubsection{Populating the class objects on the heap with fields and methods}
+\subsection{Populating the class objects on the heap with fields and methods}
 As mentioned above the heap objects we create at class declaration nodes are empty. We add fields and methods to these heap objects inbetween the class entry and class exit nodes. First, let us investigate how fields and methods are created for classes below.
 
 Fields and methods can be created at class declaration time, and dynamically added to the class after declaration as the following tries to illustrate:
@@ -191,7 +191,7 @@ For this code we can't tell whether \inlinecode{C} after the \inlinecode{if} sta
 So far we haven't mentioned how we populate the newly created class instance object with the fields of the class, but this is more or less trivial: Each field (i.e. attribute) of the class is copied to the instance object, and each unbound method of the class is transformed into a bound method on the instance object (i.e. we create a new bound method object on the heap for each unbound method on the class).
 
 
-\subsection{Supporting constructor calls}
+\section{Supporting constructor calls}
 The magic method \inlinecode{\_\_init\_\_} can be set on a class in order to supply a constructor as the following illustrates:
 
 \begin{listing}[H]
@@ -225,8 +225,8 @@ The idea is the following: Instead of updating the call graph with call edges in
 Specifically, our implementation has a special join operation for after call nodes (for all other nodes the join operation just takes the least upper bound of the solutions of its predecessors). This join operation for after call nodes is the usual join operation, except that solutions coming from constructor call edges have their special return register (containing \inlinecode{\_\_None\_\_} emptied). As a consequence, our analysis can just take the least upper bound of the values in the special return and the special constructor return register, respectively, and store it in e.g. the attribute \inlinecode{x} of \inlinecode{c}.
 
 
-\subsection{Further class work}
+\section{Further class work}
 Not implemented yet: Resolution of methods and fields in super classes (specifically implementing the C3 MRO)\todo{Fixme}.
 
-\subsection{Analyzing a concrete example}
+\section{Analyzing a concrete example}
 Give a concrete example together with the output of our analysis tool on that particular example\todo{Fixme}.

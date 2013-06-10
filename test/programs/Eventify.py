@@ -25,7 +25,7 @@ class Eventify(object):
 			return self.trigger(obj,e,args)
 		return triggerInner
 
-	def __init__(self, obj):
+	def __init__(self,obj):
 		self.events = {}
 		obj.trigger = self.triggerWrapper(obj)
 		obj.off = self.off
@@ -33,31 +33,30 @@ class Eventify(object):
 
 ##Tester code##
 class A(object):
-	pass
+	def __init__(self):
+		pass
 
 x = A()
-Eventify(x)
+y = Eventify(x)
+
+y = 0
 
 def onC(self,args):
+	y = 10
 	print "onC", self, args
 
 def onB(self,args):
+	y = 20
 	print "onB", self, args
 
-def onB2(self,args):
-	print "onB2", self, args
-
-
 x.on("B", onB)
-x.on("B", onB2)
 x.on("C", onC)
 
-x.trigger("B", [1,2])
-x.trigger("C", [1,2,3])
+x.trigger("B", 1)
+x.trigger("C", 2)
 
 x.off("B", onB)
-x.trigger("B", [1,2,3,4])
+x.trigger("B", 3)
 
-x.off("B")
 x.off("C")
-x.trigger("C", [1,2,3,4,5])
+x.trigger("C", 4)
