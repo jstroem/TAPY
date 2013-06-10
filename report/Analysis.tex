@@ -15,7 +15,7 @@ The value lattice is used to tell the value of a temporary variable (see the lat
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def a(): pass
-a() is None // true
+a() is None # true
 	\end{minted}
 	\caption{Constant None}\label{code:NoneExample}
 \end{listing}
@@ -51,7 +51,7 @@ In the following sections the $Heap$ and $Stack$ lattice will be described, but 
 Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*})
 \end{equation*}
 
-Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Thus the object lattice is the product between object values and a scope chain modelled as a list of object labels.
+Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability mark variables as global is needed, idicating that writes to this varible should be done in the global variable scope object. Thus the object lattice is the product between object values, a scope chain modelled as a list of object labels and a global flag.
 
 
 \section{The Heap}
@@ -59,8 +59,7 @@ Having made special lattices for the 'primitive' objects there is still a need t
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
-
-The heap is modelled by a map from object labels to an object value. During the execution of a program there may be infinitely many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
+The heap is modelled by a map from object labels to an object value. During the execution of a program there may be unbounded many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
 
 As an illustrative example consider the following very simple program:
 
