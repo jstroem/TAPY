@@ -235,7 +235,7 @@ trait Calls extends Exceptions with Logger {
   def handleAfterCallNode(node: AfterCallNode, solution: Elt): Elt = {
     try {
       // Join constructor call edges!
-      var stack = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StackLattice.bottom) {(acc, pred) =>
+      var state = CallGraphLattice.getConstructorCallPredecessors(AnalysisLattice.getCallGraph(solution), node).foldLeft(StateLattice.bottom) {(acc, pred) =>
         log("AfterCallNode", "Joining from " + pred)
         
         // Check that __init__ returns None
@@ -249,14 +249,15 @@ trait Calls extends Exceptions with Logger {
           case _ => // Happens when there is no __init__
         }
         
-        StackLattice.leastUpperBound(acc, pred.getStack(solution))
+        StateLattice.leastUpperBound(acc, pred.getState(solution))
       }
-      stack = StackLattice.setExecutionContext(stack)
-      stack = StackLattice.leastUpperBound(node.getStack(solution), stack)
-      stack = StackLattice.updateStackFrame(stack, StackConstants.RETURN, ValueLattice.bottom, true)
+
+      state = StateLattice.setExecutionContext(state)
+      state = StateLattice.leastUpperBound(node.getState(solution), state)
+      state = StateLattice.updateStackFrame(state, StackConstants.RETURN, ValueLattice.bottom, true)
 
       // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
-      var tmp = node.setStack(solution, stack)
+      var tmp = node.setState(solution, state)
 
       println()
       println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))

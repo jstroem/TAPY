@@ -35,7 +35,7 @@ object StateLattice extends ProductLattice(HeapLattice, StackLattice) {
   def setStack(el: Elt, stack: StackLattice.Elt): Elt =
     (getHeap(el), stack)
   
-  def setExecutionContext(el: Elt, executionContext: ExecutionContextLattice.Elt): Elt =
+  def setExecutionContext(el: Elt, executionContext: ExecutionContextLattice.Elt = ExecutionContextLattice.bottom): Elt =
     (getHeap(el), StackLattice.setExecutionContext(getStack(el), executionContext))
     
   /* Updaters */

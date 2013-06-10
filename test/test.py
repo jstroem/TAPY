@@ -1,10 +1,8 @@
-class C(object):
-	a = 10
+class A(object):
+	def __init__(self):
+		self.x = 10
+		__Analysis_Dump_Lol__
 
-def foo(x):
-	def bar(y):
-		return x+y
-	return bar
+class B(object): pass
 
-x = foo(1)
-y = x(2)
+a = A()
