@@ -1,5 +1,5 @@
 \chapter{Handling functions}
-In this chapter we start with motivating why it is necessary to have three objects on the heap for each function declaration. Consider the below example \ref{code:FunctionPropertyExample}. As mentioned we create a function object on the heap for each function declaration. This object is necessary as functions are themselves objects, just like in e.g. JavaScript. For instance we can set a property on a function object as line 2 illustrates.
+In this chapter we start with motivating why it is necessary to have three objects on the heap for each function declaration. Consider the listing \ref{code:FunctionPropertyExample}. As mentioned we create a function object on the heap for each function declaration. This object is necessary as functions are themselves objects, just like in e.g. JavaScript. For instance we can set a property on a function object as line 2 illustrates.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -37,7 +37,8 @@ a.__call__.prop = 10
 \caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
 \end{listing}
 
-Finally, the scope object of a function in example \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function:
+Finally, the scope object of a function in listing \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function.
+In the analysis there is only created one scope object on the heap, this is an abstraction since when running a function in Python a new scope object would be created every time a function is invoked. The abstraction makes it possible to create the scope object when the function is declared instead of doing it when a function is invoked.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -50,10 +51,11 @@ a.x # AttributeError
 
 
 \section{Calling functions and updating the call graph}
-We need to describe what we do when functions are called, how the call graph is populated, and how we fix parameter passing + default parameters\todo{Fixme}.
+We need to describe what we do when functions are called, how the call graph is populated, and how we fix parameter passing\todo{Fixme}.
+When converting a function declaration from the AST representation into the CFG representation, stack space is allocated for the default arguments. Default arguments is only evaluated once when the function is declared and when normal arguments is passed into the function, registers to the default arguments is used if the normal argument on that position is absent.
 
 \section{Strong or weak updates of local variables}
-Since onlu one scope object is created for each function, there is a big potential for presition loss because soundness would dictate that all writes to local variable are modeled as weak updates, i.e. least upper bound between current value and the new value. This is due to the fact that a scobe object of a perticular function might exist in more than one instance at runtime, as it is the case with recursive functions. An examble would be if, at runtime, one instance of a scope object for a particular function has some variable z to be 5 while another has it to be 10, then the analysis would need to emulate both these values at the same time in the scope object. Ths can be achieved by taking the least upper bound of the two values, but this has potential to grealt reduce the accuraru of the analysis since the only upperbound possible in our value lattice is the any integer element.
+Since only one scope object is created for each function, there is a big potential for presition loss because soundness would dictate that all writes to local variable are modeled as weak updates, i.e. least upper bound between current value and the new value. This is due to the fact that a scobe object of a perticular function might exist in more than one instance at runtime, as it is the case with recursive functions. An examble would be if, at runtime, one instance of a scope object for a particular function has some variable z to be 5 while another has it to be 10, then the analysis would need to emulate both these values at the same time in the scope object. Ths can be achieved by taking the least upper bound of the two values, but this has potential to grealt reduce the accuraru of the analysis since the only upperbound possible in our value lattice is the any integer element.
 
 This problem only arises in the presence of recursive functions, so to enable the analysis to do strong updates a flag is introduced to tell the analysis if it can assume no recursive functions. This is a very fast to implement and allowed more time to focus on the magic methods, which on its own doesn't introduce any recursion.
 
