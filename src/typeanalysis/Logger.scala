@@ -20,7 +20,7 @@ trait Logger {
     if (DEBUG) {
       val str = s"[$node] $msg"
       if (str != last) {
-        println(s"[$node] $msg")
+        // println(s"[$node] $msg")
         last = str
       }
     }

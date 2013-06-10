@@ -1,1 +1,53 @@
 \chapter{Results}
+During our project we have developed a type analyzer for Python, that is able to analyze simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django were simple.
+
+In order to do so we needed to handle among others simple use of exceptions. Consider the following calculator example that makes use of exceptions:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def calculator(a, op, b):
+	if (op == "+"):
+		result = a + b
+	elif (op == "-"):
+		result = a - b
+	elif (op == "*"):
+		result = a * b
+	elif (op == "/"):
+		result = a / b
+	else:
+		raise Exception()
+	return result
+
+try:
+	amodb  = calculator(10, "%", 20)
+except:
+	err = "An error occured"
+	\end{minted}
+\end{listing}
+
+For this example our analyzer will conclude that \inlinecode{amodb} is undefined, and that \inlinecode{err} is "An error occured". Due to a very simple path sensivity our analyzer does not conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. If we had instead called \inlinecode{calculator(10, "+", 20)} our analyzer would correctly conclude that the result of the function call would be 30.
+
+The simple exception handling has allowed us to handle implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from section \ref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class Student(object):
+  def __init__(self, name):
+    self.name = name
+  def __getattr__(self, name):
+    if name in self.grades:
+      return self.grades[name]
+    else:
+      raise AttributeError()
+a = Student('John')
+a.grades = { 'math': 'A' }
+try:
+	mathgrade = a.math
+except:
+	err = "Error"
+	\end{minted}
+\end{listing}
+
+Our tool is able to analyze this program and conclude that \inlinecode{mathgrade} is either 'A' or undefined (the latter because we do a weak update in line 10 to \inlinecode{a.grades}). It should be mentioned though, that the lack of context sensivity destroys the precision very quickly because Python has a lot of implicit method calls, contrary to e.g. JavaScript.
+
+Again however, it is important to stress that the fact that we only support a subset of Python, e.g. not the magic method \inlinecode{\_\_getattribute\_\_}, simplifies the situation as also mentioned in the section about magic methods, \ref{Magic methods transformation}.

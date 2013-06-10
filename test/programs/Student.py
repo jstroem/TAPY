@@ -1,10 +1,16 @@
 class Student(object):
+    def __init__(self, name):
+        self.name = name
+
     def __getattr__(self, name):
         if name in self.grades:
             return self.grades[name]
         else:
-            raise AttributeError("'Student' object has no attribute '"  + name + "'")
+            raise AttributeError()
 
-a = Student()
+a = Student('John')
 a.grades = { 'math': 'A' }
-mathgrade = a.math
+try:
+	mathgrade = a.math
+except:
+	err = "An error occurred"

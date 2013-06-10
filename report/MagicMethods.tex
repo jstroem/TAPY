@@ -34,6 +34,7 @@ Thus, the magic method \inlinecode{\_\_getattribute\_\_} can be used to supply a
 As mentioned in the introduction we have only aimed to support \inlinecode{\_\_getattr\_\_} in our type analyzer, due to the limited time of our project. However, in order to determine that we wanted to support \inlinecode{\_\_getattr\_\_} and not \inlinecode{\_\_getattribute\_\_}, we looked at the use of these magic methods in some larger Python projects. In Django 1.5.1\footnote{See \url{http://www.djangoproject.com/}.}, a high-level web framework, we found that \inlinecode{\_\_getattribute\_\_} was not used at all. However, \inlinecode{\_\_getattr\_\_} is used 14 times and therefore seems more useful to support if the choice stands between the two of them. Of course 14 usages is not much for a web framework on approximately 200.000 lines of code, but it is still essential to handle in order to be able to statically analyze Python programs.
 
 \section{Transforming the CFG}
+\label{Magic methods transformation}
 Since each single attribute access possibly involves method calls, we normalize the CFG in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadAttribute(<base>,prop)}, into the following CFG piece:
 
 \begin{listing}[H]
