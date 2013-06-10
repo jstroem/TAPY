@@ -224,6 +224,9 @@ The idea is the following: Instead of updating the call graph with call edges in
 
 Specifically, our implementation has a special join operation for after call nodes (for all other nodes the join operation just takes the least upper bound of the solutions of its predecessors). This join operation for after call nodes is the usual join operation, except that solutions coming from constructor call edges have their special return register (containing \inlinecode{\_\_None\_\_} emptied). As a consequence, our analysis can just take the least upper bound of the values in the special return and the special constructor return register, respectively, and store it in e.g. the attribute \inlinecode{x} of \inlinecode{c}.
 
+\section{Builtin classes}
+To support some of the built-in function and classes Python contains, a specific \inlinecode{\_\_builtin\_\_.py} file is created and imported every time an analysis is made. This \inlinecode{\_\_builtin\_\_.py} file contains abstract implementations of the built-in function and classes written in Python. The idea of using the target language to implement some of the built-in functions is common in static analysis and can be seen in both the TAJS\cite{tajs} and the Lambda-py\cite{lambdapy} project, even though the projects have different approaches on how they do the static analysis.
+
 
 \section{Further class work}
 Not implemented yet: Resolution of methods and fields in super classes (specifically implementing the C3 MRO)\todo{Fixme}.
