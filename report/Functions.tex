@@ -49,10 +49,19 @@ a.x # AttributeError
 \end{listing}
 
 
-\subsection{Calling functions and updating the call graph}
+\section{Calling functions and updating the call graph}
 We need to describe what we do when functions are called, how the call graph is populated, and how we fix parameter passing + default parameters\todo{Fixme}.
 
-\subsection{Further work with functions}
+\section{Strong or weak updates of local variables}
+Since onlu one scope object is created for each function, there is a big potential for presition loss because soundness would dictate that all writes to local variable are modeled as weak updates, i.e. least upper bound between current value and the new value. This is due to the fact that a scobe object of a perticular function might exist in more than one instance at runtime, as it is the case with recursive functions. An examble would be if, at runtime, one instance of a scope object for a particular function has some variable z to be 5 while another has it to be 10, then the analysis would need to emulate both these values at the same time in the scope object. Ths can be achieved by taking the least upper bound of the two values, but this has potential to grealt reduce the accuraru of the analysis since the only upperbound possible in our value lattice is the any integer element.
+
+This problem only arises in the presence of recursive functions, so to enable the analysis to do strong updates a flag is introduced to tell the analysis if it can assume no recursive functions. This is a very fast to implement and allowed more time to focus on the magic methods, which on its own doesn't introduce any recursion.
+
+Alternativly to this fix, the call graph could be inspected for lopps indicating recusive functions. However since the call graph is built dynamicly as a part of the analysis a recursive function might not appear as recursive at the current iteration possibly leading to strong updates, thus special care is needed when functions are labeled recursive.
+
+A different approached could be to use the recency abstraction as introduced by \cite{recency}. This could work very well because all writes to local objects at runtime happen to the lastest instantiated stackframe, which is exactly the situation recency abstraction enables strong updates over weak updates.
+
+\section{Further work with functions}
 In Python it is possible to unfold e.g. a dictionary to the arguments of a function:
 
 \begin{listing}[H]
