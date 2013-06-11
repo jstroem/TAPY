@@ -60,7 +60,7 @@ The CFG for the for-loop example \ref{code:forExample} can been seen in figure \
 For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
 
 \section{CFG construction of With statements}
-With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used alot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
+With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -71,7 +71,7 @@ with open('file.txt') as fh:
 \end{listing}
 
 The formal description of the With statement can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.5, 
-the hightlights is that if there is an \inlinecode{as} part of your with statement the result of the method call to \inlinecode{\_\_enter\_\_} 
+the highlights is that if there is an \inlinecode{as} part of your with statement the result of the method call to \inlinecode{\_\_enter\_\_} 
 assigned to the variable in the with statement. If there is raised an exception during the execution of the body of the With statement it is 
 passed as arguments to the method call \inlinecode{\_\_exit\_\_}, if the result of that call returns something which truth value is \inlinecode{True} 
 the with statement just evaluates normally, If a truth value of \inlinecode{False} is returned the exception isn't caught. 
@@ -196,7 +196,7 @@ In the following sections we present the way we generate the CFG of a try-except
 \subsection{The try block}
 Each node in \textit{CFG$_{\textit{try}}$} (that does not already have an outgoing exception edge) is connected using an exception edge to the entry node of the first except block (*), in this case the entry node of \textit{CFG$_{\textit{except-foo}}$}. We do not add exception edges to nodes that already have an exception edges, because this would be a loss of information: the control flow always goes to the nearest enclosing except block in case of exceptions. \\
 The above models that if an exception occurs during evaluation of one of the statements in a try block, then the control flow will proceed from the first except block. \\
-If there is no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifially \textit{CFG$_{\textit{finally-unhandled-exc}}$}). However, we don't add any exception edges here; these will be added inductively because of (*) in case there are any surrounding except or finally blocks.
+If there is no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifically \textit{CFG$_{\textit{finally-unhandled-exc}}$}). However, we don't add any exception edges here; these will be added inductively because of (*) in case there are any surrounding except or finally blocks.
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-20pt}
