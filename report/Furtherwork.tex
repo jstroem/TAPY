@@ -1,16 +1,16 @@
 \chapter{Further work}
 
 \section{Exceptions}
-In Python exceptions is used a lot implicit by the language implementation, an example of this is \inlinecode{For} statements, which is described in section \ref{sec:CFGConstructionLoops}, also all generator expressions and \inlinecode{With} statements uses exceptions to some extend. Because of exceptions high involvement in the language and almost built-in use marks exceptions as a high priority in our further work.
+In Python exceptions is used a lot implicit by the language implementation, an example of this is \inlinecode{For} statements, which is described in section \ref{sec:CFGConstructionLoops}, also all generator expressions and \inlinecode{With} statements uses exceptions to some extent. Because of exceptions high involvement in the language and almost built-in use marks exceptions as a high priority in our further work.
 
 \section{Standard library and built-in functions}
-A lot of the functionallity in Python comes from the Python Standard Library which includes built-in functions (built-in functions can be interpreted as a implicit import of the library \inlinecode{\_\_builtin\_\_}). These standard libraries is used in almost every Python project made, which makes it a high priority in our further work.
+A lot of the functionality  in Python comes from the Python Standard Library which includes built-in functions (built-in functions can be interpreted as a implicit import of the library \inlinecode{\_\_builtin\_\_}). These standard libraries are used in almost every Python project made, which makes it a high priority in our further work.
 
 \section{Imports}
-Unlike JavaScript native Python supports modules. This makes analysis more complicated since programs becomes seperated into multiple modules and included between each other. The modularity is used in any large Python project made and therefore it has a high priority in our further work.
+Unlike JavaScript native Python supports modules. This makes analysis more complicated since programs become separated  into multiple modules and included between each other. The modularity is used in any large Python project made and therefore it has a high priority in our further work.
 
 \section{Precision}
 Further work would also be to make our analysis more precise, this can be done on many levels and on different topics throughout the language. An example could be doing analysis over loops precise which requires a better path sensitivity or do function calls more precise which requires more call sensitivity. Good call sensitivity is important in Python since simple expressions can become evaluated to multiple method calls and without call sensitivity the analysis would become useless. 
 
 \section{Support for Magic Methods}
-Python has a lot of implicit calls to magic methods, this can be supported in the analysis by changeing the CFG while running the analysis. Magic methods is used in some of the large frameworks written in Python including the web framework Django and the famous scientific computing frameworks in NumPy and SciPy.
+Python has a lot of implicit calls to magic methods, this can be supported in the analysis by changing  the CFG while running the analysis. Magic methods are used in some of the large frameworks written in Python including the web framework Django and the famous scientific computing frameworks in NumPy and SciPy.
