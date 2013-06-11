@@ -10,7 +10,7 @@ Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
         & \times Complex \times String \times P(ObjectLabel)
 \end{eqnarray*}
 
-The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$\footnote{\inlinecode{NotImplemented}, \inlinecode{Ellipsis} and \inlinecode{None} are examples of builtin constants. See \cite{pyref.constants} for a complete list of builtin constants in Python.} lattices all contains two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python; this constant can be used when indexing using intervals (also known as slicing). In Python when a function does not contain a return statement, the constant \inlinecode{None} is returned by default, e.g.:
+The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$\footnote{\inlinecode{NotImplemented}, \inlinecode{Ellipsis} and \inlinecode{None} are examples of builtin constants. See \cite{pyref.constants} for a complete list of builtin constants in Python.} lattices all contain two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python; this constant can be used when indexing using intervals (also known as slicing). In Python when a function does not contain a return statement, the constant \inlinecode{None} is returned by default, e.g.:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -31,7 +31,7 @@ a() is None # true
 	\vspace{-10pt}
 \end{wrapfigure}
 
-Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. As lists in Python can only be indexed using integers our lattices does not have to keep track of whether a particular number is an unsigned integer or not, as the $Num$ lattice for TAJS does (page 8, \cite{tajs}). To TAJS it is crucial to have this distinction because the behavior of associative arrays distincts based on whether a unsigned integer or not is used to index with. For the similar reason our $String$ lattice does not distinct between unsigned integer strings and not unsigned integer strings, as the $String$ lattice for TAJS does.
+Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. As lists in Python can only be indexed using integers our lattices does not have to keep track of whether a particular number is an unsigned integer or not, as the $Num$ lattice for TAJS does (page 8, \cite{tajs}). To TAJS it is crucial to have this distinction because the behavior of associative arrays are distinct based on whether an unsigned integer or not is used to index with. For the similar reason our $String$ lattice does not distinct between unsigned integer strings and not unsigned integer strings, as the $String$ lattice for TAJS does.
 
 Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in figure \ref{fig:latticeInteger}. The $Float$, $Long$ and $String$ lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object on the heap, which we model in the $Value$ lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
 
@@ -51,7 +51,7 @@ In the following sections the $Heap$ and $Stack$ lattice will be described, but 
 Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*})
 \end{equation*}
 
-Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability mark variables as global is needed, idicating that writes to this varible should be done in the global variable scope object. Thus the object lattice is the product between object values, a scope chain modelled as a list of object labels and a global flag.
+Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability mark variables as global is needed, indicating that writes to this variable should be done in the global variable scope object. Thus the object lattice is the product between object values, a scope chain modeled as a list of object labels and a global flag.
 
 
 \section{The Heap}
@@ -59,7 +59,7 @@ Having made special lattices for the 'primitive' objects there is still a need t
 \begin{equation*}
 Heap = (ObjectLabel \rightarrow Object)
 \end{equation*}
-The heap is modelled by a map from object labels to an object value. During the execution of a program there may be unbounded many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
+The heap is modeled by a map from object labels to an object value. During the execution of a program there may be unbounded many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
 
 As an illustrative example consider the following very simple program:
 
@@ -78,7 +78,7 @@ At runtime this example would of course generate two different \inlinecode{C} ob
 
 As a side note we mention that the approach taken here is quite similar to the one taken in the Static Analysis course\footnote{See \url{http://cs.au.dk/SA}.}, where a bunch of points-to analyses for TIP (Tiny Imperative Language) was described. There, \textit{Targets} was introduced as the possible set of allocations sites, which for TIP is the pointer targets \inlinecode{malloc-i} for a given program (page 74, \cite{sa}).
 
-In our implementation of the type analyzer we found it benefitial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
+In our implementation of the type analyzer we found it beneficial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
 
 \section{The Stack}
 The $Stack$ lattice is defined as:
@@ -87,7 +87,7 @@ The $Stack$ lattice is defined as:
 Stack = (Register \rightarrow Value) \times P(ObjectLabel^{*})
 \end{equation*}
 
-For each register, which can be thought of as an temporary variable, we specify the value of that particular register. Recall that we use registers in our intermediate representation, see e.g. figure \ref{fig:callCfg} in section \label{CFG calls} about CFG construction of function and method calls.
+For each register, which can be thought of as a temporary variable, we specify the value of that particular register. Recall that we use registers in our intermediate representation, see e.g. figure \ref{fig:callCfg} in section \label{CFG calls} about CFG construction of function and method calls.
 
 The power set $P(ObjectLabel^{*})$ specifies the objects on the scope chain $ObjectLabel^{*}$, i.e. the runtime stack. The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
 
