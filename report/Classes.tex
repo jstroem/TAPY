@@ -1,5 +1,5 @@
 \chapter{Analyzing Classes}
-Python has two different kinds of classes, namely new and old style (or classic) classes that both supports multiple inheritance (note that from Python 3 all classes are new style classes). A new style class is one that contrary to an old style class is a subclass of \inlinecode{object}. The two different kinds of classes vary among others in their method resolution order (MRO)\cite{pyref.typehierarchy}: old style classes resolves variables and attributes by a depth-first, left-to-right strategy, whereas new style classes uses the more complex strategy C3\cite{pyref.c3mro}, which is also known as the call-next-method from other multiple inheritance languages. Also, the built in function \inlinecode{super} can only be used with new style classes. In this section we present our work towards handling those two kinds of classes.
+Python has two different kinds of classes, namely new and old style (or classic) classes that both support multiple inheritance (note that from Python 3 all classes are new style classes). A new style class is one that contrary to an old style class is a subclass of \inlinecode{object}. The two different kinds of classes vary among others in their method resolution order (MRO)\cite{pyref.typehierarchy}: old style classes resolves variables and attributes by a depth-first, left-to-right strategy, whereas new style classes uses the more complex strategy C3\cite{pyref.c3mro}, which is also known as the call-next-method from other multiple inheritance languages. Also, the built in function \inlinecode{super} can only be used with new style classes. In this section we present our work towards handling those two kinds of classes.
 
 To start with consider the below example that illustrates the difference in MRO between new and old style classes.
 
@@ -20,12 +20,12 @@ Since \inlinecode{D} extends \inlinecode{B} and \inlinecode{C}, which in turn ex
 
 
 \section{Class declarations}
-To start with we must take care of class declarations. In the CFG we have the following nodes related to this: \textit{ClassDeclNode}, \textit{ClassEntryNode}, and \textit{ClassExitNode}. Consider a class declaration like \inlinecode{class C(B1,...,Bn):<body>}. For this particular code we create a class declaration node in our CFG which holds the name of the class and the names of the baseclasses, i.e. \inlinecode{C}, and \inlinecode{B1}, ..., \inlinecode{Bn}. Furthermore we create a class entry node which we make the successor of the class declaration node. Then the inductively created CFG for the piece of code appearing at \inlinecode{<body>} will be inserted after the class entry node, and finally, we create a class exit node and make it the successor of the exit node of the inductively created \inlinecode{<body>} CFG.
+To start with we must take care of class declarations. In the CFG we have the following nodes related to this: \textit{ClassDeclNode}, \textit{ClassEntryNode}, and \textit{ClassExitNode}. Consider a class declaration like \inlinecode{class C(B1,...,Bn):<body>}. For this particular code we create a class declaration node in our CFG which holds the name of the class and the names of the base classes, i.e. \inlinecode{C}, and \inlinecode{B1}, ..., \inlinecode{Bn}. Furthermore we create a class entry node which we make the successor of the class declaration node. Then the inductively created CFG for the piece of code appearing at \inlinecode{<body>} will be inserted after the class entry node, and finally, we create a class exit node and make it the successor of the exit node of the inductively created \inlinecode{<body>} CFG.
 
 More or less, the purpose of the three different kinds of nodes is the following:
 
 \begin{itemize}
-	\item The class declaration node, \textit{ClassDeclNode}, creates one or more class objects on the heap and writes the variable \inlinecode{C} as a property on each object that is on top of on of the scope chains.
+	\item The class declaration node, \textit{ClassDeclNode}, creates one or more class objects on the heap and writes the variable \inlinecode{C} as a property on each object that is on top of one of the scope chains.
 	\item The class entry node, \textit{ClassEntryNode}, modifies the set of execution contexts by pushing the newly created class object on top of each of them.
 	\item The class exit node, \textit{ClassExitNode}, reverts the execution contexts to what they were before visiting the class entry node (by popping the newly created class object from each of the execution contexts).
 \end{itemize}
@@ -34,7 +34,7 @@ More or less, the purpose of the three different kinds of nodes is the following
 As mentioned our type analysis creates one or more class object on the heap whenever a class declaration node is meet. More precisely:
 
 \begin{itemize}
-	\item If \inlinecode{C} is definately a new style class a new style class object is created on the heap. Likewise for old style classes.
+	\item If \inlinecode{C} is definitely a new style class a new style class object is created on the heap, likewise for old style classes.
 	\item Otherwise, both a new style class object and an old style class object is created on the heap.
 \end{itemize}
 
@@ -48,10 +48,10 @@ else:
 	class B(object): pass
 class C(B): pass
 	\end{minted}
-	\caption{An example where we can't conclude that \inlinecode{C} is definately a new style class or definately an old style class.}\label{code:NotDefinatelyNewOldStyleClass}
+	\caption{An example where we can't conclude that \inlinecode{C} is definitely a new style class or definitely an old style class.}\label{code:NotDefinatelyNewOldStyleClass}
 \end{listing}
 
-We conclude that a class is definately a new style class if the following holds:
+We conclude that a class is definitely a new style class if the following holds:
 
 \begin{enumerate}
 	\item The built in class \inlinecode{object} has not been overwritten.
@@ -74,15 +74,15 @@ If \inlinecode{object} has not been overwritten, we check that:
 
 \begin{enumerate}
 \setcounter{enumi}{1}
-	\item All the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are either the built in object or definately a new style class.
+	\item All the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are either the built in object or definitely a new style class.
 \end{enumerate}
 
-Recall that the baseclasses \inlinecode{B1}, ..., \inlinecode{Bn} are just variablenames. If \inlinecode{Bi} is the variable \inlinecode{object}, we can conclude that it is the built in object since we from (1) have that the built in \inlinecode{object} has not been overwritten. If \inlinecode{Bi} is not \inlinecode{object} we look up the variable on the scope chain, and make sure its value is only a pointer to a new style class object on the heap, or the built in class \inlinecode{object}. If it is for instance a pointer to either a new style class object or an old style class object (see for instance listing \ref{code:NotDefinatelyNewOldStyleClass}), we conclude that the class \inlinecode{C} it is not definately a new style class object.
+Recall that the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are just variable names. If \inlinecode{Bi} is the variable \inlinecode{object}, we can conclude that it is the built in object since we from (1) have that the built in \inlinecode{object} has not been overwritten. If \inlinecode{Bi} is not \inlinecode{object} we look up the variable on the scope chain, and make sure its value is only a pointer to a new style class object on the heap, or the built in class \inlinecode{object}. If it is for instance a pointer to either a new style class object or an old style class object (see for instance listing \ref{code:NotDefinatelyNewOldStyleClass}), we conclude that the class \inlinecode{C} it is not definitely a new style class object.
 
-In the same way we conclude that a class is definately an old style class.
+In the same way we conclude that a class is definitely an old style class.
 
 \subsection{Populating the class objects on the heap with fields and methods}
-As mentioned above the heap objects we create at class declaration nodes are empty. We add fields and methods to these heap objects inbetween the class entry and class exit nodes. First, let us investigate how fields and methods are created for classes below.
+As mentioned above the heap objects we create at class declaration nodes are empty. We add fields and methods to these heap objects in between the class entry and class exit nodes. First, let us investigate how fields and methods are created for classes below.
 
 Fields and methods can be created at class declaration time, and dynamically added to the class after declaration as the following tries to illustrate:
 
@@ -130,11 +130,11 @@ C.foo.prop = 0 # AttributeError
 	\item When creating a class instance the unbound methods of the class are turned into bound methods on the instance object (we concentrate on this in the following section, Handling object creations).
 \end{enumerate}
 
-Fields and methods can also be added to a class after declaration time as was illustrated in example \ref{code:FieldAndMethodOnClass}. In our CFG this is represented by a \textit{WriteVariableNode}, so what we do in this case is very simular to what we do inbetween the class entry and exit nodes: if the object being written to is a class object, and the value being written is a function, then we wrap it in an unbound method object. Otherwise we just write the value to the property of the object as we would normally have done.
+Fields and methods can also be added to a class after declaration time as was illustrated in example \ref{code:FieldAndMethodOnClass}. In our CFG this is represented by a \textit{WriteVariableNode}, so what we do in this case is very similar to what we do in between the class entry and exit nodes: if the object being written to is a class object, and the value being written is a function, then we wrap it in an unbound method object. Otherwise we just write the value to the property of the object as we would normally have done.
 
 
 \subsection{Handling object creations}
-When an instance of a class is created each unbound method of the class is turned into a bound method on the object. The purpose of the bound method is to pass the instance reference as the first argument to the unbound method (the \inlinecode{self} argument). As a consequence our lattice, unlike e.g. the lattice used by the TAJS Analyzer, does not contain an explicit representation of the \inlinecode{this} object (it is simply treated as a normal parameter to the function). The below example illustrates the implicit passing of the self parameter for bound methods:
+When an instance of a class is created each unbound method of the class is turned into a bound method on the object. The purpose of the bound method is to pass the instance reference as the first argument to the unbound method (the \inlinecode{self} argument). As a consequence our lattice, unlike e.g. the lattice used by the TAJS Analyzer, does not contain an explicit representation of the \inlinecode{this} object (it is simply treated as a normal parameter to the function). The below example illustrates the implicit passing of the self-parameter for bound methods:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
