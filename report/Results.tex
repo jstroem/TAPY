@@ -1,5 +1,5 @@
 \chapter{Results}
-During our project we have developed a type analyzer for Python, that is able to analyze simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django were simple.
+During our project we have developed a type analyzer for Python, which is able to analyze simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django were simple.
 
 In order to do so we needed to handle among others simple use of exceptions. Consider the following calculator example that makes use of exceptions:
 
@@ -25,7 +25,7 @@ except:
 	\end{minted}
 \end{listing}
 
-For this example our analyzer will conclude that \inlinecode{amodb} is undefined, and that \inlinecode{err} is "An error occured". Due to a very simple path sensivity our analyzer does not conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. If we had instead called \inlinecode{calculator(10, "+", 20)} our analyzer would correctly conclude that the result of the function call would be 30.
+For this example our analyzer will conclude that \inlinecode{amodb} is undefined, and that \inlinecode{err} is "An error occurred". Due to a very simple path sensitivity our analyzer does not conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. If we had instead called \inlinecode{calculator(10, "+", 20)} our analyzer would correctly conclude that the result of the function call would be 30.
 
 The simple exception handling has allowed us to handle implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from section \ref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
 
