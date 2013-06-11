@@ -11,7 +11,7 @@ As a consequence the changes to our type analyzer has been minor. When an except
 	\vspace{-20pt}
 \end{listing}
 
-Therefore, our type analyzer can just take that object (for the example: the object in \inlinecode{<2>}) an store it in the temporary exception variable.
+Therefore, our type analyzer can just take that object (for the example: the object in \inlinecode{<2>}) a store it in the temporary exception variable.
 
 When an exception is not raised by means of a \inlinecode{RaiseNode}, our type analyzer creates a new exception object on its own. If for instance an attribute is read on an object without that attribute, we create a new \inlinecode{AttributeError} object and store it on the heap in our lattice. We do this as follows:
 
@@ -27,7 +27,7 @@ The above outline only specifies how we raise exception intraprocedurally, since
 
 We take care of exceptions interprocedurally by introducing a new type of node for function exit: \inlinecode{ExceptionalExitNode}. Thus for each function we have two exit nodes. We now take each of the CFG nodes of the function that does not have an outgoing exception edge\inlinecode{If a CFG node in a function already has an outgoing exception edge, it is because it is inside a try-except block.} and connect them to the exceptional exit node by an exception edge.
 
-Recall from the section about functions, that we upon a call to a function update the call graph with call edges from the call node to the entry node of the function, and from the exit node of the function to the after call node. In order to accomodate exceptions interprocedural we now also add a \textit{call exception edge} from the exceptional exit node of the function to the except block of the call node. To illustrate this consider the below example together with its corresponding (partial) CFG:
+Recall from the section about functions, that we upon a call to a function update the call graph with call edges from the call node to the entry node of the function, and from the exit node of the function to the after call node. In order to accommodate exceptions interprocedural we now also add a \textit{call exception edge} from the exceptional exit node of the function to the except block of the call node. To illustrate this consider the below example together with its corresponding (partial) CFG:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -79,7 +79,7 @@ Our type analyzer will for this particular code conclude that for the exit node 
 \begin{itemize}
 	\item \inlinecode{y} is either undefined or 42
 	\item \inlinecode{z} is either undefined or "trickyComputation() was true"
-	\item \inlinecode{err} is either undefined or "An error occured"
+	\item \inlinecode{err} is either undefined or "An error occurred"
 \end{itemize}
 
 For the state at the last program point in the try block, our type analyzer concludes that:
