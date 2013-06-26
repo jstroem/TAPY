@@ -258,17 +258,17 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitImport(node: Import): String = {
-    println("visitImport");
+    // println("visitImport");
     return "<not implemented>";
   }
   
   override def visitImportFrom(node: ImportFrom): String = {
-    println("visitImportFrom");
+    // println("visitImportFrom");
     return "<not implemented>";
   }
   
   override def visitExec(node: Exec): String = {
-    println("visitExec");
+    // println("visitExec");
     val body = node.getInternalBody().accept(this)
     val globals = if (node.getInternalGlobals() != null) " in " + node.getInternalGlobals().accept(this) else ""
     val locals = if (node.getInternalLocals() != null) ", " + node.getInternalLocals().accept(this) else ""
@@ -276,47 +276,47 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitGlobal(node: Global): String = {
-    println("visitGlobal");
+    // println("visitGlobal");
     return indent("global "+ implodeList(node.getInternalNameNodes(), ", "));
   }
   
   override def visitExpr(node: Expr): String = {
-    println("visitExpr");
+    // println("visitExpr");
     return indent(node.getInternalValue().accept(this));
   }
   
   override def visitPass(node: Pass): String = {
-    println("visitPass")
+    // println("visitPass")
     return indent("pass")
   }
   
   override def visitBreak(node: Break): String = {
-    println("visitBreak")
+    // println("visitBreak")
     return indent("break")
   }
   
   override def visitContinue(node: Continue): String = {
-    println("visitContinue")
+    // println("visitContinue")
     return indent("continue")
   }
   
   override def visitBoolOp(node: ast.BoolOp): String = {
-    println("visitBoolOp")
+    // println("visitBoolOp")
     return "(" + implodeList(node.getInternalValues(), " " + boolopTypeToString(node.getInternalOp()) + " ") + ")"
   }
   
   override def visitBinOp(node: BinOp): String = {
-    println("visitBinOp");
+    // println("visitBinOp");
     return "("+node.getInternalLeft.accept(this) + " " + operatorToString(node.getInternalOp) +" " + node.getInternalRight.accept(this)+")"
   }
   
   override def visitUnaryOp(node: UnaryOp): String = {
-    println("visitUnaryOp");
+    // println("visitUnaryOp");
     return indent(unaryopTypeToString(node.getInternalOp()) + " " + node.getInternalOperand().accept(this))
   }
   
   override def visitLambda(node: Lambda): String = {
-    println("visitLambda");
+    // println("visitLambda");
     val attrs = visitArguments(node.getInternalArgs())
     val body = node.getInternalBody().accept(this)
     return s"lambda $attrs: $body";
@@ -331,17 +331,17 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitDict(node: Dict): String = {
-    println("visitDict");
+    // println("visitDict");
     return "{"+implodeStringList((node.getInternalKeys().toList zip node.getInternalValues().toList).map({ case (key, value) => key.accept(this) + ": "+ value.accept(this) }), ",")+"}"
   }
   
   override def visitSet(node: Set): String = {
-    println("visitSet")
+    // println("visitSet")
     return "{"+implodeList(node.getInternalElts(), ", ")+"}"
   }
   
   override def visitListComp(node: ListComp): String = {
-    println("visitListComp");
+    // println("visitListComp");
     val elt = node.getInternalElt().accept(this)
     val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
 
@@ -350,7 +350,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitSetComp(node: SetComp): String = {
-    println("visitSetComp");
+    // println("visitSetComp");
     val elt = node.getInternalElt().accept(this)
     val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
 
@@ -359,7 +359,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitDictComp(node: DictComp): String = {
-    println("visitDictComp");
+    // println("visitDictComp");
     val key = node.getInternalKey().accept(this)
     val value = node.getInternalValue().accept(this)
     val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
@@ -369,7 +369,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitGeneratorExp(node: GeneratorExp): String = {
-    println("visitGeneratorExp");
+    // println("visitGeneratorExp");
     val elt = node.getInternalElt().accept(this)
     val generators = if (!node.getInternalGenerators().isEmpty()) node.getInternalGenerators().toList.foldLeft("")((acc,node) => acc + " " + visitComprehension(node)) else ""
 
@@ -378,12 +378,12 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitYield(node: Yield): String = {
-    println("visitYield")
+    // println("visitYield")
     return "yield " + node.getInternalValue().accept(this)
   }
   
   override def visitCompare(node: Compare): String = {
-    println("visitCompare");
+    // println("visitCompare");
 
     val pairList = node.getInternalComparators().toList zip node.getInternalOps().toList
 
@@ -391,7 +391,7 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitCall(node: Call): String = {
-    println("visitCall")
+    // println("visitCall")
     
     val func = node.getInternalFunc().accept(this)
     
@@ -405,17 +405,17 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitRepr(node: Repr): String = {
-    println("visitRepr");
+    // println("visitRepr");
     return "`"+node.getInternalValue().accept(this)+"`"
   }
   
   override def visitNum(node: Num): String = {
-    println("visitNum");
+    // println("visitNum");
     return node.getInternalN().toString();
   }
   
   override def visitStr(node: Str): String = {
-    println("visitStr");
+    // println("visitStr");
     return "\"" + node.getInternalS().toString().replaceAll("\\\\", "\\\\\\\\")
                                                 .replaceAll("\n","\\\\n")
                                                 .replaceAll("\t", "\\\\t")
@@ -427,36 +427,36 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitAttribute(node: Attribute): String = {
-    println("visitAttribute");
+    // println("visitAttribute");
     return node.getInternalValue().accept(this) + "." + node.getInternalAttrName().accept(this);
   }
   
   override def visitSubscript(node: Subscript): String = {
-    println("visitSubscript");
+    // println("visitSubscript");
     val slice = node.getInternalSlice().accept(this)
     val value = node.getInternalValue().accept(this)
     return s"$value[$slice]";
   }
   
   override def visitName(node: Name): String = {
-    println("visitName");
+    // println("visitName");
     return node.getInternalId();
   }
   
   override def visitList(node: List): String = {
-    println("visitList");
+    // println("visitList");
     val elts = implodeList(node.getInternalElts(), ", ")
     return s"[$elts]";
   }
   
   override def visitTuple(node: Tuple): String = {
-    println("visitTuple");
+    // println("visitTuple");
     val elts = implodeList(node.getInternalElts(), ", ")
     return s"($elts)";
   }
   
   override def visitEllipsis(node: Ellipsis): String = {
-    println("visitEllipsis");
+    // println("visitEllipsis");
     return "Ellipsis"
   }
   
@@ -469,17 +469,17 @@ object ASTPrettyPrinter extends VisitorBase[String] {
   }
   
   override def visitExtSlice(node: ExtSlice): String = {
-    println("visitExtSlice");
+    // println("visitExtSlice");
     return implodeList(node.getInternalDims(), ", ");
   }
   
   override def visitIndex(node: Index): String = {
-    println("visitIndex");
+    // println("visitIndex");
     return node.getInternalValue().accept(this)
   }
   
   override def visitExceptHandler(node: ExceptHandler): String = {
-    println("visitExceptHandler");
+    // println("visitExceptHandler");
     val itype = if (node.getInternalType() != null) node.getInternalType().accept(this) else ""
     val iname = if (node.getInternalName() != null) node.getInternalName().accept(this) else ""
     incIndent()

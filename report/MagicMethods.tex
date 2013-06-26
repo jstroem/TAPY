@@ -1,5 +1,4 @@
-\chapter{Magic methods}
-\section{Introduction}
+\section{Magic methods}
 Now that we have discussed both functions and classes, we can proceed to one of the features where Python really differs from e.g. JavaScript, namely the so called magic methods. These magic methods can be thought of as hooks, which allow the programmer to get to execute code at e.g. attribute access. We already showed in the section about classes how to handle the magic method \inlinecode{\_\_init\_\_}. This particular magic method is less interesting from many other magic methods, as it just corresponds to a constructor.
 
 Two very important magic methods, however, are \inlinecode{\_\_getattribute\_\_} and \inlinecode{\_\_getattr\_\_}. These are particular interesting because each time an attribute \inlinecode{a} is read from a class object \inlinecode{x}, the following happens:

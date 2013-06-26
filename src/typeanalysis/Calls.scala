@@ -193,11 +193,15 @@ trait Calls extends Exceptions with Logger {
       throw new NotImplementedException("kw arguments on function calls is not implemented");
 
     // Set the parameters as variables in the functionScopeObject
-    var args = functionLabel.entryNode.funcDef.getInternalArgs().getInternalArgs().toList.map(_ match {
-      case t: Name => t.getInternalId()
-      case _ => throw new NotImplementedException("Other elements than Name was used as arguments in function definition")
-    })
-
+    var args: List[String] = List()
+    if (functionLabel.entryNode.funcDef != null) // null if default __init__
+      args = functionLabel.entryNode.funcDef.getInternalArgs().getInternalArgs().toList.map(_ match {
+        case t: Name => t.getInternalId()
+        case _ => throw new NotImplementedException("Other elements than Name was used as arguments in function definition")
+      })
+    else if (functionLabel.entryNode.name == "__init__")
+      args = List("self")
+    
     // If the argument size is not equal an exception should potentially be rasied
     if (args.size - functionLabel.declNode.defaultArgRegs.size > callNode.argRegs.size + receiver.size) {
      throw new NotImplementedException("List of registers given as arguments to function is smaller than required argument length")
@@ -259,9 +263,10 @@ trait Calls extends Exceptions with Logger {
       // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
       var tmp = node.setState(solution, state)
 
-      println()
-      println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
-      println()
+      // println()
+      // println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
+      // println("Old was: " + node.getExecutionContexts(solution))
+      // println()
       
       // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))

@@ -31,7 +31,7 @@ object GraphFix {
     entries.foldLeft (g) ((graph, entry) => {
       val globals = reachable(entry, graph).filter(globalFilter)
       globals.foldLeft(graph) ((cfg, global) => {
-        println("removing " + global)
+        // println("removing " + global)
         val normalSucc = cfg.getSuccessors(entry)
         val exceptSucc = cfg.getExceptionSuccessors(entry)
           cfg.removeNodeAndEdges(global)

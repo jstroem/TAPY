@@ -1,0 +1,19 @@
+
+
+Abstract
+Intro
+
+"New" Hvad er vores approach?
+   --> Monotone fw
+   --> Lattice
+   --> Relate til tajs?
+
+Constructing the internal representation (CFG)
+
+
+
+
+Limitations
+  --> generator expressions relate to lambdaPY
+Further work
+Results
