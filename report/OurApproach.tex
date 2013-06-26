@@ -1,0 +1,151 @@
+\chapter{Our approach}
+
+Our approach for this project is to use existing frameworks and techniques with proven qualities to analyse the Python source code, most notably the monotone framework. This chapter contains outlines of how these frameworks and techniques are adapted to fit the specific task.
+
+\section{Monotone framework implementation}
+
+To get started on the implementation we have made an implementation of the monotone framework that is decoupled from the actual analysis. This implementation counts commonly used lattice structures, the work list algorithm, a graph structure and an analysis interface (or trait in scala-lingo).
+
+\subsection{Lattices}
+
+In order to make our lives easier when constructing the actual analysis lattice, we have implemented several common lattice structures as type generic classes. These common lattice structures include, among others, a map- and product lattice. In this section we will briefly go over the implementation decisions made for these structures.
+
+Using classic OOP principles each of these compound structures decide the ordering of their elements by delegating to the underlying lattices in a point wise fashion, e.g. the product lattice has two underlying lattices, one for each element and thus the ordering is decided by comparing the first element in the pair in the context of the first lattice and similarly for the second element.
+
+The map lattice has received a couple changes from the naive implementation to make it usable in more cases. The first change was to interpret an unbound key value, k, to be a mapping from k to the bottom element of the underlying lattice. In some use cases, such as a functional approach to intra procedural static analysis, the map lattice will have a huge amount of keys. Requiring all of these to be bound to some value in the map is superfluous. This invariant is hidden completely in the lattice class because you can't manipulate the lattice element directly, so when trying to lookup an unbound key, the lattice simply constructs a fresh bottom value.
+
+Since we now have a way to avoid binding every value from the key set, we are also able to change the constructor from the straightforward approach s: \inlinecode{Set[T]}, l: \inlinecode{Lattice[S]} into a more general s: \inlinecode{T}, l: \inlinecode{Lattice[S]} (where \inlinecode{S} and \inlinecode{T} are type arguments). The straightforward approach has to compute the entire key set before you are able to instantiate the map lattice, but since the key set in itself might be exponentially large that wouldn't be practical. The downside to this change is, that since map lattice has no way to know the intended key set, there is no way to construct the top element of the lattice.
+
+The top element of the lattice is useful for when you want to give up in the analysis, so to fix we instrumented the map lattice with a new top element, in a similar fashion to how the sink lattice instruments the underlying lattice with a new bottom element. 
+
+\subsection{Constraints}
+
+Being in a functional programming language an easy-to-work-with representation of the constraints is anonymous lambdas with the type \inlinecode{E $\rightarrow$ E}, where \inlinecode{E} is the type of the elements in the analysis lattice. Each constraint captures the node it was made from in its closure, so it is able to lookup the needed information in the lattice element.
+
+This approach follows the notation very nicely, and as such makes the implementation a simple task when the constraints have been formulated formally.
+
+\subsection{Worklist}
+Our work list implementation hasn't seen any optimizations and as such is just the straightforward implementation. First it generates constraint functions for each of the nodes in the controlflow graph, adding each node to a work list as it goes along. It then starts recursion (scala benefits from tail call optimization to prevent the stack from exploding) on the list, popping one node from the list at a time. When a node is popped the corresponding constraint function is applied to the solution. Using scalas built-in structural equality, the result is compared to the input and if they differ all nodes that depends on the popped node are added to the work list.
+
+A simple optimization would be to focus on finding a fixed point for a strongly connected component of the control flow graph before continuing with the strongly connected components that depend on it.
+
+\section{The Analysis Lattice}
+Inspired by TAJS \cite{tajs} we have constructed a lattice for abstract values, $Value$, from which we build a lattice for abstract objects, $Object$. These two lattices are the main building blocks for the lattice of abstract states, $State$. Our analysis lattice is the lattice which for each program point (i.e. for each CFG node) tells the abstract state of that program point. Furthermore the analysis lattice tells the call graph of the CFG.
+
+\subsection{Abstract Values}
+The concrete lattice for abstract values follows below.
+
+\begin{eqnarray*}
+Value = & Undefined \times None \times NotImplemented \times Ellipsis \\
+        & \times Boolean \times Integer \times Float \times Long \\
+        & \times Complex \times String \times P(ObjectLabel)
+\end{eqnarray*}
+
+The value lattice is used to tell the value of a temporary variable (see the lattice $Stack$), and a property on an object (see the lattice $Object$). The $Undefined$, $NotImplemented$, $Ellipsis$ and $None$\footnote{\inlinecode{NotImplemented}, \inlinecode{Ellipsis} and \inlinecode{None} are examples of builtin constants. See \cite{pyref.constants} for a complete list of builtin constants in Python.} lattices all contain two nodes, top and bottom. $NotImplemented$ is a constant in Python that is used sometimes when a function is not supported. $Ellipsis$ is another constant which represents $\dots$ in Python; this constant can be used when indexing using intervals (also known as slicing). In Python when a function does not contain a return statement, the constant \inlinecode{None} is returned by default, e.g.:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def a(): pass
+a() is None # true
+	\end{minted}
+	\caption{Constant None}\label{code:NoneExample}
+\end{listing}
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+	\vspace{-20pt}
+	\begin{center}
+		\includegraphics[width=0.48\textwidth]{images/integer-lattice.png}
+	\end{center}
+	\vspace{-10pt}
+	\caption{The integer lattice}
+	\label{fig:latticeInteger}
+	\vspace{-10pt}
+\end{wrapfigure}
+
+Contrary to JavaScript, Python supports integers, floats, longs and complex numbers, so we have separate lattices for those. As lists in Python can only be indexed using integers our lattices does not have to keep track of whether a particular number is an unsigned integer or not, as the $Num$ lattice for TAJS does (page 8, \cite{tajs}). To TAJS it is crucial to have this distinction because the behavior of associative arrays are distinct based on whether an unsigned integer or not is used to index with. For the similar reason our $String$ lattice does not distinct between unsigned integer strings and not unsigned integer strings, as the $String$ lattice for TAJS does.
+
+Note that $Complex = Float \times Float$, since a complex number in Python is represented using a float for the real and imaginary part, respectively \cite{pyref.stdtypes}. The Integer lattice is defined here in figure \ref{fig:latticeInteger}. The $Float$, $Long$ and $String$ lattices are defined in similar ways. Finally, a value can of course also be a pointer to an object on the heap, which we model in the $Value$ lattice by having a power set\footnote{All our power sets are ordered by subset inclusion.} of object labels, $P(ObjectLabel)$.
+
+The notion of object labels will be described in section \ref{The Heap} about the heap.
+
+\subsection{Abstract State}
+We use the following lattice to model abstract state:
+
+\begin{equation*}
+State = Heap \times Stack
+\end{equation*}
+
+In the following sections the $Heap$ and $Stack$ lattice will be described, but first it is necessary to look at the $Object$ lattice:
+
+\begin{equation*}
+Object = (PropertyName \rightarrow Value \times Global) \times P(ObjectLabel^{*})
+\end{equation*}
+
+Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as function objects. As with JavaScript you can augment objects with properties at runtime, so the lattice needs to accommodate this dynamic behavior, so we use a map from property names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability mark variables as global is needed, indicating that writes to this variable should be done in the global variable scope object. Thus the object lattice is the product between object values, a scope chain modeled as a list of object labels and a global flag.
+
+\subsection{The Heap}
+\label{The Heap}
+\begin{equation*}
+Heap = (ObjectLabel \rightarrow Object)
+\end{equation*}
+The heap is modeled by a map from object labels to an object value. During the execution of a program there may be unbounded many objects on the heap, which we of course must approximate somehow by using a finite representation. We do this (also inspired by TAJS \cite{tajs}) by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. Thus, our heap lattice will only contain one object for each such allocation site.
+
+As an illustrative example consider the following very simple program:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+class C(): pass
+x = []
+for y in range(0,2):
+	x.append(C())
+x[0].a = 'a'
+x[1].b = 'b'
+	\end{minted}
+\end{listing}
+
+At runtime this example would of course generate two different \inlinecode{C} objects with attributes \inlinecode{a} and \inlinecode{b}, respectively. Using the object label abstraction only a single \inlinecode{C} object would be created on the heap. As a consequence, when writing to the property \inlinecode{a} in line 5, this is in principle done on each object originating from the same allocation site\footnote{In order to deal with this conservatively, it must of course be a weak update. We discuss strong and weak updates in the chapter about functions.}. Thus an analysis for this code should conclude at the end that the attribute \inlinecode{a} of an object originating from line 4 might be undefined or \inlinecode{'a'} (similar for \inlinecode{b}).
+
+As a side note we mention that the approach taken here is quite similar to the one taken in the Static Analysis course\footnote{See \url{http://cs.au.dk/SA}.}, where a bunch of points-to analyses for TIP (Tiny Imperative Language) was described. There, \textit{Targets} was introduced as the possible set of allocations sites, which for TIP is the pointer targets \inlinecode{malloc-i} for a given program (page 74, \cite{sa}).
+
+In our implementation of the type analyzer we found it beneficial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
+
+\subsection{The Stack}
+The $Stack$ lattice is defined as:
+
+\begin{equation*}
+Stack = (Register \rightarrow Value) \times P(ObjectLabel^{*})
+\end{equation*}
+
+For each register, which can be thought of as a temporary variable, we specify the value of that particular register. Recall that we use registers in our intermediate representation, see e.g. figure \ref{fig:callCfg} in section \label{CFG calls} about CFG construction of function and method calls.
+
+The power set $P(ObjectLabel^{*})$ specifies the objects on the scope chain $ObjectLabel^{*}$, i.e. the runtime stack. The head element in the scope chain determines which object on the heap, local variable writes should we written to. For instance we will for each program have an object on the heap, that models the module/top-level script environment \inlinecode{\_\_main\_\_}\cite{pyref.main} (this is what corresponds to the global object in JavaScript). Whenever an assignment to a variable occurs in the top-level scripting environment, e.g. \inlinecode{x=10}, the variable \inlinecode{x} is set as a property mapping to the integer 10 on the \inlinecode{\_\_main\_\_} object in the heap.
+
+The scope chain specifies where to look in case of e.g. reading a variable that is not present on the variable object. The following simple example can be used to illustrate this:
+
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+x = 10
+def a():
+	return x
+a() # 10
+	\end{minted}
+\caption{Scope example}\label{code:ScopeExample}
+\end{listing}
+
+For this particular scope example we will have the following objects on the heap:
+
+\begin{enumerate}
+  \item The \inlinecode{\_\_main\_\_} object,
+  \item The object of the function \inlinecode{a},
+  \item The function wrapper object of \inlinecode{a}, and
+  \item The scope object of \inlinecode{a} (which is an object similar to the \inlinecode{\_\_main\_\_} object, i.e. an object where local variables are written onto).
+\end{enumerate}
+
+When entering the function (calling it) the scope object of the function a (or more precise, its label) will be pushed onto the current scope chain (which at the function call will be the list containing the \inlinecode{\_\_main\_\_} object). When the variable \inlinecode{x} is read, \inlinecode{x} is looked up in the scope chain starting from the head of it. For this particular example \inlinecode{x} is found on the \inlinecode{\_\_main\_\_} object. In the next chapter we describe our work towards handling functions including why we need these three different kinds of objects on the heap. Handling functions of course includes populating the call graph such that the CFG becomes interprocedural.
+
+\begin{eqnarray*}
+CallGraph = & P(Node \times Node) \\
+Analysis = & (Node \rightarrow State) \times CallGraph
+\end{eqnarray*}
+
+
