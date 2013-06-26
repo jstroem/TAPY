@@ -199,6 +199,8 @@ trait Calls extends Exceptions with Logger {
         case t: Name => t.getInternalId()
         case _ => throw new NotImplementedException("Other elements than Name was used as arguments in function definition")
       })
+    else if (functionLabel.entryNode.name == "__init__")
+      args = List("self")
     
     // If the argument size is not equal an exception should potentially be rasied
     if (args.size - functionLabel.declNode.defaultArgRegs.size > callNode.argRegs.size + receiver.size) {
@@ -261,10 +263,10 @@ trait Calls extends Exceptions with Logger {
       // Clear the return register (ensures that a=C() => a=C(), and not A=C() or A=None)
       var tmp = node.setState(solution, state)
 
-      println()
-      println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
-      println("Old was: " + node.getExecutionContexts(solution))
-      println()
+      // println()
+      // println("New execution context after AfterCallNode: " + node.getExecutionContexts(tmp))
+      // println("Old was: " + node.getExecutionContexts(solution))
+      // println()
       
       // Get the returned values
       val value = node.getRegisterValues(solution, Set(StackConstants.RETURN, StackConstants.RETURN_CONSTRUCTOR))

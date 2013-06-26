@@ -47,6 +47,12 @@ object Main {
       cfgMin = if (cfgMin.exitNodes.size == 1) cfgMin else cfgMin.append(NoOpNode("Module Exit"))
       println("...done in " + (System.currentTimeMillis() - now) + " ms")
       
+      now = System.currentTimeMillis();
+      cfgMin.exportToFile(dir + fname, true, false)
+      // cfgMin.exportToFile(dir + fname, true, false, AnalysisLattice.getCallGraph(solution))
+      // worklist.cfg.exportToFile(dir + fname + ".full", true, false, AnalysisLattice.getCallGraph(solution))
+      println("...done in " + (System.currentTimeMillis() - now) + " ms")
+      
       println("\n----------\n")
       println("Generation analysis result of \"" + file + "\"\n")
       now = System.currentTimeMillis();
@@ -56,11 +62,7 @@ object Main {
   
       println("\n----------\n")
       println("Pretty printing CFG of \"" + file + "\"\n")
-      now = System.currentTimeMillis();
-      cfgMin.exportToFile(dir + fname, true, false, AnalysisLattice.getCallGraph(solution))
-      worklist.cfg.exportToFile(dir + fname + ".full", true, false, AnalysisLattice.getCallGraph(solution))
-      println("...done in " + (System.currentTimeMillis() - now) + " ms")
-
+      
       if (cfgMin.exitNodes.size > 0) {
         println("\n----------\n")
         println("Pretty printing heap for the CFG exit node of \"" + file + "\"\n")

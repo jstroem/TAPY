@@ -221,10 +221,10 @@ trait ClassFunctionDecls extends Environment with Logger {
         scopeChains.map((scopeChain) => (scopeChain, scopeObjectLabel))
       val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
       
-      println()
-      println("New execution context after FunctionEntryNode: " + executionContexts)
-      println("Old was: " + node.getExecutionContexts(solution))
-      println()
+      // println()
+      // println("New execution context after FunctionEntryNode: " + executionContexts)
+      // println("Old was: " + node.getExecutionContexts(solution))
+      // println()
       
       this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
         Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
@@ -254,10 +254,10 @@ trait ClassFunctionDecls extends Environment with Logger {
           (scopeChain, scopeObjectLabel)})
       val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
       
-      println()
-      println("New execution context after ClassEntryNode: " + executionContexts)
-      println("Old was: " + node.getExecutionContexts(solution))
-      println()
+      // println()
+      // println("New execution context after ClassEntryNode: " + executionContexts)
+      // println("Old was: " + node.getExecutionContexts(solution))
+      // println()
       
       this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
         Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
@@ -299,10 +299,10 @@ trait ClassFunctionDecls extends Environment with Logger {
   def handleClassExitNode(node: ClassExitNode, solution: Elt): Elt = {
     log("ExitNode", "Handle exit node")
 
-    println()
-    println("New execution context after ClassExitNode: " + ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
-    println("Old was: " + node.getExecutionContexts(solution))
-    println()
+    // println()
+    // println("New execution context after ClassExitNode: " + ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
+    // println("Old was: " + node.getExecutionContexts(solution))
+    // println()
     
     // Update the execution contexts
     AnalysisLattice.setExecutionContexts(solution, node, ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))

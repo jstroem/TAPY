@@ -126,7 +126,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   /* Implementation of visitor methods: */
 
   override def visitModule(node: Module): ControlFlowGraph = {
-    println("visitModule")
+    // println("visitModule")
     if (moduleName != "__builtin__") {
       val body = generateCFGOfStatementList(new ImportNode(List("__builtin__"), true), node.getInternalBody())
       new ControlFlowGraph(new ModuleEntryNode(moduleName, node)).append(body)
@@ -135,23 +135,23 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitInteractive(node: Interactive): ControlFlowGraph = {
-    println("visitInteractive")
+    // println("visitInteractive")
     return null
   }
 
   override def visitExpression(node: Expression): ControlFlowGraph = {
-    println("visitExpression")
+    // println("visitExpression")
     return null
   }
 
   override def visitSuite(node: Suite): ControlFlowGraph = {
-    println("visitSuite")
+    // println("visitSuite")
     return null
   }
 
   // Note: FunctionDeclNode inserted in generateCFGOfStatementList
   override def visitFunctionDef(node: FunctionDef): ControlFlowGraph = {
-    println("visitFunctionDef")
+    // println("visitFunctionDef")
     
     val entryNode = FunctionEntryNode(node.getInternalName(), node)
     val exitNode = FunctionExitNode(node.getInternalName(), entryNode)
@@ -176,7 +176,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
 
   // Note: ClassDeclNode inserted in generateCFGOfStatementList
   override def visitClassDef(node: ClassDef): ControlFlowGraph = {
-    println("visitClassDef")
+    // println("visitClassDef")
     
     val entryNode = ClassEntryNode(node.getInternalName(), namesToList(node.getInternalBases().toList), node)
     val exitNode = ClassExitNode(node.getInternalName(), entryNode)
@@ -306,7 +306,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitAugAssign(node: AugAssign): ControlFlowGraph = {
-    println("visitAugAssign")
+    // println("visitAugAssign")
     
     val targetCfg = node.getInternalTarget().accept(this)
     val targetRegister = Registers.last
@@ -337,7 +337,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitFor(node: For): ControlFlowGraph = {
-    println("visitFor")
+    // println("visitFor")
 
     var iterCfg = node.getInternalIter().accept(this)
     val containerReg = Registers.last
@@ -382,7 +382,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitWhile(node: While): ControlFlowGraph = {
-    println("visitWhile")
+    // println("visitWhile")
 
     val conditionCfg = node.getInternalTest().accept(this)
     val conditionRegister = Registers.last
@@ -406,7 +406,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitIf(node: If): ControlFlowGraph = {
-    println("visitIf")
+    // println("visitIf")
     
     val conditionCfg = node.getInternalTest().accept(this)
     val conditionRegister = Registers.last
@@ -424,7 +424,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitWith(node: With): ControlFlowGraph = {
-    println("visitWith")
+    // println("visitWith")
     var initCfg = node.getInternalContext_expr().accept(this)
     val objectReg = Registers.last
     val exitFuncReg = Registers.next()
@@ -470,13 +470,13 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitRaise(node: Raise): ControlFlowGraph = {
-    println("visitRaise")
+    // println("visitRaise")
     val cfg = node.getInternalType().accept(this)
     return cfg.append(new RaiseNode(Some(Registers.last)))
   }
 
   override def visitTryExcept(node: TryExcept): ControlFlowGraph = {
-    println("visitTryExcept")
+    // println("visitTryExcept")
     
     val bodyCfg = generateCFGOfStatementList(new NoOpNode("Try-Except entry"), node.getInternalBody())
     
@@ -514,7 +514,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitTryFinally(node: TryFinally): ControlFlowGraph = {
-    println("visitTryFinally")
+    // println("visitTryFinally")
     
     val finallyNormalCfg = generateCFGOfStatementList(new NoOpNode("Finally-normal entry"), node.getInternalFinalbody())
     val finallyHandledCfg = generateCFGOfStatementList(new NoOpNode("Finally-except-handled entry"), node.getInternalFinalbody())
@@ -551,7 +551,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitAssert(node: Assert): ControlFlowGraph = {
-    println("visitAssert")
+    // println("visitAssert")
     val debugVarReg = Registers.next()
     val exitNode = new NoOpNode("assert merge node")
     val ifDebugNode = new IfNode(debugVarReg)
@@ -584,7 +584,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitImport(node: Import): ControlFlowGraph = {
-    println("visitImport")
+    // println("visitImport")
     val names = node.getInternalNames().toList.foldRight(List[String]()) {(name, acc) =>
       name.getInternalName() :: acc
     }
@@ -592,24 +592,24 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitImportFrom(node: ImportFrom): ControlFlowGraph = {
-    println("visitImportFrom")
+    // println("visitImportFrom")
     return null
   }
 
   override def visitExec(node: Exec): ControlFlowGraph = {
-    println("visitExec")
+    // println("visitExec")
     return null
   }
 
   override def visitGlobal(node: Global): ControlFlowGraph = {
-    println("visitGlobal")
+    // println("visitGlobal")
     return node.getInternalNameNodes().foldLeft(new ControlFlowGraph(new NoOpNode("Global entry"))) {(acc, name) =>
       acc.append(new GlobalNode(name.getInternalId()))
     }
   }
 
   override def visitExpr(node: Expr): ControlFlowGraph = {
-    println("visitExpr")
+    // println("visitExpr")
     return node.getInternalValue().accept(this)
   }
 
@@ -691,12 +691,12 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitLambda(node: Lambda): ControlFlowGraph = {
-    println("visitLambda")
+    // println("visitLambda")
     return null
   }
 
   override def visitIfExp(node: IfExp): ControlFlowGraph = {
-    println("visitIfExp")
+    // println("visitIfExp")
     
     val conditionCfg = node.getInternalTest().accept(this)
     val conditionRegister = Registers.last
@@ -720,7 +720,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitDict(node: Dict): ControlFlowGraph = {
-    println("visitDict")
+    // println("visitDict")
     
     val emptyDictRegister = Registers.next()
     val newDictFunc = Registers.next()
@@ -746,7 +746,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitSet(node: org.python.antlr.ast.Set): ControlFlowGraph = {
-    println("visitSet")
+    // println("visitSet")
     
     val emptySetRegister = Registers.next()
     val newSetFunc = Registers.next()
@@ -823,7 +823,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitListComp(node: ListComp): ControlFlowGraph = {
-    println("visitListComp")
+    // println("visitListComp")
     val resultReg = Registers.next()
     val appendFuncReg = Registers.next()
     val newListFunc = Registers.next()
@@ -846,7 +846,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitSetComp(node: SetComp): ControlFlowGraph = {
-    println("visitSetComp")
+    // println("visitSetComp")
     val resultReg = Registers.next()
     val appendFuncReg = Registers.next()
     val newSetFunc = Registers.next()
@@ -868,7 +868,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitDictComp(node: DictComp): ControlFlowGraph = {
-    println("visitDictComp")
+    // println("visitDictComp")
     val resultReg = Registers.next()
     val appendFuncReg = Registers.next()
     val newDictFunc = Registers.next()
@@ -893,17 +893,17 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitGeneratorExp(node: GeneratorExp): ControlFlowGraph = {
-    println("visitGeneratorExp")
+    // println("visitGeneratorExp")
     return null
   }
 
   override def visitYield(node: Yield): ControlFlowGraph = {
-    println("visitYield")
+    // println("visitYield")
     return null
   }
   
   override def visitCompare(node: Compare): ControlFlowGraph = {
-    println("visitCompare")
+    // println("visitCompare")
     
     val pairs = node.getInternalComparators().toList.zip(node.getInternalOps().toList)
     
@@ -937,7 +937,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
   
   override def visitCall(node: Call): ControlFlowGraph = {
-    println("visitCall")
+    // println("visitCall")
     
     // Lookup the function
     val lookupCfg = node.getInternalFunc().accept(this)
@@ -985,7 +985,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitRepr(node: Repr): ControlFlowGraph = {
-    println("visitRepr")
+    // println("visitRepr")
     val exprCfg = node.getInternalValue().accept(this)
     val exprReg = Registers.last
     val resultReg = Registers.next()
@@ -1019,7 +1019,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
   
   def visitAttribute(node: Attribute, assignFromRegister: Int): ControlFlowGraph = {
-    println("visitAttribute")
+    // println("visitAttribute")
     val lastExpressionRegister = Registers.last
     
     val lookupCfg = node.getInternalValue().accept(this)
@@ -1041,7 +1041,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
   
   def visitSubscript(node: Subscript, assignFromRegister: Int): ControlFlowGraph = {
-    println("visitSubscript")
+    // println("visitSubscript")
     
     val lastExpressionRegister = Registers.last
     
@@ -1069,7 +1069,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitList(node: ast.List): ControlFlowGraph = {
-    println("visitList")
+    // println("visitList")
     val resultReg = Registers.next()
     val newListFunc = Registers.next()
     val newListCfg = new ControlFlowGraph(new ReadVariableNode("list",newListFunc,true))
@@ -1100,7 +1100,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitTuple(node: Tuple): ControlFlowGraph = {
-    println("visitTuple")    
+    // println("visitTuple")    
 
     val listResultReg = Registers.next()
     val newListFunc = Registers.next()
@@ -1139,13 +1139,13 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitEllipsis(node: Ellipsis): ControlFlowGraph = {
-    println("visitEllipsis")
+    // println("visitEllipsis")
     Registers.last = Registers.next()
     return new ControlFlowGraph(new ReadVariableNode("Ellipsis", Registers.last, true))
   }
 
   override def visitSlice(node: Slice): ControlFlowGraph = {
-    println("visitSlice")
+    // println("visitSlice")
     val resultReg = Registers.next()
     val newSliceFunc = Registers.next()
     var argsList : List[Int] = List()
@@ -1174,7 +1174,7 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitExtSlice(node: ExtSlice): ControlFlowGraph = {
-    println("visitExtSlice")
+    // println("visitExtSlice")
 
     val listResultReg = Registers.next()
     val newListFunc = Registers.next()
@@ -1202,13 +1202,13 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
   }
 
   override def visitIndex(node: Index): ControlFlowGraph = {
-    println("visitIndex")
+    // println("visitIndex")
 
     return node.getInternalValue().accept(this)
   }
 
   override def visitExceptHandler(node: ExceptHandler): ControlFlowGraph = {
-    println("visitExceptHandler")
+    // println("visitExceptHandler")
     
     val excType: List[String] = if (node.getInternalType() != null) namesToList(List(node.getInternalType())) else List()
     val excName: List[String] = if (node.getInternalName() != null) namesToList(List(node.getInternalName())) else List()
