@@ -32,7 +32,7 @@ trait ClassFunctionDecls extends Environment with Logger {
   }
   
   def handleFunctionDeclNode(node: FunctionDeclNode, variableObjectLabel: ObjectLabel, solution: Elt): Elt = {
-    val name = node.entry.funcDef.getInternalName()
+    val name = node.entry.name
     
     // Create labels
     val scopeLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
@@ -46,7 +46,7 @@ trait ClassFunctionDecls extends Environment with Logger {
     
     // Generate scope-object scope chain
     val scopeChain = ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution))
-    log("FunctionDeclNode", "Scope chain of " + node.entry.funcDef.getInternalName() + " is " + scopeChain.toString())
+    log("FunctionDeclNode", "Scope chain of " + node.entry.name + " is " + scopeChain.toString())
     
     // Create objects
     val scopeObject = ObjectLattice.setScopeChain(scopeChain)
@@ -61,7 +61,7 @@ trait ClassFunctionDecls extends Environment with Logger {
   }
   
   def handleUnboundMethodDeclNode(node: FunctionDeclNode, variableObjectLabel: ObjectLabel, solution: Elt): Elt = {
-    val name = node.entry.funcDef.getInternalName()
+    val name = node.entry.name
     
     // Create labels
     val scopeLabel = FunctionScopeObjectLabel(node, node.entry, node.exit)
@@ -221,6 +221,11 @@ trait ClassFunctionDecls extends Environment with Logger {
         scopeChains.map((scopeChain) => (scopeChain, scopeObjectLabel))
       val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
       
+      println()
+      println("New execution context after FunctionEntryNode: " + executionContexts)
+      println("Old was: " + node.getExecutionContexts(solution))
+      println()
+      
       this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
         Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
       }
@@ -248,6 +253,11 @@ trait ClassFunctionDecls extends Environment with Logger {
         ExecutionContextLattice.getVariableObjectsOnScopeChains(node.getExecutionContexts(solution)).map({(scopeChain) =>
           (scopeChain, scopeObjectLabel)})
       val tmp = AnalysisLattice.setExecutionContexts(solution, node, executionContexts)
+      
+      println()
+      println("New execution context after ClassEntryNode: " + executionContexts)
+      println("Old was: " + node.getExecutionContexts(solution))
+      println()
       
       this.environmentVariables.getOrElse(node, Set()).foldLeft(tmp) {(acc, variable) =>
         Utils.writePropertyValueOnObjectLabelToHeap(node, variable, scopeObjectLabel, ValueLattice.undefined, acc)
@@ -291,6 +301,7 @@ trait ClassFunctionDecls extends Environment with Logger {
 
     println()
     println("New execution context after ClassExitNode: " + ExecutionContextLattice.popVariableObject(node.getExecutionContexts(solution)))
+    println("Old was: " + node.getExecutionContexts(solution))
     println()
     
     // Update the execution contexts

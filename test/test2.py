@@ -1,6 +1,5 @@
 class C(object):
 	def __init__(self):
-		#self.b = self.a(1)
 		pass
 
 	def a(self, x):

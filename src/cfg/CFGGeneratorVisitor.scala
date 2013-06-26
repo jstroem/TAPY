@@ -42,8 +42,11 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
 
   /* Helper methods */
 
-  def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph = {
-    return statements.toList.foldLeft(new ControlFlowGraph(entryNode)) {(acc, stm) =>
+  def generateCFGOfStatementList(entryNode: Node, statements: java.util.List[stmt]): ControlFlowGraph =
+    generateCFGOfStatementList(new ControlFlowGraph(entryNode), statements)
+  
+  def generateCFGOfStatementList(entryCfg: ControlFlowGraph, statements: java.util.List[stmt]): ControlFlowGraph = {
+    return statements.toList.foldLeft(entryCfg) {(acc, stm) =>
       val stmCfg = stm.accept(this)
       stmCfg.entryNodes.head match {
         case node: ClassEntryNode =>
@@ -178,8 +181,18 @@ class CFGGeneratorVisitor(moduleName: String) extends VisitorBase[ControlFlowGra
     val entryNode = ClassEntryNode(node.getInternalName(), namesToList(node.getInternalBases().toList), node)
     val exitNode = ClassExitNode(node.getInternalName(), entryNode)
     
-    val bodyCfg = generateCFGOfStatementList(entryNode, node.getInternalBody())
-    return bodyCfg.append(exitNode)
+    val initEntryNode = FunctionEntryNode("__init__", null)
+    val initNoneRegister = Registers.next()
+    val initNoneNode = ConstantNoneNode(initNoneRegister)
+    val initReturnNode = ReturnNode(initNoneRegister)
+    val initExitNode = FunctionExitNode("__init__", initEntryNode)
+    val initExceptionalExitNode = ExceptionalExitNode("__init__", initEntryNode)
+    val initCfg = new ControlFlowGraph(initEntryNode).append(initNoneNode).append(initReturnNode).append(initExitNode)
+    
+    val initDeclNode = FunctionDeclNode(initEntryNode, initExitNode, initExceptionalExitNode, List())
+    
+    val bodyCfg = generateCFGOfStatementList(new ControlFlowGraph(entryNode).append(initDeclNode), node.getInternalBody())
+    return bodyCfg.append(exitNode).insert(initCfg)
   }
 
   override def visitReturn(node: Return): ControlFlowGraph = {

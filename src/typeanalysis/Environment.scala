@@ -11,7 +11,7 @@ trait Environment {
     def buildVariables(g: ControlFlowGraph): Map[Node, Set[String]] = {
       def getVarName = {(n: Node) => n match {
         case WriteVariableNode(s,_,_) => s
-        case FunctionDeclNode(entry, _, _, _, _) => entry.funcDef.getInternalName()
+        case FunctionDeclNode(entry, _, _, _, _) => entry.name
         case ClassDeclNode(entry, _, _, _) => entry.classDef.getInternalName()
         case _ => ""
       }}

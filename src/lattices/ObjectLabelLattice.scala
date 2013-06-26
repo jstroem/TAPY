@@ -32,19 +32,19 @@ case class OldStyleClassObjectLabel(declNode: ClassDeclNode, entryNode: ClassEnt
 case class ObjectBuiltinObjectLabel() extends ClassObjectLabel()
 
 case class WrapperObjectLabel(label: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Function Wrapper ${label.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Function Wrapper ${label.entryNode.name}"
 }
 case class UnboundMethodObjectLabel(functionLabel: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Unbound Method ${functionLabel.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Unbound Method ${functionLabel.entryNode.name}"
 }
 case class BoundMethodObjectLabel(instance: ObjectLabel, functionLabel: FunctionObjectLabel) extends CallableObjectLabel() {
-  override def toString() = s"Bound Method ${functionLabel.entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Bound Method ${functionLabel.entryNode.name}"
 }
 case class FunctionScopeObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: FunctionExitNode) extends ObjectLabel() {
-  override def toString() = s"Scope ${entryNode.funcDef.getInternalName()}"
+  override def toString() = s"Scope ${entryNode.name}"
 }
 case class FunctionObjectLabel(declNode: FunctionDeclNode, entryNode: FunctionEntryNode, exitNode: FunctionExitNode, exceptionalExitNode: ExceptionalExitNode, scopeLabel: FunctionScopeObjectLabel) extends CallableObjectLabel() {
-	override def toString() = s"Function ${entryNode.funcDef.getInternalName()}"
+	override def toString() = s"Function ${entryNode.name}"
 }
 case class NewStyleInstanceObjectLabel(classLabel: NewStyleClassObjectLabel, allocationSite: Node) extends CallableObjectLabel() {
   override def toString() = s"New Style Instance ${classLabel.entryNode.classDef.getInternalName()}"

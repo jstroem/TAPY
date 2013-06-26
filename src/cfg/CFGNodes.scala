@@ -51,7 +51,7 @@ abstract class Node(id: UUID) {
 
 // Class and function declaration
 case class FunctionDeclNode(entry: FunctionEntryNode, exit: FunctionExitNode, exceptionalExitNode: ExceptionalExitNode, defaultArgRegs : List[Int], id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"FunctionDecl(${entry.funcDef.getInternalName()})"
+  override def toString = s"FunctionDecl(${entry.name})"
 }
 case class ClassDeclNode(entry: ClassEntryNode, exit: ClassExitNode, bases: List[String], id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassDecl(${entry.classDef.getInternalName()})"
@@ -65,8 +65,8 @@ case class ExceptionalExitNode(name: String, entryNode: Node, id: UUID = UUID.ra
 case class ClassEntryNode(note: String, bases: List[String], classDef: org.python.antlr.ast.ClassDef, id: UUID = UUID.randomUUID()) extends Node(id) {
   override def toString = s"ClassEntryNode($note)"
 }
-case class FunctionEntryNode(note: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
-  override def toString = s"FunctionEntryNode($note)"
+case class FunctionEntryNode(name: String, funcDef: org.python.antlr.ast.FunctionDef, id: UUID = UUID.randomUUID()) extends Node(id) {
+  override def toString = s"FunctionEntryNode($name)"
 }
 
 case class ClassExitNode(note: String, entryNode: ClassEntryNode, id: UUID = UUID.randomUUID()) extends Node(id) {
