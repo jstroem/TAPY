@@ -1,5 +1,5 @@
 \chapter{Results}
-During our project we have developed a type analyzer for Python, which is able to analyze simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django were simple.
+During our project we have developed a type analyzer for Python, which is able to analyze simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django\cite{django} were simple.
 
 In order to do so we needed to handle among others simple use of exceptions. Consider the following calculator example that makes use of exceptions:
 

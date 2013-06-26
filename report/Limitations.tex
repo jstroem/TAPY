@@ -1,7 +1,5 @@
 \chapter{Limitations}
 
-Rather than going with the latest version of Python, we will be working on version 2.7. This version is still predominantly used in the wild and we were only able to find a ready-to-use parser for 2.7 which, given the scope of this project, was a huge selling point. The magic methods remain unchanged in the 3.x family, so extending this proof of concept for a more recent version is straightforward.
-
 \section{Language features}
 Python is a general purpose programming language and quite popular, it has been developed and extended and holds a lot of different functionality, some of these functionalities is not used that often. In our analysis we have decided to exclude some of these language functionalities;
 
@@ -11,13 +9,11 @@ Python is a general purpose programming language and quite popular, it has been 
 	\item Yield expressions
 \end{itemize}
 
-Each of these features present a great deal of complexity so to be able to go in depth with the magic methods these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
+Especially the features Generator and Yield expressions presents a great deal of complexity\footnote{Shriram and Joe et. al. support these features and in their paper they describe their results during investigating these features\cite{lambdapy}. } for supporting them and therefore these will remain unhandled.
+seems high Each of these features present a great deal of complexity so to be able to go in depth with the magic methods these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
 
 \subsection{Function decorators}
 In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this are when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
-
-\section{Numbers}
-The size of an integer in Python depends on the system you're on. If you're running python on a x64 machine you will be able to create integers in the interval $[-2^{63}-2;2^{63}-1]$, whereas a x86 machine would limit your integers to the interval $[-2^{31}-2;2^{31}-1]$. These limitations are described in The Python Language Reference data model\cite{pyref.datamodel} in section 3.2. In our analysis we assume that our target machine is an x86 and the integers is then limited to 32-bits.
 
 \section{Magic methods}
 Python uses magic methods to give the developer flexibility to do, among other things, operation overloading on custom classes. These methods make simple operations such as binary and unary operations more difficult to handle in the control flow graph since it's not just one operation but could potentially be a method call with side-effects.
