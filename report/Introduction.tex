@@ -1,11 +1,77 @@
 \chapter{Introduction}
-Python is a dynamically typed, general purpose programming language that supports both object-oriented, imperative and functional programming styles. Because of its dynamic nature it has a lot of similar features to JavaScript, which makes it difficult to statically analyze. This is further complicated by langauges features supported in Python which is non-trivial to analyse. An example of such an non-trivial language feature is Pythons magic methods, which results in implicit method and function calls; this makes it harder to predict the outcome of otherwise relatively simple statements and expressions, as e.g. an attribute lookup.
+Python is a dynamically typed, general purpose programming language that supports both object-oriented, imperative and functional programming styles.
 
-Python is widely used in both education and industry, and because of this popularity IDEs\cite{ide.appcelerator, ide.jetbrains, ide.wingware} and other third-party tools\cite{tool.pep8, tool.pyflakes, tool.pychecker, tool.pylint} has been developed to accomondate the developer by finding errors and making refacorings. Sadly all of these tools is affected by the complexity in the Python language and thereby shown to be unsound\cite{lamdapy}. In this report we present our work towards developering a conservaite and sound type analysis for Python version 2.7.5\footnote{This version is still predominantly used in the wild} written in Scala, furthermore we uses the third-party project Jython\cite{jython} to parse Python.
+Python has a lot of similarities to JavaScript as they are both dynamic languages. However, static type analysis of Python is further complicated by its scoping rules [REF], magic methods, generator expressions and others. One of the reasons why magic methods are challenging to reason about, is that they result in implicit method and function calls; this makes it harder to predict the outcome of, otherwise relatively, simple statements and expressions, e.g. attribute lookup.
+
+Python is widely used in both education and industry, and because of this popularity IDEs \cite{ide.appcelerator, ide.jetbrains, ide.wingware} and other third-party tools \cite{tool.pep8, tool.pyflakes, tool.pychecker, tool.pylint} have been developed to accommodate the developer by finding errors and making refactorings. Sadly, all these tools are affected by the complexity in the Python language and shown to be unsound \cite{lamdapy}. In this report we present our work towards developing a conservative and sound type analysis for Python version 2.7.5\footnote{This version is still predominantly used in the wild.} written in Scala, furthermore we use the third-party project Jython \cite{jython} to parse Python.
 
 \section{Motivation and Contributions}
-Inspired by the Type Analysis for JavaScript\cite{tajs} or aim for this project is to develop a type analysis for Python which will be able to analyze simple Python programs that use some of the non-trivial features, like magic methods, that distinct Python from other dynamically typed languages as e.g. JavaScript. Especially, we wish to be able to do type analysis on programs that uses the magic method \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. As this should already indicate, our type analyzer should therefore also be able to handle among others declaration and instantiation of classes together with exceptions.
+Inspired by Type Analysis for JavaScript \cite{tajs} our aim for this project is to develop a type analysis for Python that will be able to analyze simple Python programs for type related errors. Especially, we wish to be able to do type analysis on programs that use the magic method \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. In order to achieve this goal our type analyzer should be able to handle declarations and instantiations of classes, exceptions and others.
 
-This paper presents a proof of concept that static analysis of Python is possible using the traditional Monotone framework. In the paper we give Control Flow Graph (CFG) constructions for varius statements and expressions for Python including a dynamic way of changing the CFG during evaluation of the analysis to accomondate the support for the magic method \inlinecode{\_\_getattr\_\_}.  
+This report presents a proof of concept that static analysis of Python is possible using the traditional monotone framework. We present how to construct CFG snippets for various statements and expressions, including a dynamic way to change the CFG during execution of the analysis to accommodate the support for the magic method \inlinecode{\_\_getattr\_\_}.  
 
-During the development of this project we have identified some of the intriguing features in Python. This includes python scope rules and the order of evaluation when handling magic methods.
+During the development of our project we have identified some intriguing features in Python, that includes its scope rules and the order of evaluation when handling magic methods.
+
+\section{Dynamic features and type related errors}
+\label{Features}
+In this section we give some examples of typical type errors that may occur in Python programs.
+
+Classes can be modified after creation. The code in example \ref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the builtin class \inlinecode{object}.
+
+\begin{listing}[H]
+  \begin{minted}[linenos]{python}
+class Student(object):
+  def __init__(self, name):
+    self.name = name
+s1 = Student('Foo')
+s2 = Student('Bar')
+def addGrade(self, course, grade):
+  self.grades[course] = grade
+Student.addGrade = addGrade
+s1.grades = {}
+s1.addGrade('math', 10)
+s2.addGrade('math', 7)
+  \end{minted}
+  \caption{Magic method example in Python}
+  \label{code:Features1}
+\end{listing}
+
+At line 8 a function \inlinecode{addGrade} is written to the \inlinecode{addGrade} attribute of the \inlinecode{Student} class. Since it is written onto a class it will be wrapped in an unbound method; this will ensure that the function can be called as a method on instance objects; especially, the receiver object will be implicitly passed to the \inlinecode{self}\footnote{The first argument is not required to be called \inlinecode{self}, but it is considered bad practice to name it otherwise.} argument (eliminating the purpose of having the \inlinecode{this} keyword as in e.g. JavaScript).
+
+At line 9 the attribute \inlinecode{grades} is set to an empty dictionary on the \inlinecode{s1} object. Therefore we can call the (bound) method \inlinecode{addGrade} on the \inlinecode{s1} object without getting a runtime error. However, since we forgot to set the \inlinecode{grades} attribute on the \inlinecode{s2} object, we will get the following runtime error from line 11: \inlinecode{AttributeError:\ 'Student' object has no attribute 'grades'}. 
+
+Recall that the receiver object is given implicitly as a first argument to the \inlinecode{addGrade} method. 
+In case we had forgotten to supply the extra formal parameter \inlinecode{self}, the following runtime error would result from line 10:
+\inlinecode{TypeError:\ addGrade() takes exactly 2 arguments (3 given)}. 
+
+% Another interesting aspect with regards to parameter passing is that Python supports unpacking of argument lists. For instance we could have provided the arguments to the \inlinecode{addGrade} function in line 10 by means of a dictionary instead: \inlinecode{s1.addGrade(**\{ 'course': 'math', grade: 10\})}.
+
+However, we wouldn't be able to change line 9 into \inlinecode{s1['grades'] = \{\}} (as is possible in JavaScript). This would result in the following error: 
+\inlinecode{TypeError:\ 'Student' object does not support item assignment}, while trying to access \inlinecode{s1['grades']} would result in the following error: 
+\inlinecode{TypeError:\ 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the builtin functions 
+\inlinecode{getattr(obj, attr)} and \inlinecode{setattr(obj, attr, val)}.
+
+Python do however allow the programmer to customize the behavior when indexing into an object by supplying the magic methods
+\inlinecode{\_\_setitem\_\_} and \inlinecode{\_\_getitem\_\_}, giving the programmer much more freedom. 
+As an example consider the new Student class in example \ref{code:Features2}. 
+With this implementation we could set the grades attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}} (due to the implementation of \inlinecode{\_\_setitem\_\_}), 
+and get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} (due to \inlinecode{\_\_getattr\_\_}) or \inlinecode{s1['math']} (due to \inlinecode{\_\_getitem\_\_}).
+
+\begin{listing}[H]
+\begin{minted}[linenos]{python}
+class Student(Person):
+  def __getitem__(self, name):
+    return self.grades[name]
+  def __setitem__(self, name, val):
+    setattr(self, name, val)
+  def __getattr__(self, name):
+    if name in self.grades:
+      return self.grades[name]
+    else:
+      return "<no such grade>"
+\end{minted}
+	\caption{Magic method example in python}
+	\label{code:Features2}
+\end{listing}
+
+As mentioned in the introduction we want our type analyzer to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when dereferencing attributes on class instances. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.
