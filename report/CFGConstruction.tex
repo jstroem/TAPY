@@ -1,13 +1,12 @@
 \chapter{The Control Flow Graph}
 \label{chap:CFGConstruction}
-In this section we give examples of how we inductively generate the control flow graph of some essential language features. 
-During this we will present the control flow graph nodes that we use, together with their semantics.
-
+In this section we give examples of how we inductively generate the CFG of some essential language features. 
+During this we will present the CFG nodes that we use, together with their semantics.
 
 
 \section{An example: For loops}
 \label{sec:CFGConstructionLoops}
-Loops in Python differs from loops in most other languages as both \inlinecode{for} and \inlinecode{while} loops have an \inlinecode{else} branch, as can be seen in example \ref{code:forExample}. The \inlinecode{else} branch is executed if the loop terminates normally, i.e. not using the \inlinecode{break} statement.
+Loops in Python differ from loops in most other languages as both \inlinecode{for} and \inlinecode{while} loops have an \inlinecode{else} branch, as can be seen in \autoref{code:forExample}. The \inlinecode{else} branch is executed if the loop terminates normally, i.e. not using the \inlinecode{break} statement.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
@@ -21,18 +20,17 @@ else:
   \caption{For loop example with an \inlinecode{else} block.}\label{code:forExample}
 \end{listing}
 
-First, the expression given to the for loop, \inlinecode{[1,2,3]}, is evaluated. This should result in an iterable object, such that an iterator object can be created. Now for each element of the iterator the body of the for loop is evaluated once.
+The semantics is as follows: First, the expression given to the for loop, \inlinecode{[1,2,3]}, is evaluated. This should result in an iterable object, such that an iterator object can be created. Now for each element of the iterator the body of the for loop is evaluated once.
 
-To simulate the evaluation sequence of such a for loop in our CFG, we need to take a look at the iterator object: 
-to get the next element from an iterator object the \inlinecode{next} method can be called. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception.
+To simulate this in our CFG, we need to take a look at the iterator object: to get the next element from an iterator object the \inlinecode{next} method is called. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception.
 
-The CFG our type analyzer generates for example \ref{code:forExample} can been seen in figure \ref{fig:forCfg}.
+The CFG our type analyzer generates for \autoref{code:forExample} can been seen in \autoref{fig:forCfg}.
 
 \begin{figure}{H}
   \begin{center}
     \includegraphics[width=0.8\textwidth]{images/for-example-cfg2.png}
   \end{center}
-  \caption{Control Flow Graph for the for-loop example \ref{code:forExample}}
+  \caption{CFG for the for-loop \autoref{code:forExample}.}
   \label{fig:forCfg}
 \end{figure}
 
@@ -42,35 +40,35 @@ The CFG our type analyzer generates for example \ref{code:forExample} can been s
 %    \includegraphics[width=0.48\textwidth]{images/while.png}
 %  \end{center}
 %  \vspace{-10pt}
-%  \caption{Control Flow Graph for a while-loop}
+%  \caption{CFG for a while-loop}
 %  \label{fig:whileCfg}
 %  \vspace{-10pt}
 %\end{wrapfigure}
 
-%For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
+%For a while loop we generate the CFG in figure \ref{fig:whileCfg}.
 
 
 
 \section{Using registers for the intermediate representation}
 \label{CFG calls}
-Inspired from TAJS \cite{tajs}, Type Analyzer for JavaScript, we use registers in our intermediate representation to model that even simple expressions in Python is evaluated in several steps. To illustrate this consider the following line of code from example \ref{code:Features1}: \inlinecode{s1.addGrade('math', 10)}.
+Inspired from TAJS \cite{tajs} we use registers in our intermediate representation to model that even simple expressions in Python is evaluated in several steps. To illustrate this consider the following line of code from \autoref{code:Features1}: \inlinecode{s1.addGrade('math', 10)}.
 
-First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the CFG using \textit{ReadAttributeNode}, which holds a result register, a base register, i.e. the register where to find the object, and the name of the attribute to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}.
+First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the CFG using \textit{ReadAttributeNode}, which holds a result register, a base register (i.e. the register where to find the object), and the name of the attribute to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}.
 
-\begin{wrapfigure}{r}{0.5\textwidth}
+\begin{wrapfigure}{r}{0.4\textwidth}
 	\vspace{-20pt}
 	\begin{center}
-		\includegraphics[width=0.48\textwidth]{images/Call-example.png}
+		\includegraphics[width=0.40\textwidth]{images/Call-example.png}
 	\end{center}
 	\vspace{-10pt}
-	\caption{Control Flow Graph for a call example}
+	\caption{CFG for a call example.}
 	\label{fig:callCfg}
 	\vspace{-10pt}
 \end{wrapfigure}
 
-Second, each argument given to the function is evaluated, and finally the actual call is done. Calls in the control flow graph is modeled using the \textit{CallNode}, which holds a function register and a list of argument registers, and \textit{AfterCallNode}, which holds a result register.
+Second, each argument given to the function is evaluated, and finally the actual call is done. Calls in the CFG is modeled using the \textit{CallNode}, which holds a function register and a list of argument registers, and \textit{AfterCallNode}, which holds a result register.
 
-Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the control flow graph found in figure \ref{fig:callCfg} 
+Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the CFG found in \autoref{fig:callCfg} 
 (where the numbers to the left represent the result registers of the nodes).
 
 So far we have primarily been concerned with putting constants into registers and reading e.g. variables. In order to support writing we have three different nodes: \textit{WriteVariableNode}, \textit{WriteAttributeNode}, and \textit{WriteIndexableNode}. Besides holding a value register, i.e. the register where to find the value being written, \textit{WriteVariableNode} contains the name of the variable being written to, \textit{WriteAttributeNode} contains a base register and the attribute being written to, and \textit{WriteIndexableNode} contains a base and attribute register (the latter has a register for the attribute because it is not constant, for instance we could write something like the following: \inlinecode{dict[getKey()] = aValue}, whereas attribute in \inlinecode{obj.attribute = aValue} must be a string).
@@ -142,7 +140,7 @@ y = x.a # __getattr__ will be called if trickyComputation() returned false
   \label{code:MagicMethods2}
 \end{listing}
 
-Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG). This is in fact what our implementation does. In order to obtain this we have provided the analysis with a hook from the work list algorithm, such that our type analyzer can modify the control flow graph during the analysis. When doing this, each newly added node to the CFG must of course be added to the work list.
+Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG). This is in fact what our implementation does. In order to obtain this we have provided the analysis with a hook from the work list algorithm, such that our type analyzer can modify the CFG during the analysis. When doing this, each newly added node to the CFG must of course be added to the work list.
 
 It is important to note however, that not supporting \inlinecode{\_\_getattribute\_\_} simplifies the task a bit. Recall that we don't need to normalize read attribute nodes as long the attribute being read is definitely set. This is not the case if we took the magic method \inlinecode{\_\_getattribute\_\_} into account, as it might itself raise an \inlinecode{AttributeError} (causing \inlinecode{\_\_getattr\_\_} to be called)! Thus a type analysis that also supports \inlinecode{\_\_getattribute\_\_} would for a start actually have to normalize all read attribute nodes where an attribute is dereferenced from an instance that belongs from a class where \inlinecode{\_\_getattribute\_\_} is defined. In some cases it might of course be possible to conclude that the particular implementation of \inlinecode{\_\_getattribute\_\_} will never raise an \inlinecode{AttributeError}, e.g. when the implementation just returns a constant (see the example below), in which the type analysis of course don't need to normalize the read property node.
 
@@ -169,7 +167,7 @@ y = x.a # no attribute access will result in __getattr__ being called
 
 
 \section{Handling exceptions}
-In order to handle the flow caused by exceptions we use two different kinds of edges in the control flow graph. 
+In order to handle the flow caused by exceptions we use two different kinds of edges in the CFG. 
 A solid edge indicates normal flow, and a dashed edge indicates exception flow. 
 
 In Python exceptions can be caught using a try-except-else-finally block. An except block can be annotated with a number of types, 
@@ -179,7 +177,7 @@ i.e. when no exceptions were raised inside the try block.
 The AST provided by the Jython parser has been normalized from a try-except-else-finally block into a try-finally block, 
 which contains a try-except-else block in its try block.
 
-For instance the code in the first example \ref{code:tryExceptBefore} below is transformed into the code in the next example \ref{code:tryExceptAfter}:
+For instance the code in the first \autoref{code:tryExceptBefore} below is transformed into the code in the next \autoref{code:tryExceptAfter}:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -252,7 +250,7 @@ If there is no except blocks, each node should instead be connected using an exc
     \includegraphics[width=0.48\textwidth]{images/Try-except-else-finally.png}
   \end{center}
   \vspace{-10pt}
-  \caption{Control Flow Graph for try try-except example \ref{code:tryExceptAfter}}
+  \caption{CFG for try try-except \autoref{code:tryExceptAfter}}
   \label{fig:tryExceptCfg}
   \vspace{-10pt}
 \end{wrapfigure}
@@ -301,7 +299,7 @@ Due to the fact that the global statement takes effect no matter where it is in 
 
 
 \section{CFG construction of With statements}
-With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
+With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in \autoref{code:withExample}.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
