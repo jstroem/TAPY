@@ -1,12 +1,11 @@
 \chapter{The Control Flow Graph}
 \label{chap:CFGConstruction}
-In this chapter we give examples of how we recursively generate the CFG of some essential language features, during this we will present the CFG nodes that we use, together with their semantics.
-
+In this chapter we give examples of how we recursively generate the CFG of some essential language features, during this we will present the CFG nodes\footnote{The complete list of our CFG nodes can be found in \autoref{chapter:NodeRef}} that we use, together with their semantics.
 
 
 \section{An example: For loops}
 \label{sec:CFGConstructionLoops}
-Loops in Python differs from loops in most other languages as both \inlinecode{for} and \inlinecode{while} loops have an \inlinecode{else} branch, as can be seen in example \ref{code:forExample}. The \inlinecode{else} branch is executed if the loop terminates normally, i.e. not using the \inlinecode{break} statement.
+Loops in Python differ from loops in most other languages as both \inlinecode{for} and \inlinecode{while} loops have an \inlinecode{else} branch, as can be seen in \autoref{code:forExample}. The \inlinecode{else} branch is executed if the loop terminates normally, i.e. not using the \inlinecode{break} statement.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
@@ -17,100 +16,85 @@ for x in [1,2,3]:
 else:
   print "normal for termination"
   \end{minted}
-  \caption{For loop example with an \inlinecode{else} block.}\label{code:forExample}
+  \caption{\inlinecode{for} loop example with an \inlinecode{else} block.}\label{code:forExample}
 \end{listing}
 
-First, the expression given to the for loop, \inlinecode{[1,2,3]}, is evaluated. This should result in an iterable object, such that an iterator object can be created. Now for each element of the iterator the body of the for loop is evaluated once.
+The semantics is as follows: First, the expression given to the loop, \inlinecode{[1,2,3]}, is evaluated. This should result in an iterable object, such that an iterator object can be created. For each element in the iterator the body of the loop is evaluated.
 
-To simulate the evaluation sequence of such a for loop in our CFG, we need to take a look at the iterator object: 
-to get the next element from an iterator object the \inlinecode{next} method can be called. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception.
+To simulate this in our CFG we need to take a look at the iterator object: to get the next element from an iterator object the \inlinecode{next} method is called. This method returns the next element until the iteration is done and finally raises a \inlinecode{StopIteration} exception.
 
-The CFG our type analyzer generates for example \ref{code:forExample} can been seen in figure \ref{fig:forCfg}.
+The generated CFG for \autoref{code:forExample} can been seen in \autoref{fig:forCfg}.
 
 \begin{figure}{H}
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{images/for-example-cfg2.png}
+    \includegraphics[width=0.85\textwidth]{images/for-example-cfg2.png}
   \end{center}
-  \caption{Control Flow Graph for the for-loop example \ref{code:forExample}}
+  \caption{CFG for the for-loop \autoref{code:forExample}.}
   \label{fig:forCfg}
 \end{figure}
-
-%\begin{wrapfigure}{r}{0.5\textwidth}
-%  \vspace{-20pt}
-%  \begin{center}
-%    \includegraphics[width=0.48\textwidth]{images/while.png}
-%  \end{center}
-%  \vspace{-10pt}
-%  \caption{Control Flow Graph for a while-loop}
-%  \label{fig:whileCfg}
-%  \vspace{-10pt}
-%\end{wrapfigure}
-
-%For a while loop we generate the control flow graph in figure \ref{fig:whileCfg}.
-
 
 
 \section{Using registers for the intermediate representation}
 \label{CFG calls}
-Inspired from TAJS \cite{tajs}, Type Analyzer for JavaScript, we use registers in our intermediate representation to model that even simple expressions in Python is evaluated in several steps. To illustrate this consider the following line of code from example \ref{code:Features1}: \inlinecode{s1.addGrade('math', 10)}.
+Inspired from TAJS \cite{tajs} we use registers in our intermediate representation to model that even simple expressions in Python is evaluated in several steps. To illustrate this consider the following line of code from \autoref{code:Features1}: \inlinecode{s1.addGrade('math', 10)}.
 
-First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the CFG using \textit{ReadAttributeNode}, which holds a result register, a base register, i.e. the register where to find the object, and the name of the attribute to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}.
+First the function \inlinecode{addGrade} is looked up in the class of \inlinecode{s1}. This is done in the CFG using \textit{ReadAttributeNode}, which holds a result register, a base register (i.e. the register where to find the object), and the name of the attribute to look up. Similar nodes include \textit{ReadVariableNode} and \textit{ReadIndexableNode}.
 
-\begin{wrapfigure}{r}{0.5\textwidth}
-	\vspace{-20pt}
+\begin{figure}{H}
 	\begin{center}
-		\includegraphics[width=0.48\textwidth]{images/Call-example.png}
+		\includegraphics[width=0.35\textwidth]{images/Call-example.png}
 	\end{center}
-	\vspace{-10pt}
-	\caption{Control Flow Graph for a call example}
+	\caption{CFG for a call example.}
 	\label{fig:callCfg}
-	\vspace{-10pt}
-\end{wrapfigure}
+\end{figure}
 
-Second, each argument given to the function is evaluated, and finally the actual call is done. Calls in the control flow graph is modeled using the \textit{CallNode}, which holds a function register and a list of argument registers, and \textit{AfterCallNode}, which holds a result register.
+Second, each argument given to the function is evaluated and stored in individual registers, and finally the actual call can be made. Calls in the CFG is modeled using the \textit{CallNode}, which holds a function register and a list of argument registers, and \textit{AfterCallNode}, which holds a result register.
 
-Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the control flow graph found in figure \ref{fig:callCfg} 
+Thus the expression \inlinecode{s1.addGrade('math', 10)} will result in the CFG found in \autoref{fig:callCfg} 
 (where the numbers to the left represent the result registers of the nodes).
 
-So far we have primarily been concerned with putting constants into registers and reading e.g. variables. In order to support writing we have three different nodes: \textit{WriteVariableNode}, \textit{WriteAttributeNode}, and \textit{WriteIndexableNode}. Besides holding a value register, i.e. the register where to find the value being written, \textit{WriteVariableNode} contains the name of the variable being written to, \textit{WriteAttributeNode} contains a base register and the attribute being written to, and \textit{WriteIndexableNode} contains a base and attribute register (the latter has a register for the attribute because it is not constant, for instance we could write something like the following: \inlinecode{dict[getKey()] = aValue}, whereas attribute in \inlinecode{obj.attribute = aValue} must be a string).
+So far we have primarily been concerned with putting constants into registers and reading variables and attributes. In order to support writing we have three different nodes: \textit{WriteVariableNode}, \textit{WriteAttributeNode}, and \textit{WriteIndexableNode}. Besides holding a value register, i.e. the register where to find the value being written, \textit{WriteVariableNode} contains the name of the variable being written to, \textit{WriteAttributeNode} contains a base register and the attribute being written to, and \textit{WriteIndexableNode} contains a base and attribute register (the latter has a register for the attribute because it is not constant, for instance we could write something like the following: \inlinecode{dict[getKey()] = aValue}, whereas attribute in \inlinecode{obj.attribute = aValue} must be a string).
 
 
 
 \section{Magic methods}
-The so-called magic methods can be thought of as hooks, which allow the programmer to get to execute code at e.g. attribute access. This is something that cannot be done in e.g. JavaScript.
+The so-called magic methods can be thought of as hooks, which allow the programmer to get to execute code at attribute access and other similar places. This is something that cannot be done in JavaScript.
 
-From a static analysis point of view some of these magic methods are less interesting, as e.g. \inlinecode{\_\_init\_\_}. This particular magic method just corresponds to a constructor.
+From a static analysis point of view some of these magic methods are less interesting. For instance the magic method \inlinecode{\_\_init\_\_} just corresponds to a constructor.
 
-Two very interesting magic methods, however, are \inlinecode{\_\_getattribute\_\_} and \inlinecode{\_\_getattr\_\_}. These are particular interesting because each time an attribute \inlinecode{a} is read from a class object \inlinecode{x}, the following happens:
+\begin{sloppypar}
+However, two very interesting magic methods are \inlinecode{\_\_getattribute\_\_} and \inlinecode{\_\_getattr\_\_}, because each time an attribute \inlinecode{a} is read from a class instance \inlinecode{x}, the following happens:
+\end{sloppypar}
 
-The magic method \inlinecode{\_\_getattribute\_\_} is looked up on \inlinecode{x}. If it is defined, the method is called with the instance, \inlinecode{x}, and the attribute name \inlinecode{a}. It is now up to the supplied method to return the correct value\inlinecode{For instance the implementation of \inlinecode{\_\_getattribute\_\_} could just return a constant, which would cause every attribute access to result in that particular constant.}. If the implementation of \inlinecode{\_\_getattribute\_\_} happens to raise an \inlinecode{AttributeError}, \inlinecode{\_\_getattr\_\_} is called. Otherwise if \inlinecode{\_\_getattribute\_\_} is not defined, the attribute is looked up on the instance. If the attribute is present on the instance it is returned, otherwise an \inlinecode{AttributeError} is raised and the magic method \inlinecode{\_\_getattr\_\_} is called (at least if it is defined).
+The magic method \inlinecode{\_\_getattribute\_\_} is looked up on \inlinecode{x}. If it is defined by the programmer, the method is called with the instance, \inlinecode{x}, and the attribute name \inlinecode{a}. It is now up to the supplied method to return the correct value\footnote{For instance the implementation of \inlinecode{\_\_getattribute\_\_} could just return a constant, which would cause every attribute access to result in that particular constant.}. If the implementation of \inlinecode{\_\_getattribute\_\_} happens to raise an \inlinecode{AttributeError}, \inlinecode{\_\_getattr\_\_} is called. Otherwise if \inlinecode{\_\_getattribute\_\_} is not defined, the attribute is looked up on the instance. If the attribute is present on the instance it is returned, otherwise an \inlinecode{AttributeError} is raised and the magic method \inlinecode{\_\_getattr\_\_} is called if it is defined.
 
-The following pseudo code should illustrate this:
+The following pseudo code should clarify this:
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
-def readAttribute(x, a):
-  __getattribute__ = lookup(x, '__getattribute__')
-  __getattr__ = lookup(x, '__getattr__')
+def readAttribute(x,a):
+  __getattribute__ = lookup(x,'__getattribute__')
+  __getattr__ = lookup(x,'__getattr__')
 
   try:
     if isset(__getattribute__):
       # __getattribute__ is called if defined
-      return __getattribute__(x, a)
+      return __getattribute__(x,a)
     else:
-      return getattr(x, a)
+      return getattr(x,a)
   except AttributeError as e:
     if isset(__getattr__):
       # __getattr__ called in case of an AttributeError
-      return __getattr__(x, a)
+      return __getattr__(x,a)
     else
       raise e
   \end{minted}
+  \caption{Pseudo code to clarify the attribute lookup mechanism.}
 \end{listing}
 
-Thus, the magic method \inlinecode{\_\_getattribute\_\_} can be used to supply a custom attribute lookup function, and \inlinecode{\_\_getattr\_\_} can be used to supply a fallback function in case of a bad attribute access. Note also that the \inlinecode{\_\_getattribute\_\_} can not be thought of as being equivalent (or nearly equivalent) to getters in e.g. ECMAScript 5 and C\#: In Python one single method is supplied, not one for each attribute (or property and field for ECMAScript 5, respectively C\#).
+Thus, the magic method \inlinecode{\_\_getattribute\_\_} can be used to supply a custom attribute lookup function, and \inlinecode{\_\_getattr\_\_} can be used to supply a fallback function in case of a bad attribute access. It should also be noted that \inlinecode{\_\_getattribute\_\_} cannot be thought of as being equivalent (or nearly equivalent) to getters in ECMAScript 5 and C\#: In Python one single method is supplied, not one for each attribute.
 
-As mentioned in the introduction we have only aimed to support \inlinecode{\_\_getattr\_\_} in our type analyser, due to the limited time of our project. However, in order to determine that we wanted to support \inlinecode{\_\_getattr\_\_} and not \inlinecode{\_\_getattribute\_\_}, we looked at the use of these magic methods in some larger Python projects. In Django 1.5.1\footnote{See \url{http://www.djangoproject.com/}.}, a high-level web framework, we found that \inlinecode{\_\_getattribute\_\_} was not used at all. However, \inlinecode{\_\_getattr\_\_} is used 14 times and therefore seems more useful to support if the choice stands between the two of them. Of course 14 usages is not much for a web framework on approximately 200.000 lines of code, but it is still essential to handle in order to be able to statically analyse Python programs.
+As mentioned in the introduction we have only aimed to support \inlinecode{\_\_getattr\_\_} in our type analyser, due to the limited time of our project. However, in order to determine that we wanted to support \inlinecode{\_\_getattr\_\_} and not \inlinecode{\_\_getattribute\_\_}, we looked at the use of these magic methods in some larger Python projects. In Django \cite{django}, a high-level web framework, we found that \inlinecode{\_\_getattribute\_\_} was not used at all. However, \inlinecode{\_\_getattr\_\_} is used 14 times and therefore seems more useful to support if the choice stands between the two of them. Of course 14 usages is not much for a web framework on approximately 200.000 lines of code, but it is still essential to handle in order to be able to statically analyse Python programs.
 
 \subsection{Transforming the CFG}
 \label{Magic methods transformation}
@@ -141,7 +125,7 @@ y = x.a # __getattr__ will be called if trickyComputation() returned false
   \label{code:MagicMethods2}
 \end{listing}
 
-Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG). This is in fact what our implementation does. In order to obtain this we have provided the analysis with a hook from the work list algorithm, such that our type analyzer can modify the control flow graph during the analysis. When doing this, each newly added node to the CFG must of course be added to the work list.
+Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG). This is in fact what our implementation does. In order to obtain this we have provided the analysis with a hook from the work list algorithm, such that our type analyzer can modify the CFG during the analysis. When doing this, each newly added node to the CFG must of course be added to the work list.
 
 It is important to note however, that not supporting \inlinecode{\_\_getattribute\_\_} simplifies the task a bit. Recall that we don't need to normalize read attribute nodes as long the attribute being read is definitely set. This is not the case if we took the magic method \inlinecode{\_\_getattribute\_\_} into account, as it might itself raise an \inlinecode{AttributeError} (causing \inlinecode{\_\_getattr\_\_} to be called)! Thus a type analysis that also supports \inlinecode{\_\_getattribute\_\_} would for a start actually have to normalize all read attribute nodes where an attribute is dereferenced from an instance that belongs from a class where \inlinecode{\_\_getattribute\_\_} is defined. In some cases it might of course be possible to conclude that the particular implementation of \inlinecode{\_\_getattribute\_\_} will never raise an \inlinecode{AttributeError}, e.g. when the implementation just returns a constant (see the example below), in which the type analysis of course don't need to normalize the read property node.
 
@@ -168,7 +152,7 @@ y = x.a # no attribute access will result in __getattr__ being called
 
 
 \section{Handling exceptions}
-In order to handle the flow caused by exceptions we use two different kinds of edges in the control flow graph. 
+In order to handle the flow caused by exceptions we use two different kinds of edges in the CFG. 
 A solid edge indicates normal flow, and a dashed edge indicates exception flow. 
 
 In Python exceptions can be caught using a try-except-else-finally block. An except block can be annotated with a number of types, 
@@ -178,7 +162,7 @@ i.e. when no exceptions were raised inside the try block.
 The AST provided by the Jython parser has been normalized from a try-except-else-finally block into a try-finally block, 
 which contains a try-except-else block in its try block.
 
-For instance the code in the first example \ref{code:tryExceptBefore} below is transformed into the code in the next example \ref{code:tryExceptAfter}:
+For instance the code in the first \autoref{code:tryExceptBefore} below is transformed into the code in the next \autoref{code:tryExceptAfter}:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -251,7 +235,7 @@ If there is no except blocks, each node should instead be connected using an exc
     \includegraphics[width=0.48\textwidth]{images/Try-except-else-finally.png}
   \end{center}
   \vspace{-10pt}
-  \caption{Control Flow Graph for try try-except example \ref{code:tryExceptAfter}}
+  \caption{CFG for try try-except \autoref{code:tryExceptAfter}}
   \label{fig:tryExceptCfg}
   \vspace{-10pt}
 \end{wrapfigure}
@@ -300,7 +284,7 @@ Due to the fact that the global statement takes effect no matter where it is in 
 
 
 \section{CFG construction of With statements}
-With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in Listing \ref{code:withExample}.
+With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in \autoref{code:withExample}.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
