@@ -98,7 +98,7 @@ As mentioned in the introduction we have only aimed to support \inlinecode{\_\_g
 
 \subsection{Transforming the CFG}
 \label{Magic methods transformation}
-Since each single attribute access possibly involves method calls, we normalize the CFG in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadAttribute(<base>,prop)}, into the following CFG piece:
+Since every attribute access possibly involves method calls we normalize the CFG in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadAttribute(<base>,attr)}, into the following CFG piece:
 
 \begin{listing}[H]
   \begin{center}
@@ -109,7 +109,9 @@ Since each single attribute access possibly involves method calls, we normalize 
   \label{fig:MagicMethods1}
 \end{listing}
 
-As can be seen from the normalized CFG of read attribute nodes the only challenge there is in order for our analysis to handle the magic method \inlinecode{\_\_getattr\_\_}, is that we need to handle exceptions in our analysis. We return to this in the following section. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When we can't conclude that an attribute is definitely available (e.g. as in the example below), we must of course normalize the read attribute node.
+As it can be seen from the normalized CFG for read attribute nodes handling exceptions is key to handling the magic method \inlinecode{\_\_getattr\_\_}. We return to this in the following section, \autoref{chapter:Exceptions}. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When we can't conclude that an attribute is definitely available read attribute nodes must be normalized (\autoref{ex:DefinitelyAvailable} shows such a scenario).
+
+However, in order for an analysis to conclude that an attribute is definitely set it must support strong updates. We discuss how strong updates can be obtained using recency abstraction in \autoref{section:Strong or weak}. In our current implementation we have no apparent way of making strong updates in a sound fashion. Instead we have introduced a way to tell our analyzer that it can assume that allocation-sites only correspond to a single concrete object, thus allowing for strong updates.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
@@ -121,13 +123,13 @@ class C():
 x = C()
 y = x.a # __getattr__ will be called if trickyComputation() returned false
   \end{minted}
-  \caption{A simple example of when it will be possible to conclude that \inlinecode{\_\_getattr\_\_} will never be called even though \inlinecode{\_\_getattribute\_\_} is defined.}
-  \label{code:MagicMethods2}
+  \caption{In some cases it is not possible to conclude whether an attribute is definitely available or not.}
+  \label{ex:DefinitelyAvailable}
 \end{listing}
 
-Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG). This is in fact what our implementation does. In order to obtain this we have provided the analysis with a hook from the work list algorithm, such that our type analyzer can modify the CFG during the analysis. When doing this, each newly added node to the CFG must of course be added to the work list.
+Thus the type analyzer can be improved such that it only normalizes read attribute nodes if the attribute being read may not be defined (resulting in possibly $12 * \#\texttt{read attribute nodes}$ nodes less in the CFG)\footnote{...}. This is in fact what our implementation does when we make the assumption previously mentioned. In order to obtain this we have provided the analysis with a hook from the worklist algorithm, such that our type analyzer can modify the CFG during the analysis. When doing this each newly added node to the CFG must be added to the worklist.
 
-It is important to note however, that not supporting \inlinecode{\_\_getattribute\_\_} simplifies the task a bit. Recall that we don't need to normalize read attribute nodes as long the attribute being read is definitely set. This is not the case if we took the magic method \inlinecode{\_\_getattribute\_\_} into account, as it might itself raise an \inlinecode{AttributeError} (causing \inlinecode{\_\_getattr\_\_} to be called)! Thus a type analysis that also supports \inlinecode{\_\_getattribute\_\_} would for a start actually have to normalize all read attribute nodes where an attribute is dereferenced from an instance that belongs from a class where \inlinecode{\_\_getattribute\_\_} is defined. In some cases it might of course be possible to conclude that the particular implementation of \inlinecode{\_\_getattribute\_\_} will never raise an \inlinecode{AttributeError}, e.g. when the implementation just returns a constant (see the example below), in which the type analysis of course don't need to normalize the read property node.
+It is important to note that not supporting \inlinecode{\_\_getattribute\_\_} simplifies the task a bit. Recall that we don't need to normalize read attribute nodes as long the attribute being read is definitely set. This is not the case if we took the magic method \inlinecode{\_\_getattribute\_\_} into account, as it might itself raise an \inlinecode{AttributeError} (causing \inlinecode{\_\_getattr\_\_} to be called)! Thus a type analysis that also supports \inlinecode{\_\_getattribute\_\_} would for a start actually have to normalize all read attribute nodes where an attribute is dereferenced from an instance that belongs from a class where \inlinecode{\_\_getattribute\_\_} is defined. In some cases it might be possible to conclude that the particular implementation of \inlinecode{\_\_getattribute\_\_} will never raise an \inlinecode{AttributeError}, e.g. when the implementation just returns a constant (see the example below), in which the type analysis doesn't need to normalize the read property node.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
@@ -145,13 +147,8 @@ y = x.a # no attribute access will result in __getattr__ being called
 
 
 
-
-
-
-
-
-
 \section{Handling exceptions}
+\label{chapter:Exceptions}
 In order to handle the flow caused by exceptions we use two different kinds of edges in the CFG. 
 A solid edge indicates normal flow, and a dashed edge indicates exception flow. 
 
@@ -270,7 +267,7 @@ to the entry node of \textit{CFG$_{\textit{finally-normal}}$}.
 
 
 
-\subsection{Global Statement}
+\section{Global Statement}
 At first glance the \inlinecode{global} statement in Python seems rater straightforward to analyse, but it has some interesting quirks that are not that intuitive, and thus deserves special handling. In this section we will go over these quirks and how this affected the analysis of this statement.
 
 The statement allows for a function to declare an identifier to be considered global for the entirety of the function body. No matter where the global statement is stated within the function body it will take effect for the entire function body, even for statements that are stated before the global statement. It should also be noted that the statement doesn't have to be executed to take effect, so global statements in dead code also take effect.
@@ -283,7 +280,7 @@ Due to the fact that the global statement takes effect no matter where it is in 
 
 
 
-\section{CFG construction of With statements}
+\section{CFG construction of \inlinecode{with} statements}
 With statements in Python are unlike With statements in JavaScript.\ They are usually used when you have object you need to "open" before you do some work and then "close" it in the end, this pattern is used a lot when working with I/O such as files or databases.\ An example of with statements can be seen in \autoref{code:withExample}.
 
 \begin{listing}[H]
