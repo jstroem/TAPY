@@ -1,4 +1,4 @@
-\chapter{Analyzing Classes}
+\chapter{Analysing Classes}
 Python has two different kinds of classes, namely new and old style (or classic) classes that both support multiple inheritance (note that from Python 3 all classes are new style classes). A new style class is one that contrary to an old style class is a subclass of \inlinecode{object}. The two different kinds of classes vary among others in their method resolution order (MRO)\cite{pyref.typehierarchy}: old style classes resolves variables and attributes by a depth-first, left-to-right strategy, whereas new style classes uses the more complex strategy C3\cite{pyref.c3mro}, which is also known as the call-next-method from other multiple inheritance languages. Also, the built in function \inlinecode{super} can only be used with new style classes. In this section we present our work towards handling those two kinds of classes.
 
 To start with consider the below example that illustrates the difference in MRO between new and old style classes.
