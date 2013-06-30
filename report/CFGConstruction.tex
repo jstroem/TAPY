@@ -208,18 +208,13 @@ Each node in \textit{CFG$_{\textit{try}}$} (that does not already have an outgoi
 
 The above description models if an exception occurs during evaluation of one of the statements in a try block, then the control flow will proceed from the first except block. If there are no except blocks, each node should instead be connected using an exception edge to the entry node of its nearest surrounding except or finally block (specifically \textit{CFG$_{\textit{finally-unhandled-exc}}$}). However, we don't add any exception edges here; these will be added inductively because of (\inlinecode{*}) in case there are any surrounding except or finally blocks.
 
-\begin{wrapfigure}{r}{0.5\textwidth}
-  \vspace{-20pt}
+\begin{figure}{H}
   \begin{center}
     \includegraphics[width=0.48\textwidth]{images/Try-except-else-finally.png}
   \end{center}
-  \vspace{-10pt}
   \caption{CFG for try try-except \autoref{code:tryExceptAfter}}
-  \label{fig:tryExceptCfg}
-  \vspace{-10pt}
-\end{wrapfigure}
-
-
+  \label{fig:forCfg}
+\end{figure}
 
 \subsection{The except block}
 The entry node of each except block is connected using an exception edge to the entry node of the next except block (except for the last block). Thus we make an exception edge from the entry node of \textit{CFG$_{\textit{except-Foo}}$} to the entry node of \textit{CFG$_{\textit{except}}$}.

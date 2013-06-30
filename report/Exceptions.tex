@@ -1,9 +1,9 @@
-\chapter{Exceptions}
+\chapter{Analysing Exceptions}
 \label{chapter:Exceptions}
-\section{Raising exceptions intraprocedurally}
-As it has not been our primary goal to fully support exception handling, but only to support some kind of simple exception handling in order to be able to handle the magic method \inlinecode{\_\_getattr\_\_}, we have only concentrated on except blocks (catch blocks) without types that catches all raised exceptions. In particular we don't support except blocks like \inlinecode{except AttributeError as e}.
+Initially it was not a goal to support exceptions, but since so many language constructs (including the magic method \inlinecode{\_\_getattr\_\_}) in Python rely so heavily on these, it became a necessity to handle these. Thus we have only concentrated on except blocks (catch blocks) without types that catches all raised exceptions. In particular we don't support except blocks like \inlinecode{except AttributeError as e}.
 
-As a consequence the changes to our type analyzer has been minor. When an exception is possibly raised the type analyzer writes that particular exception object to a special temporary variable where we store the latest raised exception. If the exception is raised by means of a \inlinecode{RaiseNode} in the CFG, the exception object will already be stored in a temporary variable. This is the case because the code \inlinecode{raise Exception()} is represented as follows in our CFG:
+\section{Raising exceptions intraprocedurally}
+To handle exceptions intraprocedurally our type analysis has received minor modifications\footnote{In \autoref{chap:CFGConstruction} we describe how the CFG is constructed to support exceptions}. When an exception is possibly raised the type analyser writes that particular exception object to a special fixed register where we store the latest raised exception. If the exception is raised by a \inlinecode{RaiseNode} in the CFG, the exception object will already be stored in a fixed register. This is the case because the code \inlinecode{raise Exception()} is represented as follows in our CFG:
 
 \begin{listing}[H]
 	\begin{center}
@@ -12,14 +12,14 @@ As a consequence the changes to our type analyzer has been minor. When an except
 	\vspace{-20pt}
 \end{listing}
 
-Therefore, our type analyzer can just take that object (for the example: the object in \inlinecode{<2>}) a store it in the temporary exception variable.
+Therefore, our type analyser can just take that object (for the example: the object in \inlinecode{<2>}) and store it in the fixed register.
 
-When an exception is not raised by means of a \inlinecode{RaiseNode}, our type analyzer creates a new exception object on its own. If for instance an attribute is read on an object without that attribute, we create a new \inlinecode{AttributeError} object and store it on the heap in our lattice. We do this as follows:
+When an exception is not raised by a \inlinecode{RaiseNode}, our type analyser creates a new exception object. As an example of this, would be reading an absent attribute on an object. This would result in a new \inlinecode{AttributeError} object stored on the abstract heap. We do this as follows:
 
 \begin{enumerate}
 	\item The \inlinecode{\_\_builtin\_\_} module object on the heap is looked up,
 	\item The attribute "AttributeError" is looked up on the \inlinecode{\_\_builtin\_\_} object from (1); this should always yield a \inlinecode{NewStyleClassObjectLabel},
-	\item We manually create an instance of that particular class label found in (2), stores it on the heap of our lattice and finally also in the temporary exception variable on our stack lattice.
+	\item We manually create an instance of that particular class label found in (2), stores it on the abstract heap and finally saves it into the special fixed register.
 \end{enumerate}
 
 
