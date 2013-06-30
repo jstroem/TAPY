@@ -24,11 +24,11 @@ When an exception is not raised by a \inlinecode{RaiseNode}, our type analyser c
 
 
 \section{Raising exceptions interprocedurally}
-The above outline only specifies how we raise exception intraprocedurally, since we so far haven't specified any exception edges in our CFG going across function definitions.
+The above outline only specifies how we handle exceptions intraprocedurally, since we so far haven't specified any exception edges in our CFG going across function definitions.
 
-We take care of exceptions interprocedurally by introducing a new type of node for function exit: \inlinecode{ExceptionalExitNode}. Thus for each function we have two exit nodes. We now take each of the CFG nodes of the function that does not have an outgoing exception edge\inlinecode{If a CFG node in a function already has an outgoing exception edge, it is because it is inside a try-except block.} and connect them to the exceptional exit node by an exception edge.
+We take care of exceptions interprocedurally by introducing a new type of node for function exits: \inlinecode{ExceptionalExitNode}, this new node is added to each function CFG so they now have two types of exit nodes. We now take each of the CFG nodes of the function that does not have an outgoing exception edge\footnote{If a CFG node in a function already has an outgoing exception edge, it is because it is inside a try-except block.} and connect them to the exceptional exit node with an exception edge.
 
-Recall from the section about functions, that we upon a call to a function update the call graph with call edges from the call node to the entry node of the function, and from the exit node of the function to the after call node. In order to accommodate exceptions interprocedural we now also add a \textit{call exception edge} from the exceptional exit node of the function to the except block of the call node. To illustrate this consider the below example together with its corresponding (partial) CFG:
+Recall from \autoref{Functions} about functions, that we upon a call to a function updates the call graph with call edges from the call node to the entry node of the function, and from the exit node of the function to the after call node. To accommodate exceptions interprocedural we also add a \textit{call exception edge} from the exceptional exit node of the function to the except block of the call node. To illustrate this consider the below example together with its corresponding (partial) CFG:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -55,7 +55,7 @@ except:
 
 
 \section{Catching exceptions}
-The constraint function for an \inlinecode{ExceptNode} in the CFG reads the value of the temporary variable associated with the latest raised exception. If the exception variable is bottom the solution of this node is simply set to the bottom element of the $State$ lattice. This indicates that the path is infeasible and acts as a simple sort of path sensivity. If the exception variable is actually set to an object on the heap, we just clear the exception variable on the stack by setting it to the bottom element of the $Value$ lattice. Now, the CFG nodes in the except block will change the solution as it looked like when an exception was raised, and the node following the try and except blocks will join the state coming from the try and except block, respectively.
+The constraint function for an \inlinecode{ExceptNode} in the CFG, checks the speical exception register. If the abstract value of the exception register is bottom (indicating no exceptions was raised) the solution of this node is simply set to the bottom element of the $State$ lattice. This indicates that the path is infeasible and acts as a simple sort of path sensivity. If the value of the exception register is actually poiting to an object on the abstract heap, we just clear the exception register on the stack by setting it to the bottom element of the $Value$ lattice. Now, the CFG nodes in the except block will change the solution, relatively as if an exception was raised at runtime, and the node following the try and except blocks will join the state coming from the try and except block, respectively.
 
 As an example consider the following code:
 
@@ -75,17 +75,17 @@ except:
 	\caption{An example that involves exceptions together with the solution of our type analyzer (see below).}
 \end{listing}
 
-Our type analyzer will for this particular code conclude that for the exit node of the program:
+Our type analyzer will for this particular code concludes the folowing for the exit node of the program:
 
 \begin{itemize}
-	\item \inlinecode{y} is either undefined or 42
-	\item \inlinecode{z} is either undefined or "trickyComputation() was true"
-	\item \inlinecode{err} is either undefined or "An error occurred"
+	\item \inlinecode{y} is either \inlinecode{undefined} or \inlinecode{42}
+	\item \inlinecode{z} is either \inlinecode{undefined} or \inlinecode{"trickyComputation() was true"}
+	\item \inlinecode{err} is either \inlinecode{undefined} or \inlinecode{"An error occurred"}
 \end{itemize}
 
-For the state at the last program point in the try block, our type analyzer concludes that:
+For the state at the last program point in the try block, the type analyser concludes:
 
 \begin{itemize}
-	\item \inlinecode{y} is undefined or 42
-	\item \inlinecode{z} is "trickyComputation() was true"
+	\item \inlinecode{y} is \inlinecode{undefined} or \inlinecode{42}
+	\item \inlinecode{z} is \inlinecode{"trickyComputation() was true"}
 \end{itemize}
