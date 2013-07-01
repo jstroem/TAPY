@@ -198,7 +198,7 @@ The CFG for the finally block is then cloned into three duplicates (\textit{CFG$
 \end{enumerate}
 
 In particular, it is important that the finally block handling case (3), \textit{CFG$_{\textit{finally-unhandled-exc}}$}, 
-is not connected to the exit node of the try-except-else-finally block (this is illustrated in \autoref{fig:tryExceptCfg})! Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception).
+is not connected to the exit node of the try-except-else-finally block (this is illustrated in \autoref{fig:tryExceptAfter})! Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception).
 
 In the following sections we present the way we generate the CFG of a try-except-else-finally block. In \autoref{chapter:Exceptions} we describe how we handle exceptions in the analysis.
 
