@@ -54,6 +54,7 @@ foo.x # AttributeError
 \label{code:callPropertyExample}
 \end{listing}
 
+\newpage
 
 \section{Calling functions and updating the call graph}
 A function call is represented by a \textit{CallNode} and an \textit{AfterCallNode} in the CFG.
@@ -96,10 +97,10 @@ def foo(i):
 foo(0)
 	\end{minted}
 \caption{Simple recursive function.}
-\label{code:UnfoldDictFunctionExample}
+\label{code:SimpleRecursive}
 \end{listing}
 
-In \autoref{code:UnfoldDictFunctionExample} three function scope objects would exist simultaneously for \inlinecode{foo} at runtime. However, our abstraction only has one object so it needs to model all values of $i$ in the same summary. The only way to do this is to take the least upper bound of these abstract values resulting in the top element of the $Integer$ lattice.
+In \autoref{code:SimpleRecursive} three function scope objects would exist simultaneously for \inlinecode{foo} at runtime. However, our abstraction only has one object so it needs to model all values of $i$ in the same summary. The only way to do this is to take the least upper bound of these abstract values resulting in the top element of the $Integer$ lattice.
 
 The problem only arises in the presence of recursive functions, so to enable the analysis to do strong updates a command-line flag is introduced to tell the analysis if it can assume no recursive functions occur. This was very fast to implement and allowed more time to focus on the magic methods, which on their own doesn't introduce any recursion.
 
@@ -107,6 +108,7 @@ Alternatively, the call graph could be inspected for loops in order to detect re
 
 An entirely different approach is to use the recency abstraction as introduced by \cite{recency}, which can be seen as an extension of the allocation-site abstraction. The idea is to allocate two objects for each allocation-site $s$, namely the most-recently-allocated-block (MRAB[$s$]) and not-most-recently-allocated-blocks (NMRAB$s$), instead of only one as in the allocation-site abstraction. This will allow for strong updates to attributes of MRAB[$s$]. This turns out to work very well because all writes to local variables at runtime happen to the latest instantiated stack frame, which is exactly the situation in which recency abstraction enables strong updates over weak updates.
 
+\newpage
 
 \section{Further work with parameter passing}
 In Python it is possible to unfold e.g. a dictionary to the arguments of a function:
@@ -118,7 +120,8 @@ def foo(bar, baz):
 params = { 'bar': 'bar', 'baz': 'baz' }
 foo(*params) # 'barbaz'
 	\end{minted}
-\caption{Unfolding of a dictionary to the parameters a function.}\label{code:UnfoldDictFunctionExample}
+\caption{Unfolding of a dictionary to the parameters a function.}
+\label{code:UnfoldDictFunctionExample}
 \end{listing}
 
 Currently, our analysis does not support this kind of parameter passing. Also, it does not support the special \inlinecode{**args} parameter that collects all of the superfluous arguments in a list, quite similar to the \inlinecode{arguments} object that is available inside functions in JavaScript.

@@ -31,6 +31,7 @@ A simple optimization would be to focus on finding a fixed-point for a strongly 
 \section{The Analysis Lattice}
 Inspired by TAJS \cite{tajs} we have constructed a lattice for abstract values, $Value$ (see \autoref{lattice:Value}), from which we build a lattice for abstract objects, $Object$ (see \autoref{lattice:Object}). These two lattices are the main building blocks for the lattice of abstract states, $State$ (see \autoref{lattice:State}). Our analysis lattice is the lattice which for each program point (i.e. for each CFG node) describes the abstract state of that program point. Furthermore the $Analysis$ lattice (see \autoref{lattice:Analysis}) describes the call graph of the CFG.
 
+\newpage
 \subsection{Abstract Values}
 The lattice for abstract values follows below:
 
@@ -96,6 +97,8 @@ Object = (AttributeName \rightarrow Value \times Global) \times P(ObjectLabel^{*
 \end{figure}
 
 Having made special lattices for the 'primitive' objects there is still a need to handle the more complex objects such as class instances and function objects. As with JavaScript you can augment objects with attributes at runtime, so the lattice needs to accommodate this dynamic behavior. We therefore use a map from attribute names to values. For some objects it is required to track the scope in which they were defined, to model the closure they are evaluated in. Additionally, variable scope objects will be modeled with abstract values of this type, and here the ability to mark variables as global is needed, indicating that writes to this variable should be done in the global variable scope object. Thus the object lattice is the product between object values and a static scope chain modeled as a list of object labels. The static scope chain is only present for function objects and describes the scope of the function at its declaration. It is used to properly update the scope chain when calling the function.
+
+\newpage
 
 \subsection{The Heap}
 \label{The Heap}

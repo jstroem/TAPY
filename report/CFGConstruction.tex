@@ -109,7 +109,7 @@ Since every attribute access possibly involves method calls we normalize the CFG
   \label{fig:MagicMethods1}
 \end{listing}
 
-As it can be seen from the normalized CFG for read attribute nodes handling exceptions is key to handling the magic method \inlinecode{\_\_getattr\_\_}. We return to this in the following section, \autoref{chapter:Exceptions}. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When we can't conclude that an attribute is definitely available read attribute nodes must be normalized (\autoref{ex:DefinitelyAvailable} shows such a scenario).
+As it can be seen from the normalized CFG for read attribute nodes handling exceptions is key to handling the magic method \inlinecode{\_\_getattr\_\_}. We return to this in \autoref{section:Handling exceptions}. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When we can't conclude that an attribute is definitely available read attribute nodes must be normalized (\autoref{ex:DefinitelyAvailable} shows such a scenario).
 
 However, in order for an analysis to conclude that an attribute is definitely set it must support strong updates. We discuss how strong updates can be obtained using recency abstraction in \autoref{section:Strong or weak}. In our current implementation we have no apparent way of making strong updates in a sound fashion. Instead we have introduced a way to tell our analyser that it can assume that allocation-sites only correspond to a single concrete object, thus allowing for strong updates.
 
@@ -148,7 +148,7 @@ y = x.a # no attribute access will result in __getattr__ being called
 
 
 \section{Handling exceptions}
-\label{chapter:Exceptions}
+\label{section:Handling exceptions}
 In order to handle the flow caused by exceptions we introduce a new kind of edge to the CFG. A solid edge will model normal flow while a dashed edge will model exception flow. 
 
 In Python, exceptions can be caught using a try-except-else-finally block. An except block can be annotated with a number of types, and each try-except-else-finally block may contain an arbitrary number of except blocks. As usual, the else block is evaluated after a normal exit, i.e. when no exceptions were raised inside the try block.
@@ -198,7 +198,7 @@ The CFG for the finally block is then cloned into three duplicates (\textit{CFG$
 \end{enumerate}
 
 In particular, it is important that the finally block handling case (3), \textit{CFG$_{\textit{finally-unhandled-exc}}$}, 
-is not connected to the exit node of the try-except-else-finally block (this is illustrated in \autoref{fig:tryExceptAfter})! Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception).
+is not connected to the exit node of the try-except-else-finally block (this is illustrated in \autoref{fig:tryExceptAfter}). Instead, it should be connected to its nearest surrounding except block (if any), or no except block at all (indicating that the program crashes with a runtime error because of an unhandled exception).
 
 In the following sections we present the way we generate the CFG of a try-except-else-finally block. In \autoref{chapter:Exceptions} we describe how we handle exceptions in the analysis.
 
@@ -212,8 +212,8 @@ The above description models if an exception occurs during evaluation of one of 
   \begin{center}
     \includegraphics[width=0.48\textwidth]{images/Try-except-else-finally.png}
   \end{center}
-  \caption{CFG for try try-except \autoref{code:tryExceptAfter}}
-  \label{fig:forCfg}
+  \caption{CFG for try try-except \autoref{code:tryExceptAfter}.}
+  \label{fig:tryExceptAfter}
 \end{figure}
 
 \subsection{The except block}
