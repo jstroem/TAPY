@@ -3,8 +3,8 @@ digraph ControlFlowGraph {
 	node [shape=record];
 	"d25d3b63-a03b-4367-9caf-a7ffc1458ee8" [shape=record label="&lt;9&gt; = foo	(ReadVariableNode)\n_ = &lt;9&gt;()	(CallNode)"];
 	"89b7ab86-407d-469b-a18a-742b588dc080" [shape=record label="&lt;5&gt; = x	(ReadVariableNode)\n&lt;6&gt; = &lt;5&gt;.a	(ReadPropertyNode)\nresult = &lt;6&gt;	(WriteVariableNode)\n&lt;7&gt; = result	(ReadVariableNode)\nreturn &lt;7&gt;	(ReturnNode)"];
-	"78d648cc-c347-44e6-b890-1d57f950f423" [shape=record label="&lt;10&gt; = _	(AfterCallNode)\ny = &lt;10&gt;	(WriteVariableNode)"];
-	"4bdc015a-2629-4931-8239-454d2f3d79f3" [shape=record label="except:  as \n&lt;11&gt; = 'An error occured'	(ConstantStringNode)\nerr = &lt;11&gt;	(WriteVariableNode)"];
+	"78d648cc-c347-44e6-b890-1d57f950f423" [shape=record label="&lt;10&gt; = _	(AfterCallNode)\ny = &lt;10&gt;	(WriteVariableNode)\n&lt;12&gt; = 'trickyComputation() was true'	(ConstantStringNode)\nz = &lt;12&gt;	(WriteVariableNode)"];
+	"4bdc015a-2629-4931-8239-454d2f3d79f3" [shape=record label="except:\n&lt;11&gt; = 'An error occured'	(ConstantStringNode)\nerr = &lt;11&gt;	(WriteVariableNode)"];
 	"2e24f1be-f20d-4256-9744-08b3ffb7065a" [shape=record label="ExitNode(foo)"];
 	"3c4ea1c3-ffa4-49ca-b200-30e89808d2e7" [shape=record label="ExceptionalExitNode(foo)"];
 	"17b59d59-b6b5-413f-a5ee-a6c655798e1a" [shape=record label="Module Exit	(NoOpNode)"];

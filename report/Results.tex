@@ -1,7 +1,10 @@
 \chapter{Results}
-During our project we have developed a type analyzer for Python, which is able to analyse simple Python programs. In this section we present some small, but non-trivial to analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that all uses of it in the web framework Django\cite{django} were simple.
+\label{chapter:results}
+In this report we presented one approach to a type analyser for Python, capable of analysing simple Pythong Programs. In this chapter we will give examples of some small non-trivial programs together with the results from our type analyser. The primary goal was to support simple usesage of the magic method \inlinecode{\_\_getattr\_\_} similar to the usesage in Django\cite{django}.
 
-In order to do so we needed to handle among others simple use of exceptions. Consider the following calculator example that makes use of exceptions:
+%During our project we have developed a type analyzer for Python, which is able to analyze simple Python programs. In this section we present some small, but non-trivial to %analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that %all uses of it in the web framework Django\cite{django} were simple.
+
+In order to achieve this goal restricted support for exceptions was needed. Consider the following calculator example that makes use of exceptions to unsupported operations:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -25,9 +28,9 @@ except:
 	\end{minted}
 \end{listing}
 
-For this example our analyzer will conclude that \inlinecode{amodb} is undefined, and that \inlinecode{err} is "An error occurred". Due to a very simple path sensitivity our analyzer does not conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. If we had instead called \inlinecode{calculator(10, "+", 20)} our analyzer would correctly conclude that the result of the function call would be 30.
+For this example our analyser will conclude that \inlinecode{amodb} is undefined and that \inlinecode{err} is "An error occurred". Due to a very simple path sensitivity our analyser doesn't conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. Had line 15 been changed to \inlinecode{calculator(10, "+", 20)} our analyser would correctly conclude that the result of the function call would be 30.
 
-The simple exception handling has allowed us to handle implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from section \ref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
+The restricted exception handling has enables us to handle implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from section \ref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -48,6 +51,10 @@ except:
 	\end{minted}
 \end{listing}
 
-Our tool is able to analyse this program and conclude that \inlinecode{mathgrade} is either 'A' or undefined (the latter because we do a weak update in line 10 to \inlinecode{a.grades}). It should be mentioned though, that the lack of context sensivity destroys the precision very quickly because Python has a lot of implicit method calls, contrary to e.g. JavaScript.
+Our tool is able to analyse this program and conclude that \inlinecode{mathgrade} is either 'A' or undefined (the latter because we do a weak update in line 10 to \inlinecode{a.grades}). It should be mentioned, that the lack of context sensivity destroys the precision very quickly because Python has a lot of implicit method calls, contrary to JavaScript.
 
-Again however, it is important to stress that the fact that we only support a subset of Python, e.g. not the magic method \inlinecode{\_\_getattribute\_\_}, simplifies the situation as also mentioned in the section about magic methods, \ref{Magic methods transformation}.
+Dynamicly expanding the \textit{ReadAttributeNode} results in 12 added CFG nodes per expanded \textit{ReadAttributeNode}, however it can be avoid when it can be statically determined that the attribute is definitely present. It would be nice to give a measure of how often the dynamic expansion can be avoided, but because our current analyser doesn't make any strong updates on classes it always does the expansion.
+
+It is important to stress that the fact that we only support a subset of Python. Not supporting the magic method \inlinecode{\_\_getattribute\_\_} simplifies the situation as  mentioned in the section about magic methods, \ref{Magic methods transformation}.
+
+
