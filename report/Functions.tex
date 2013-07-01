@@ -1,92 +1,114 @@
-\chapter{Handling functions}
+\chapter{Analysing Functions}
 \label{Functions}
-In this chapter we start with motivating why it is necessary to have three objects on the heap for each function declaration. Consider the below listing \ref{code:FunctionPropertyExample}. As mentioned we create a function object on the heap for each function declaration. This object is necessary as functions are themselves objects, just like in e.g. JavaScript. For instance we can set a property on a function object as line 2 illustrates.
+In this chapter we motivate why the analyser puts two objects on the abstract heap for each function declaration, as mentioned in \autoref{The Stack}. One being the function object, and the other being the function scope object. The function object is necessary as functions are themselves objects, just like in JavaScript. For instance we can set an attribute on a function object:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
-def a(): pass
-a.prop = 42
+def foo(): pass
+foo.attr = 42
 	\end{minted}
-\caption{Property on function object}\label{code:FunctionPropertyExample}
+\caption{Setting an attribute on a function object.}
+\label{code:FunctionPropertyExample}
 \end{listing}
 
-Thus for this concrete example we map the property \inlinecode{prop} to the integer 42 on the object of the function.
+%Another thing with regards to function objects on the heap, is that Python has a built in method \inlinecode{\_\_call\_\_} on each function. This method is a function wrapper of the function itself; calling it will result in calling the function itself. We therefore map the attribute \inlinecode{\_\_call\_\_} on the function object to its function wrapper object. The following illustrates how each newly declared function has this method:
 
-Another relevant thing with regards to function objects on the heap, is that Python has a built in method \inlinecode{\_\_call\_\_} on each function. This method is a function wrapper of the function itself; calling it will result in calling the function itself. We therefore map the property \inlinecode{\_\_call\_\_} on the function object to its function wrapper object. The following illustrates how each newly declared function has this method:
+%\begin{listing}[H]
+%	\begin{minted}[linenos]{python}
+%def a():
+%	print "a"
+%a() // "a"
+%a.__call__ # <method-wrapper '__call__' of function object at ...> 
+%a.__call__() # "a"
+%	\end{minted}
+%\caption{On a newly declared function the \_\_call\_\_ attribute is set to a built in method wrapper.}\label{code:printFunctionExample}
+%\end{listing}
+
+%It is important to distinguish between the object of the function, and the function object, since \inlinecode{\_\_call\_\_} is not just a reference to the object of the function, as illustrated below:
+
+%\begin{listing}[H]
+%	\begin{minted}[linenos]{python}
+%def a(): 
+%	pass
+%
+%# TypeError: 'method-wrapper' object has only read-only attributes
+%a.__call__.prop = 10
+%	\end{minted}
+%\caption{Function object and \_\_call\_\_ example}
+%\label{code:callPropertyExample}
+%\end{listing}
+
+The function scope object is necessary as local variables inside a function should not be set as attributes on the function object (see \autoref{code:callPropertyExample}). In the analysis only one function scope object is created on the abstract heap. This is an abstraction since at runtime a new function scope object is created for each invocation of a particular function. This abstraction makes it possible to create the function scope object in our analysis when the function is declared.
+
+A better abstraction would be to create a new function scope object for each call site. This is in fact what TAJS \cite{tajs} does. However, this abstraction has the same precision issues when faced with recursive functions.
+
+No matter which abstraction is used, there is a potential for the precision of the analysis to be ruined, because all local variable writes must be modelled as weak updates to preserve soundness. This is discussed in \autoref{section:Strong or weak} about strong and weak updates.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
-def a():
-	print "a"
-a() // "a"
-a.__call__ # <method-wrapper '__call__' of function object at ...> 
-a.__call__() # "a"
+def foo(): 
+  x = 42
+foo.x # AttributeError
 	\end{minted}
-\caption{On a newly declared function the \_\_call\_\_ property is set to a built in method wrapper.}\label{code:printFunctionExample}
-\end{listing}
-
-It is important to distinguish between the object of the function, and the function object, since \inlinecode{\_\_call\_\_} is not just a reference to the object of the function, as illustrated below:
-
-\begin{listing}[H]
-	\begin{minted}[linenos]{python}
-def a(): 
-	pass
-
-# TypeError: 'method-wrapper' object has only read-only attributes
-a.__call__.prop = 10
-	\end{minted}
-\caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
-\end{listing}
-
-Finally, the scope object of a function in listing \ref{code:callPropertyExample} is necessary as local variables inside a function should not be set as properties on the object of the function.
-In the analysis there is only created one scope object on the heap, this is an abstraction since when running a function in Python a new scope object would be created every time a function is invoked. The abstraction makes it possible to create the scope object when the function is declared instead of doing it when a function is invoked.
-
-\begin{listing}[H]
-	\begin{minted}[linenos]{python}
-def a(): 
-	x = 42
-a.x # AttributeError
-	\end{minted}
-\caption{Function object and \_\_call\_\_ example}\label{code:callPropertyExample}
+\caption{Function object and \_\_call\_\_ example}
+\label{code:callPropertyExample}
 \end{listing}
 
 
 \section{Calling functions and updating the call graph}
-A call is represented by a \inlinecode{CallNode} (and \inlinecode{AfterCallNode}) in the CFG.
+A function call is represented by a \textit{CallNode} and an \textit{AfterCallNode} in the CFG.
 
-If the value being called is a function $f(p_1, ..., p_2)$, we first look up the scope object of the function $f$ on the heap. We need the scope object of the function in order to handle parameter passing: For each parameter $p_i$ of $f$ we set $p_i$ as an attribute on the scope object of $f$ to the value of $a_i$, the i'th supplied argument. This implies that reading the variable $a_i$ inside the function will yield the supplied argument.
+If the register being called points to a function $f(p_1, ..., p_n)$, the function scope object of $f$ is found on the abstract heap, which is needed to handle parameter passing. For each parameter $p_i$ of $f$ we set $p_i$ as an attribute on the scope object of $f$ to the abstract value of the $i$'th supplied argument. This implies that reading the variable $p_i$ inside the function will yield the $i$'th supplied argument. 
 
-However, if the function is called more than once, reading the i'th argument inside the function will result in the least upper bound of all supplied i'th arguments because we have no context sensitivity! The following example illustrates this:
+In Python default arguments are supported. This is handled in the analysis by evaluating the default arguments in the CFG whenever a function is declared. The abstract values of the default arguments are saved in a list of registers which is used as standin for absent arguments when the particular function is called.
+
+If the function is called more than once with different parameters, reading the $i$'th argument inside the function will result in the least upper bound of all $i$'th supplied arguments because we have no context sensitivity\footnote{In \cite{sa} it is described how the call string and functional approach can be used to obtain context sensivity.}. The following example illustrates this:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def f(p1): 
-	return p1
+  return p1
 f(10)
 x = f(20) # x becomes the top element of the integer lattice, not 20
 	\end{minted}
-\caption{An example illustrating the consequence of not having context sensitivity.}
+\caption{A consequence of not having context sensitivity.}
 \end{listing}
 
-Next, we update the call graph accordingly by inserting call edges from the call node to the entry node of $f$ and from the exit node of $f$ to the after call node. This implies that the work list of our fixed point algorithm will be updated with the entry node of $f$, such that it will be reevaluated.
+Next, we update the call graph by inserting call edges from the call node to the entry node of $f$ and from the exit node of $f$ to the after call node. This implies that the worklist of our fixed-point algorithm will be updated with the entry node of $f$, such that it will be reevaluated.
 
-At the \inlinecode{FunctionEntryNode} we change the runtime scope chain to the static scope chain of the function, which can be found on the function object on the heap (see the $Object$ lattice).
+At the function entry node we change the dynamic scope chain to the static scope chain of the function as mentioned in \autoref{The Stack}, which is found in the function object on the abstract heap.
 
-When the fixed point algorithm have processed the function the after call node can read the return value of the function (which we store in a special constant register), and store it on the stack.
+When the fixed-point algorithm has processed a function the after call node can read the return value of the function and store it on the stack. The return value is stored in a special fixed register. Whenever the analysis encounters a return node it writes the returned value to this special register using a weak update.
+
+We discuss how two take care of interprocedural exception flow in \autoref{chapter:Exceptions}.
 
 \section{Strong or weak updates of local variables}
 \label{section:Strong or weak}
-Since only one scope object is created for each function, there is a big potential for precision loss because soundness dictates that all writes to local variables are modeled as weak updates, i.e. least upper bound between current value and the new value. This is due to the fact that a scope object of a particular function might exist in more than one instance at runtime, as it is the case with recursive functions. An example would be if, at runtime, one instance of a scope object for a particular function has some variable \inlinecode{z} to be 5 while another has it to be 10, then the analysis would need to emulate both these values at the same time in the scope object. This can be achieved by taking the least upper bound of the two values, but this has potential to greatly reduce the accuracy of the analysis since the only upper bound possible in our value lattice is the any integer element.
+Since only one scope object is created for each function there is a big potential for precision loss because soundness dictates that all writes to local variables are modelled as weak updates, i.e. least upper bound between the current value and the new value. This is due to the fact that a scope object of a particular function might exist in more than one instance at runtime, as it is the case with recursive functions.
 
-This problem only arises in the presence of recursive functions, so to enable the analysis to do strong updates a flag is introduced to tell the analysis if it can assume no recursive functions. This is a very fast to implement and allowed more time to focus on the magic methods, which on its own doesn't introduce any recursion.
+\begin{listing}[H]
+	\begin{minted}[linenos]{python}
+def foo(i):
+  if i==10:
+    return
+  else:
+    foo(i+5)
+foo(0)
+	\end{minted}
+\caption{Simple recursive function.}
+\label{code:UnfoldDictFunctionExample}
+\end{listing}
 
-Alternatively to this fix, the call graph could be inspected for loops indicating recursive functions. However since the call graph is built dynamically as a part of the analysis a recursive function might not appear as recursive at the current iteration possibly leading to strong updates, thus special care is needed when functions are labeled recursive.
+In \autoref{code:UnfoldDictFunctionExample} three function scope objects would exist simultaneously for \inlinecode{foo} at runtime. However, our abstraction only has one object so it needs to model all values of $i$ in the same summary. The only way to do this is to take the least upper bound of these abstract values resulting in the top element of the $Integer$ lattice.
 
-A different approach could be to use the recency abstraction as introduced by \cite{recency}. This could work very well because all writes to local objects at runtime happen to the latest instantiated stack frame, which is exactly the situation in which recency abstraction enables strong updates over weak updates.
+The problem only arises in the presence of recursive functions, so to enable the analysis to do strong updates a command-line flag is introduced to tell the analysis if it can assume no recursive functions occur. This was very fast to implement and allowed more time to focus on the magic methods, which on their own doesn't introduce any recursion.
 
-When converting a function declaration from the AST representation into the CFG representation, stack space is allocated for the default arguments. Default arguments is only evaluated once when the function is declared and when normal arguments is passed into the function, registers to the default arguments is used if the normal argument on that position is absent.
+Alternatively, the call graph could be inspected for loops in order to detect recursive functions. However since the call graph is built dynamically as a part of the analysis a recursive function might not appear as recursive at the current iteration possibly leading to strong updates, thus special care is needed when functions are labeled recursive.
 
-\section{Further work with functions}
+An entirely different approach is to use the recency abstraction as introduced by \cite{recency}, which can be seen as an extension of the allocation-site abstraction. The idea is to allocate two objects for each allocation-site $s$, namely the most-recently-allocated-block (MRAB[$s$]) and not-most-recently-allocated-blocks (NMRAB$s$), instead of only one as in the allocation-site abstraction. This will allow for strong updates to attributes of MRAB[$s$]. This turns out to work very well because all writes to local variables at runtime happen to the latest instantiated stack frame, which is exactly the situation in which recency abstraction enables strong updates over weak updates.
+
+
+\section{Further work with parameter passing}
 In Python it is possible to unfold e.g. a dictionary to the arguments of a function:
 
 \begin{listing}[H]
