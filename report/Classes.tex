@@ -203,7 +203,7 @@ class C(B): pass
 We conclude that a class is definitely a new style class if the following holds:
 
 \begin{enumerate}
-	\item The built in class \inlinecode{object} has not been overwritten.
+	\item The built-in class \inlinecode{object} has not been overwritten.
 \end{enumerate}
 
 Of course it would still be possible to conclude that \inlinecode{class C(O): ...} is a new style class if the variable \inlinecode{O} has been set to \inlinecode{object} before overwriting \inlinecode{object} like in the below example.
@@ -217,15 +217,15 @@ class C(O): pass
 	\caption{The class \inlinecode{C} here is easily seen to be a new style class.}\label{code:ClassOverwrittenObject}
 \end{listing}
 
-However, our implementation does not at the moment check this because of the limited time of our project, and the fact that programmers should really not overwrite the built in \inlinecode{object}. Note that our implementation does conclude that \inlinecode{class C(O): ...} is a new style class if line 2 in the example had been skipped.
+However, our implementation does not at the moment check this because of the limited time of our project, and the fact that programmers should really not overwrite the built-in \inlinecode{object}. Note that our implementation does conclude that \inlinecode{class C(O): ...} is a new style class if line 2 in the example had been skipped.
 
 If \inlinecode{object} has not been overwritten, we check that:
 
 \begin{enumerate}
 \setcounter{enumi}{1}
-	\item All the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are either the built in object or definitely a new style class.
+	\item All the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are either the built-in object or definitely a new style class.
 \end{enumerate}
 
-Recall that the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are just variable names. If \inlinecode{Bi} is the variable \inlinecode{object}, we can conclude that it is the built in object since we from (1) have that the built in \inlinecode{object} has not been overwritten. If \inlinecode{Bi} is not \inlinecode{object} we look up the variable on the scope chain, and make sure its value is only a pointer to a new style class object on the heap, or the built in class \inlinecode{object}. If it is for instance a pointer to either a new style class object or an old style class object (see for instance \autoref{code:NotDefinatelyNewOldStyleClass}), we conclude that the class \inlinecode{C} it is not definitely a new style class object.
+Recall that the base classes \inlinecode{B1}, ..., \inlinecode{Bn} are just variable names. If \inlinecode{Bi} is the variable \inlinecode{object}, we can conclude that it is the built-in object since we from (1) have that the built-in \inlinecode{object} has not been overwritten. If \inlinecode{Bi} is not \inlinecode{object} we look up the variable on the scope chain, and make sure its value is only a pointer to a new style class object on the heap, or the built-in class \inlinecode{object}. If it is for instance a pointer to either a new style class object or an old style class object (see for instance \autoref{code:NotDefinatelyNewOldStyleClass}), we conclude that the class \inlinecode{C} it is not definitely a new style class object.
 
 In the same way we conclude that a class is definitely an old style class.
