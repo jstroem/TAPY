@@ -6,7 +6,7 @@ Python has a lot of similarities to JavaScript as they are both dynamic language
 Python is widely used in both education and industry, and because of this popularity IDEs \cite{ide.appcelerator, ide.jetbrains, ide.wingware} and other third-party tools \cite{tool.pep8, tool.pyflakes, tool.pychecker, tool.pylint} have been developed to accommodate the developer by finding errors and making refactorings. Sadly, all these tools are affected by the complexity in the Python language and shown to be unsound \cite{lamdapy}. In this report we present our work towards developing a conservative and sound type analysis for Python version 2.7.5\footnote{This version is still predominantly used in the wild.} written in Scala, furthermore we use the third-party project Jython \cite{jython} to parse Python.
 
 \section{Aims and Contributions}
-Inspired by Type Analysis for JavaScript (TAJS) \cite{tajs} our aim for this project is to develop a type analysis for Python that will be able to analyse simple Python programs for type related errors. Especially, we wish to be able to do type analysis on programs that use the magic method \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. In order to achieve this goal our type analyzer should be able to handle declarations and instantiations of classes, exceptions and others.
+Inspired by Type Analysis for JavaScript (TAJS) \cite{tajs} our aim for this project is to develop a type analysis for Python that will be able to analyse simple Python programs for type related errors. Especially, we wish to be able to do type analysis on programs that use the magic method \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. In order to achieve this goal our type analyser should be able to handle declarations and instantiations of classes, exceptions and others.
 
 This report presents a proof of concept that static analysis of Python is possible using the traditional monotone framework. We present how to construct CFG snippets for various statements and expressions, including a dynamic way to change the CFG during execution of the analysis to accommodate the support for the magic method \inlinecode{\_\_getattr\_\_}.  
 
@@ -16,7 +16,7 @@ During the development of our project we have identified some intriguing feature
 \label{Features}
 In this section we give some examples of typical type errors that may occur in Python programs.
 
-Classes can be modified after creation. The code in \autoref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the builtin class \inlinecode{object}.
+Classes can be modified after creation. The code in \autoref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the built-in class \inlinecode{object}.
 
 \begin{listing}[H]
   \begin{minted}[linenos]{python}
@@ -69,6 +69,6 @@ class Student(Person):
 	\label{code:Features2}
 \end{listing}
 
-With this implementation we could set the \inlinecode{grades} attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}} (due to the implementation of \inlinecode{\_\_setitem\_\_}), and get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} (due to \inlinecode{\_\_getattr\_\_}) or \inlinecode{s1['math']} (due to \inlinecode{\_\_getitem\_\_}). This is exactly one of the reasons why Python is so difficult to statically analyze: even something as fundamental as attribute lookups possibly involves several method invocations.
+With this implementation we could set the \inlinecode{grades} attribute as in JavaScript: \inlinecode{s1['grades'] = \{\}} (due to the implementation of \inlinecode{\_\_setitem\_\_}), and get the grade of \inlinecode{s1} in the math course by calling \inlinecode{s1.math} (due to \inlinecode{\_\_getattr\_\_}) or \inlinecode{s1['math']} (due to \inlinecode{\_\_getitem\_\_}). This is exactly one of the reasons why Python is so difficult to statically analyse: even something as fundamental as attribute lookups possibly involves several method invocations.
 
-As mentioned we want our type analyzer to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when accessing attributes on class instances, as we illustrated above. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.
+As mentioned we want our type analyser to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when accessing attributes on class instances, as we illustrated above. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.

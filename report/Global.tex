@@ -1,5 +1,5 @@
 \chapter{Global Statement}
-At first glance the \inlinecode{global} statement in Python seems rater straightforward to analyze, but it has some interesting quirks that are not that intuitive, and thus deserves special handling. In this section we will go over these quirks and how this affected the analysis of this statement.
+At first glance the \inlinecode{global} statement in Python seems rater straightforward to analyse, but it has some interesting quirks that are not that intuitive, and thus deserves special handling. In this section we will go over these quirks and how this affected the analysis of this statement.
 
 The statement allows for a function to declare an identifier to be considered global for the entirety of the function body. No matter where the global statement is stated within the function body it will take effect for the entire function body, even for statements that are stated before the global statement. It should also be noted that the statement doesn't have to be executed to take effect, so global statements in dead code also take effect.
 

@@ -3,7 +3,7 @@
 As mentioned Python is a dynamically typed language, and therefore has a lot in common with JavaScript. In this section we present some of its interesting dynamic features, together with a selection of common runtime errors.
 
 Classes are declared using the \inlinecode{class} keyword, supports multiple inheritance and can be modified further after creation. 
-The code in example \ref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the builtin class \inlinecode{object}.
+The code in example \ref{code:Features1} declares a class \inlinecode{Student} with a constructor that inherits from the built-in class \inlinecode{object}.
 
 In line 8 a function \inlinecode{addGrade} is written to the \inlinecode{addGrade} attribute of the \inlinecode{Student} class. Since it is written onto a class it will be wrapped in an unbound method; this will ensure that the function can be called as a method on instance objects; especially, the receiver object will be implicitly passed to the \inlinecode{self}\footnote{The first argument is not required to be called \inlinecode{self}, but it is considered bad practice to name it otherwise.} argument (eliminating the purpose of having the \inlinecode{this} keyword as in e.g. JavaScript).
 
@@ -36,7 +36,7 @@ s2.addGrade('math', 7)
 
 However, we wouldn't be able to change line 9 into \inlinecode{s1['grades'] = \{\}} (as is possible in JavaScript). This would result in the following error: 
 \inlinecode{TypeError:\ 'Student' object does not support item assignment}, while trying to access \inlinecode{s1['grades']} would result in the following error: 
-\inlinecode{TypeError:\ 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the builtin functions 
+\inlinecode{TypeError:\ 'Student' object has no attribute '\_\_getitem\_\_'}. Instead it is possible to call the built-in functions 
 \inlinecode{getattr(obj, attr)} and \inlinecode{setattr(obj, attr, val)}.
 
 Python do however allow the programmer to customize the behavior when indexing into an object by supplying the magic methods
@@ -62,4 +62,4 @@ class Student(Person):
 	\label{code:Features2}
 \end{listing}
 
-As mentioned in the introduction we want our type analyzer to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when dereferencing attributes on class instances. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.
+As mentioned in the introduction we want our type analyser to support the magic method \inlinecode{\_\_getattr\_\_} which comes into play when dereferencing attributes on class instances. In the section about magic methods we describe in detail what exactly happens, together with our work towards supporting this particular magic method.
