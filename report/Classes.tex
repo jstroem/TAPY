@@ -166,7 +166,7 @@ Specifically, our implementation has a special join operation for after call nod
 
 
 \section{Built-in classes}
-To support some of the built-in constants, functions and classes that are available in Python we have given abstract implementations of them in a file \inlinecode{\_\_builtin\_\_.py}, which is imported every time the analysis runs. For instance we initialize the built-in constant \inlinecode{True} as follows: \inlinecode{True = \_\_BooleanLattice\_Concrete\_TRUE\_\_}. Here, \inlinecode{\_\_BooleanLattice_Concrete_TRUE\_\_} is a special name recognized by our type analyser.
+To support some of the built-in constants, functions and classes that are available in Python we have given abstract implementations of them in a file \inlinecode{\_\_builtin\_\_.py}, which is imported every time the analysis runs. For instance we initialize the built-in constant \inlinecode{True} as follows: \inlinecode{True = \_\_BooleanLattice\_Concrete\_TRUE\_\_}. Here, \inlinecode{\_\_BooleanLattice\_Concrete\_TRUE\_\_} is a special name recognized by our type analyser.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
