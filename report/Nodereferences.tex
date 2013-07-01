@@ -2,49 +2,47 @@
 \label{chapter:NodeRef}
 
 \begin{description}
-	\item[FunctionDeclNode \inlinecode{def f(...):}] Used when a function is defined, the node holds references to the function entry node and the exit node. The registers of all the default arguments is also kept in this node.
-	\item[ClassDeclNode \inlinecode{class c(...):}]  
-	\item[ExceptionalExitNode]
-	\item[ClassEntryNode]
-	\item[FunctionEntryNode] 
-	\item[ClassExitNode]
-	\item[FunctionExitNode]
-	\item[ModuleEntryNode] 
-	\item[WriteVariableNode \inlinecode{x = value}] Introduced when writing to variables
-	\item[WriteRegisterNode \inlinecode{reg$_{\inlinecode{to}}$ = reg$_{\inlinecode{from}}$}] Introduced when writing result from one register into another
-	\item[WritePropertyNode \inlinecode{reg$_{\inlinecode{obj}}$.property = value}] Introduced when writing to a property on an object.
-	\item[WriteIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when writing a indexable attribute on an object.
-	\item[ConstantBooleanNode] Used when boolean values are created. Since \inlinecode{False} and \inlinecode{True} is not keywords in Python but just variables. The node is only used when CFG rewrites.
-	\item[ConstantIntNode] Introduces integers from the AST into the CFG.
-	\item[ConstantFloatNode] Introduces floats from the AST into the CFG.
-	\item[ConstantLongNode] Introduces longs from the AST into the CFG.
-	\item[ConstantComplexNode] Introduces complex numbers from the AST into the CFG.
-	\item[ConstantStringNode] Introduces strings from the AST into the CFG.
-	\item[ConstantNoneNode] \inlinecode{None} is not a keyword in Python but just variables, so the Node is only introduced when certain CFG constructions is created. An example would be when declaring a function here a hardcoded return node is put in the end with the value of a \textit{ConstantNoneNode}.
-	\item[ReadVariableNode \inlinecode{x}] Introduced when reading variables.
-	\item[ReadPropertyNode \inlinecode{reg$_{\inlinecode{obj}}$.property}] Introduced when reading a property on an object.
-	\item[ReadIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when reading a indexable attribute on an object.
-	\item[HasAttributeNode \inlinecode{hasattr(reg$_{\inlinecode{obj}}$, 'attr')}] Introduced to ensure an attribute exists on a object. this is necessary for supporting the magic method \inlinecode{\_\_getattr\_\_}.
-	\item[DelVariableNode \inlinecode{del x}] Introduced when deleting a variable from the current scope.
-	\item[DelVariableNode \inlinecode{del reg$_{\inlinecode{obj}}$.property}] Introduced when deleting a property on an object.
-	\item[DelIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when deleting a indexable attribute on an object.
-
-	\item[NoOpNode \inlinecode{pass}] Introduced when \inlinecode{pass} is parsed in the AST. The \textit{NoOpNode} is also used when constructing the CFG as fill. Since the \textit{NoOpNode} dosen't do anything in the further analysis a minifier is created to remove these nodes from the CFG.
-	\item[BrekaNode \inlinecode{break}] Introduced when \inlinecode{break} is parsed in the AST.
-	\item[ReturnNode \inlinecode{return reg$_{\inlinecode{value}}$}] Introduced whenever there is a \inlinecode{return} statement in the AST. 
-	\item[IfNode \inlinecode{if reg$_\inlinecode{cond}$:}] Introduced when making \inlinecode{if} statements in the code. IfNodes is also introduced in other CFG constructions such as \inlinecode{while} statements and \inlinecode{binary} expressions.
-	\item[CallNode \inlinecode{reg$_{\inlinecode{function}}$(reg$_{\inlinecode{1}}$, ..., reg$_{\inlinecode{n}}$)}] Used when a function call happens. The node contains the function register and the lists of all the arguments.
-	\item[AfterCallNode] Introduced after each CallNode and holds the register of the result.
-	\item[AfterCallNode] Used as a merge node whenever a function call has been made.
-	\item[RaiseNode \inlinecode{raise reg$_\inlinecode{exception}$}] Introduced when exceptions is thrown in the AST. The node can hold the register containing the exception. If the register isn't set its a re-raise exception.
-	\item[ExceptNode \inlinecode{except (type$_\inlinecode{1}$, ..., type$_\inlinecode{n}$)}:] Introduced when exceptions is cought after a \inlinecode{try} statement in the AST.
-	\item[CompareOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{comp}$ reg$_\inlinecode{right}$}] Introduced when there is made compare expressions is created in the AST.
-	\item[BinOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{binop}$ reg$_\inlinecode{right}$}] Introduced when there is made binary operation expressions in the AST.
-	\item[UnOpNode \inlinecode{op reg$_\inlinecode{left}$}] Introduced when there is unary operation expressions in the AST.
-	\item[PrintNode \inlinecode{print reg$_\inlinecode{1}$}] Introduced when the print statement is in the AST.
-	\item[GlobalNode \inlinecode{global reg$_\inlinecode{1}$}] Introduced when the global statement is in the AST.
-	\item[AssertInterable] Used to assert that an object is iterable and has a given length.
-	\item[ImportNode \inlinecode{import reg$_\inlinecode{1}$}] Introduced when the import statement is in the AST.
-	\item[AssertNode] Used internally to something about a given register. These are for example used after if-branches.
-	
+	\item[FunctionDeclNode \inlinecode{def f(...):}] Function declarations.
+	\item[ClassDeclNode \inlinecode{class C: ...}] Class declarations.
+	\item[ModuleEntryNode] Module entry.
+	\item[ClassEntryNode] Class entry.
+	\item[FunctionEntryNode] Function entry.
+	\item[ClassExitNode] Class exit.
+	\item[FunctionExitNode] Function exit.
+	\item[ExceptionalExitNode] Exceptional function exit.
+	\item[WriteVariableNode \inlinecode{x = reg}] Writing to variables.
+	\item[WriteRegisterNode \inlinecode{reg$_{\inlinecode{to}}$ = reg$_{\inlinecode{from}}$}] Writing/copying to register.
+	\item[WriteAttributeNode \inlinecode{reg$_{\inlinecode{obj}}$.attr = reg$_{\inlinecode{from}}$}] Writing to attributes of objects.
+	\item[WriteIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$] = reg$_{\inlinecode{from}}$}] Writing to items of objects.
+	\item[ConstantBooleanNode] Boolean values.
+	\item[ConstantIntNode] Integer values.
+	\item[ConstantFloatNode] Float values.
+	\item[ConstantLongNode] Long values.
+	\item[ConstantComplexNode] Complex number values.
+	\item[ConstantStringNode] String values.
+	\item[ConstantNoneNode] Built-in constant \inlinecode{None}.
+	\item[ReadVariableNode \inlinecode{x}] Reading variables.
+	\item[ReadAttributeNode \inlinecode{reg$_{\inlinecode{obj}}$.attr}] Reading attributes of objects.
+	\item[ReadIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Reading items of objects.
+	\item[HasAttributeNode \inlinecode{hasattr(reg$_{\inlinecode{obj}}$, 'attr')}] Feature detection.
+%	\item[DelVariableNode \inlinecode{del x}] Introduced when deleting a variable from the current scope.
+%	\item[DelVariableNode \inlinecode{del reg$_{\inlinecode{obj}}$.attr}] Introduced when deleting an attribute on an object.
+%	\item[DelIndexableNode \inlinecode{reg$_{\inlinecode{obj}}$[reg$_{\inlinecode{index}}$]}] Introduced when deleting a indexable attribute on an object.
+	\item[NoOpNode \inlinecode{pass}] No operation node.
+	\item[BreakNode \inlinecode{break}] Loop breaking.
+	\item[ContinueNode \inlinecode{break}] Loop continuing.
+	\item[ReturnNode \inlinecode{return reg$_{\inlinecode{value}}$}] Function return.
+	\item[IfNode \inlinecode{if reg$_\inlinecode{cond}$:}] \inlinecode{if} statements.
+	\item[CallNode \inlinecode{reg$_{\inlinecode{function}}$(reg$_{\inlinecode{1}}$, ..., reg$_{\inlinecode{n}}$)}] Function calls.
+	\item[AfterCallNode] Stores the result of a call.
+	\item[RaiseNode \inlinecode{raise reg$_\inlinecode{exception}$}] Raising exceptions.
+	\item[ExceptNode \inlinecode{except (type$_\inlinecode{1}$, ..., type$_\inlinecode{n}$)}:] Catching exceptions.
+	\item[CompareOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{comp}$ reg$_\inlinecode{right}$}] Compare expressions.
+	\item[BinOpNode \inlinecode{reg$_\inlinecode{left}$ op$_\inlinecode{binop}$ reg$_\inlinecode{right}$}] Binary operator expressions.
+	\item[UnOpNode \inlinecode{op reg$_\inlinecode{left}$}] Unary operator expressions.
+	\item[PrintNode \inlinecode{print reg$_\inlinecode{1}$}] Print statements.
+	\item[GlobalNode \inlinecode{global reg$_\inlinecode{1}$}] Global statements.
+%	\item[AssertInterable] Used to assert that an object is iterable and has a given length.
+%	\item[ImportNode \inlinecode{import reg$_\inlinecode{1}$}] Introduced when the import statement is in the AST.
+	\item[AssertNode] Assertion for path sensivity.
 \end{description}

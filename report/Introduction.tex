@@ -3,7 +3,7 @@ Python is a dynamically typed, general purpose programming language that support
 
 Python has a lot of similarities to JavaScript as they are both dynamic languages. However, static type analysis of Python is further complicated by its scoping rules \cite{lambdapy}, magic methods, generator expressions and others. One of the reasons why magic methods are challenging to reason about, is that they result in implicit method and function calls; this makes it harder to predict the outcome of, otherwise relatively, simple statements and expressions, e.g. attribute lookup.
 
-Python is widely used in both education and industry, and because of this popularity IDEs \cite{ide.appcelerator, ide.jetbrains, ide.wingware} and other third-party tools \cite{tool.pep8, tool.pyflakes, tool.pychecker, tool.pylint} have been developed to accommodate the developer by finding errors and making refactorings. Sadly, all these tools are affected by the complexity in the Python language and shown to be unsound \cite{lamdapy}. In this report we present our work towards developing a conservative and sound type analysis for Python version 2.7.5\footnote{This version is still predominantly used in the wild.} written in Scala, furthermore we use the third-party project Jython \cite{jython} to parse Python.
+In this report we present our work towards developing a conservative and sound type analysis for Python version 2.7.5\footnote{This version is still predominantly used in the wild.} written in Scala, furthermore we use the third-party project Jython \cite{jython} to parse Python.
 
 \section{Aims and Contributions}
 Inspired by Type Analysis for JavaScript (TAJS) \cite{tajs} our aim for this project is to develop a type analysis for Python that will be able to analyse simple Python programs for type related errors. Especially, we wish to be able to do type analysis on programs that use the magic method \inlinecode{\_\_getattr\_\_}, which is called whenever an attribute lookup results in an \inlinecode{AttributeError}. In order to achieve this goal our type analyser should be able to handle declarations and instantiations of classes, exceptions and others.
@@ -11,6 +11,18 @@ Inspired by Type Analysis for JavaScript (TAJS) \cite{tajs} our aim for this pro
 This report presents a proof of concept that static analysis of Python is possible using the traditional monotone framework. We present how to construct CFG snippets for various statements and expressions, including a dynamic way to change the CFG during execution of the analysis to accommodate the support for the magic method \inlinecode{\_\_getattr\_\_}.  
 
 During the development of our project we have identified some intriguing features in Python, that includes its scope rules and the order of evaluation when handling magic methods.
+
+\section{Related work}
+Python is widely used in both education and industry, and because of this popularity IDEs \cite{ide.appcelerator, ide.jetbrains, ide.wingware} and other third-party tools \cite{tool.pep8, tool.pyflakes, tool.pychecker, tool.pylint} have been developed to accommodate the developer by finding errors and making refactorings. Sadly, all these tools are affected by the complexity in the Python language and shown to be unsound \cite{lamdapy}.
+
+From a theoretical point of view there are a few projects that makes static analysis of Python. Among these is PySonar \cite{pysonar} which is a static analyser based on abstract interpretation of Python. However, PySonar is not available as open-source. An open-source version, mini-PySonar, is available on GitHub: \url{https://github.com/yinwang0/mini-pysonar}, but this version only supports the core parts of the language and thus ignores objects, modules and others.
+
+Another approach is seen in Starkiller \cite{starkiller}, which attempts to find static types for all expressions in Python programs such that they can be compiled to C code. Starkiller was initially written as a master thesis, but later digested down to an article. To find the types it uses an algorithm based on Ole Agesen’s Cartesian Product Algorithm. The relevance to our project is limited as there is no support for exceptions and the handling of magic methods seems sweeped under the carpet.
+
+One interesting project we found is Lambda Py ($\lambda_{\pi}$) \cite{lambdapy}. This project tries to translate Python into a transitionally stageful lambda-calculus. Part of the project can be found as an open-source project on GitHub: \url{https://github.com/brownplt/lambda-py}. While $\lambda_{\pi}$ does not directly relate to our project the calculus could prove as a valuable intermediate representation. Also, it is a good source for an actual semantic of Python which is missing from the Python Language Reference.
+
+Even though static analysis haven't really succeeded with Python yet, a lot of static analysis has been successfully applied on other dynamically typed languages as JavaScript and PHP. Many of the techniques applied on these languages may be applicable on Python; we will draw on the experiences from TAJS \cite{tajs} for our approach with Python.
+
 
 \section{Dynamic features and type related errors}
 \label{Features}

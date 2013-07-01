@@ -7,14 +7,13 @@ Our approach for this project is to use existing frameworks and techniques with 
 To get started an implementation of the monotone framework that is decoupled from the actual analysis was made. This implementation counts commonly used lattice structures, the worklist algorithm, a graph structure and an analysis interface (or trait in scala-lingo).
 
 \subsection{Lattices}
-
 In order to make our lives easier when constructing the actual analysis lattice, we have implemented several common lattice structures as type generic classes. These common lattice structures include, among others, a map and product lattice. In this section we will briefly go over the implementation decisions made for these structures.
 
 Using classic object-oriented programming principles each of these compound structures decide the ordering of their elements by delegating to the underlying lattices in a point wise fashion, e.g. the product lattice has two underlying lattices, one for each element and thus the ordering is decided by comparing the first element in the pair in the context of the first lattice and similarly for the second element.
 
 The map lattice has received a couple of changes from the naive implementation to make it usable in more cases. The first change was to interpret an unbound key value, $k$, to be a mapping from $k$ to the bottom element of the underlying lattice. In some use cases, such as a functional approach to intraprocedural static analysis, the map lattice will have a huge amount of keys. Requiring all of these to be bound to some value in the map is superfluous. This invariant is hidden completely in the lattice class because you can't manipulate the lattice element directly, so when trying to lookup an unbound key, the lattice simply constructs a fresh bottom value.
 
-Since we now have a way to avoid binding every value from the key set, we are also able to change the constructor from the straightforward approach \inlinecode{s: Set[T], l: Lattice[S]} into a more general \inlinecode{s: T, l: Lattice[S]} (where \inlinecode{S} and \inlinecode{T} are type arguments)\todo{What is s and l? Explain...}. The straightforward approach has to compute the entire key set before you are able to instantiate the map lattice, but since the key set in itself might be exponentially large that wouldn't be practical. The downside to this change is, that since the map lattice has no way to know the intended key set, there is no way to construct the top element of the lattice.
+Since we now have a way to avoid binding every value from the key set, we are also able to change the constructor from the straightforward approach \inlinecode{k: Set[T], v: Lattice[S]} into a more general \inlinecode{k: T, v: Lattice[S]} (where \inlinecode{S} and \inlinecode{T} are type arguments). The straightforward approach has to compute the entire key set before you are able to instantiate the map lattice, but since the key set in itself might be exponentially large that wouldn't be practical. The downside to this change is, that since the map lattice has no way to know the intended key set, there is no way to construct the top element of the lattice.
 
 % The top element of the lattice is useful for when you want to give up in the analysis, so to fix we instrumented the map lattice with a new top element, in a similar fashion to how the sink lattice instruments the underlying lattice with a new bottom element.
 
@@ -110,7 +109,7 @@ Heap = (ObjectLabel \rightarrow Object)
 \label{lattice:Heap}
 \end{figure}
 
-The heap is modeled by a map from object labels to object values. During the execution of a program there may be unbounded many objects on the heap, which we must approximate with a finite representation. We do this by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. This is commonly known as the \textit{allocation-site abstraction} \cite{recency,aopas} \todo{Naevne der er ulemper ved kun et allocation-site object. Vi kommer ind paa dette i Strong vs. Weak updates afsnittet. Perspektiver til Rec Abs}. Thus, our abstract heap lattice will only contain one object for each such allocation site.
+The heap is modeled by a map from object labels to object values. During the execution of a program there may be unbounded many objects on the heap, which we must approximate with a finite representation. We do this by using an object label for each allocation site, i.e. each node in the CFG that may create a new object on the heap. This is commonly known as the \textit{allocation-site abstraction} \cite{recency,aopas}, which we get back to in \autoref{section:Strong or weak}. Thus, our abstract heap lattice will only contain one object for each such allocation site.
 
 As an illustrative example consider the following very simple program:
 
