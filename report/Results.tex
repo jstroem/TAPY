@@ -1,36 +1,31 @@
 \chapter{Results}
 \label{chapter:results}
-In this report we presented one approach to a type analyser for Python, capable of analysing simple Pythong Programs. In this chapter we will give examples of some small non-trivial programs together with the results from our type analyser. The primary goal was to support simple usesage of the magic method \inlinecode{\_\_getattr\_\_} similar to the usesage in Django\cite{django}.
+In this report we have presented one approach to a type analyser for Python, capable of analysing simple Python programs. In this chapter we will give examples of some small non-trivial programs together with the results from our type analyser. The primary goal was to support simple usage of the magic method \inlinecode{\_\_getattr\_\_} similar to the way it was used in Django \cite{django}.
 
-%During our project we have developed a type analyzer for Python, which is able to analyze simple Python programs. In this section we present some small, but non-trivial to %analyze, programs together with the results of our type analyzer. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that %all uses of it in the web framework Django\cite{django} were simple.
+%During our project we have developed a type analyser for Python, which is able to analyse simple Python programs. In this section we present some small, but non-trivial to %analyse, programs together with the results of our type analyser. We aimed to be able to support simple use of the magic method \inlinecode{\_\_getattr\_\_}, as we found that %all uses of it in the web framework Django\cite{django} were simple.
 
-In order to achieve this goal restricted support for exceptions was needed. Consider the following calculator example that makes use of exceptions to unsupported operations:
+In order to achieve this goal limited support for exceptions was needed. Consider the following calculator example that makes use of exceptions for unsupported operations:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 def calculator(a, op, b):
-	if (op == "+"):
-		result = a + b
-	elif (op == "-"):
-		result = a - b
-	elif (op == "*"):
-		result = a * b
-	elif (op == "/"):
-		result = a / b
-	else:
-		raise Exception()
-	return result
+  if (op == "+"): result = a + b
+  elif (op == "-"): result = a - b
+  elif (op == "*"): result = a * b
+  elif (op == "/"): result = a / b
+  else: raise Exception()
+  return result
 
 try:
-	amodb  = calculator(10, "%", 20)
+  amodb  = calculator(10, "%", 20)
 except:
-	err = "An error occured"
+  err = "An error occured"
 	\end{minted}
 \end{listing}
 
-For this example our analyser will conclude that \inlinecode{amodb} is undefined and that \inlinecode{err} is "An error occurred". Due to a very simple path sensitivity our analyser doesn't conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. Had line 15 been changed to \inlinecode{calculator(10, "+", 20)} our analyser would correctly conclude that the result of the function call would be 30.
+For this example our analyser will conclude that \inlinecode{amodb} is undefined and that \inlinecode{err} is "An error occurred". Due to a very simple path sensitivity our analyser doesn't conclude that \inlinecode{amodb} is either undefined, \inlinecode{a}+\inlinecode{b}, \inlinecode{a}-\inlinecode{b}, \inlinecode{a}*\inlinecode{b} or \inlinecode{a}/\inlinecode{b}. By changing line 15 to \inlinecode{calculator(10, "+", 20)} our analyser would conclude that the result of the function call would be 30.
 
-The restricted exception handling has enables us to handle implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from section \ref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
+The limited exception handling has enabled us to support implicit \inlinecode{\_\_getattr\_\_} calls. Consider part of the \inlinecode{Student} example from \autoref{Features} about dynamic features that uses the magic method \inlinecode{\_\_getattr\_\_}:
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
@@ -45,16 +40,14 @@ class Student(object):
 a = Student('John')
 a.grades = { 'math': 'A' }
 try:
-	mathgrade = a.math
+  mathgrade = a.math
 except:
-	err = "Error"
+  err = "Error"
 	\end{minted}
 \end{listing}
 
-Our tool is able to analyse this program and conclude that \inlinecode{mathgrade} is either 'A' or undefined (the latter because we do a weak update in line 10 to \inlinecode{a.grades}). It should be mentioned, that the lack of context sensivity destroys the precision very quickly because Python has a lot of implicit method calls, contrary to JavaScript.
+Our tool is able to analyse this program and conclude that \inlinecode{mathgrade} is either \inlinecode{'A'} or \inlinecode{undefined} (the latter because we do a weak update in line 10 to \inlinecode{a.grades}). It should be mentioned, that the lack of context sensivity destroys the precision very quickly because Python has a lot of implicit method calls, contrary to JavaScript.
 
-Dynamicly expanding the \textit{ReadAttributeNode} results in 12 added CFG nodes per expanded \textit{ReadAttributeNode}, however it can be avoid when it can be statically determined that the attribute is definitely present. It would be nice to give a measure of how often the dynamic expansion can be avoided, but because our current analyser doesn't make any strong updates on classes it always does the expansion.
+Dynamically expanding the \textit{ReadAttributeNode} results in 12 added CFG nodes per expanded \textit{ReadAttributeNode}, however it can be avoid when it can be statically determined that the attribute is definitely present. It would be nice to give a measure of how often the dynamic expansion can be avoided, but because our current analyser doesn't make any strong updates on classes it always does the expansion, except when we make use of the assumption mentioned in \autoref{Magic methods transformation}.
 
-It is important to stress that the fact that we only support a subset of Python. Not supporting the magic method \inlinecode{\_\_getattribute\_\_} simplifies the situation as  mentioned in the section about magic methods, \ref{Magic methods transformation}.
-
-
+It is important to stress the fact that we only support a subset of Python. Not supporting the magic method \inlinecode{\_\_getattribute\_\_} simplifies the situation as discussed in \autoref{Magic methods transformation}.

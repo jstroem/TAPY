@@ -1,4 +1,4 @@
-\chapter{Our approach}
+\chapter{Our Approach}
 
 Our approach for this project is to use existing frameworks and techniques with proven qualities to analyse the Python source code, most notably the monotone framework. This chapter contains outlines of how these frameworks and techniques are adapted to fit the specific task.
 
@@ -130,7 +130,7 @@ At runtime this example generates two different \inlinecode{C} objects with attr
 
 As a side note we mention that the approach taken here is quite similar to the one taken in the Static Analysis course\footnote{See \url{http://cs.au.dk/SA}.}, where a couple of points-to analyses for Tiny Imperative Language (TIP) was described. There, \textit{Targets} was introduced as the possible set of allocations-sites, which for TIP is the pointer targets \inlinecode{malloc-i} for a given program (page 74, \cite{sa}).
 
-In our type analyzer we found it beneficial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
+In our type analyser we found it beneficial to distinguish between different types of object labels but still handle them in the same way in the heap. To achieve this we made several different subclasses to the object label, e.g. a function object label, which besides its name also holds a reference to the CFG node that is the entry node for that function.
 
 
 \subsection{The Stack}
