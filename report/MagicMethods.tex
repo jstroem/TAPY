@@ -28,13 +28,13 @@ def readAttribute(x, a):
 	\end{minted}
 \end{listing}
 
-Thus, the magic method \inlinecode{\_\_getattribute\_\_} can be used to supply a custom attribute lookup function, and \inlinecode{\_\_getattr\_\_} can be used to supply a fallback function in case of a bad attribute access. Note also that the \inlinecode{\_\_getattribute\_\_} can not be thought of as being equivalent (or nearly equivalent) to getters in e.g. ECMAScript 5 and C\#: In Python one single method is supplied, not one for each attribute (or property and field for ECMAScript 5, respectively C\#).
+Thus, the magic method \inlinecode{\_\_getattribute\_\_} can be used to supply a custom attribute lookup function, and \inlinecode{\_\_getattr\_\_} can be used to supply a fallback function in case of a bad attribute access. Note also that the \inlinecode{\_\_getattribute\_\_} can not be thought of as being equivalent (or nearly equivalent) to getters in e.g. ECMAScript 5 and C\#: in Python one single method is supplied, not one for each attribute.
 
 As mentioned in the introduction we have only aimed to support \inlinecode{\_\_getattr\_\_} in our type analyser, due to the limited time of our project. However, in order to determine that we wanted to support \inlinecode{\_\_getattr\_\_} and not \inlinecode{\_\_getattribute\_\_}, we looked at the use of these magic methods in some larger Python projects. In Django 1.5.1\footnote{See \url{http://www.djangoproject.com/}.}, a high-level web framework, we found that \inlinecode{\_\_getattribute\_\_} was not used at all. However, \inlinecode{\_\_getattr\_\_} is used 14 times and therefore seems more useful to support if the choice stands between the two of them. Of course 14 usages is not much for a web framework on approximately 200.000 lines of code, but it is still essential to handle in order to be able to statically analyse Python programs.
 
 \section{Transforming the CFG}
 \label{Magic methods transformation}
-Since each single attribute access possibly involves method calls, we normalize the CFG in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadAttribute(<base>,prop)}, into the following CFG piece:
+Since each single attribute access possibly involves method calls, the CFG is normalized in order to reflect this. More concretely, we normalize each node in the CFG of the following form: \inlinecode{<res>=ReadAttribute(<base>,prop)}, into the following CFG piece:
 
 \begin{listing}[H]
 	\begin{center}
@@ -45,7 +45,7 @@ Since each single attribute access possibly involves method calls, we normalize 
 	\label{fig:MagicMethods1}
 \end{listing}
 
-As can be seen from the normalized CFG of read attribute nodes the only challenge there is in order for our analysis to handle the magic method \inlinecode{\_\_getattr\_\_}, is that we need to handle exceptions in our analysis. We return to this in the following section. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When we can't conclude that an attribute is definitely available (e.g. as in the example below), we must of course normalize the read attribute node.
+As can be seen from the normalized CFG of read attribute nodes the only challenge there is in order for our analysis to handle the magic method \inlinecode{\_\_getattr\_\_}, is that we need to handle exceptions in our analysis. We return to this in the following section. First, we want to note that if an attribute is \textit{definitely} set on an instance object, \inlinecode{\_\_getattr\_\_} is never called when reading that particular attribute. This is the case as there won't be any flow across the exception edge in the figure above, because the \inlinecode{ReadAttributeNode} will always succeed in reading the attribute and therefore not raise any \inlinecode{AttributeError}. When the analysis can't conclude that an attribute is definitely available (e.g. as in the example below), it must normalize the read attribute node.
 
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
