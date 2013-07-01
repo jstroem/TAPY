@@ -1,21 +1,25 @@
 \chapter{Limitations}
 
+As mentioned in \autoref{chapter:results} the type analyser doesn't support the entire language, some features are partially supported and other are not supported at all. In this section we will reiterate the limitations to the project.
+
 \section{Language features}
-Python is a general purpose programming language and quite popular, it has been developed and extended and holds a lot of different functionality, some of these functionalities is not used that often. In our analysis we have decided to exclude some of these language functionalities;
+Being a full fledged general purpose programming language, Python has many different syntacic elements. In our analysis we have decided to exclude some of these language elements as they don't add anything interesting when taking our goals into account;
 
 \begin{itemize}
 	\item Lambda expressions
 	\item Generator expressions
 	\item Yield expressions
+        \item Exec and eval expressions
 \end{itemize}
 
-Especially the features Generator and Yield expressions presents a great deal of complexity\footnote{Shriram and Joe et. al. support these features and in their paper they describe their results during investigating these features\cite{lambdapy}. } for supporting them and therefore these will remain unhandled.
-seems high Each of these features present a great deal of complexity so to be able to go in depth with the magic methods these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
+Especially the Generator and Yield expressions presents a great deal of complexity\footnote{Shriram and Joe et. al. support these features and in their paper they describe their results during investigating these features\cite{lambdapy}. } and as such, would be very diffucult to supporting and therefore these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
 
-\subsection{Function decorators}
-In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this are when converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} section 7.6. We have excluded this from our analysis.
+%\subsection{Function decorators}
+%In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this are when %converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} %section 7.6. We have excluded this from our analysis.
 
 \section{Magic methods}
-Python uses magic methods to give the developer flexibility to do, among other things, operation overloading on custom classes. These methods make simple operations such as binary and unary operations more difficult to handle in the control flow graph since it's not just one operation but could potentially be a method call with side-effects.
+%Python uses magic methods to give the developer flexibility to do, among other things, operation overloading on custom classes. These methods make simple operations such as %binary and unary operations more difficult to handle in the control flow graph since it's not just one operation but could potentially be a method call with side-effects.
+With the focus being on supporting \inlinecode{\_\_getattr\_\_}, there has been given little attention to other magic methods and as such they remain unsupported. A complete list and description of the magic methods can be found in The Python Language Reference data model\cite{pyref.datamodel} in section 3.4.
 
-We have chosen to focus on the magic methods that are used when properties on an object is accessed. These methods are called \inlinecode{\_\_getattribute\_\_} and \inlinecode{\_\_getattr\_\_}. A complete list and description on the magic methods can be found in The Python Language Reference data model\cite{pyref.datamodel} in section 3.4.
+\section{Exceptions}
+As a means to an end, exceptions are partially supprted. In particular there is only supprt for catch-em-all style exception handling where \inlinecode{except} statements catch all exceptions by not qualifying a type on the identifier.
