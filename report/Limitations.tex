@@ -1,25 +1,20 @@
 \chapter{Limitations}
+As mentioned in \autoref{chapter:results} the type analyser doesn't support the entire language; some features are partially supported and others are not supported at all. In this chapter we will reiterate the limitations for the project.
 
-As mentioned in \autoref{chapter:results} the type analyser doesn't support the entire language, some features are partially supported and other are not supported at all. In this section we will reiterate the limitations to the project.
-
-\section{Language features}
-Being a full fledged general purpose programming language, Python has many different syntacic elements. In our analysis we have decided to exclude some of these language elements as they don't add anything interesting when taking our goals into account;
+Being a full fledged general-purpose programming language, Python has many different features. In our analysis we have decided to exclude some of these as they don't add anything when taking our goals into account;
 
 \begin{itemize}
 	\item Lambda expressions
 	\item Generator expressions
 	\item Yield expressions
-        \item Exec and eval expressions
+    \item Exec and eval expressions
 \end{itemize}
 
-Especially the Generator and Yield expressions presents a great deal of complexity\footnote{Shriram and Joe et. al. support these features and in their paper they describe their results during investigating these features\cite{lambdapy}. } and as such, would be very diffucult to supporting and therefore these will remain unhandled. Thankfully these features don't seem to get used much either, so it should not hinder us is finding programs.
+Especially generator and yield expressions present a great deal of complexity\footnote{Shriram and Joe et. al. support these features and in their paper they describe their results while investigating these features \cite{lambdapy}.} and remain unhandled. Other limitations include the following:
 
-%\subsection{Function decorators}
-%In Python the decorator design pattern is built-in and when annotating a function it is possible to wrap it in another function. The typical use cases of this are when %converting functions to methods and visa-versa. The description of decorators can be found in The Python Language Reference compound statement list\cite{pyref.compound} %section 7.6. We have excluded this from our analysis.
-
-\section{Magic methods}
-%Python uses magic methods to give the developer flexibility to do, among other things, operation overloading on custom classes. These methods make simple operations such as %binary and unary operations more difficult to handle in the control flow graph since it's not just one operation but could potentially be a method call with side-effects.
-With the focus being on supporting \inlinecode{\_\_getattr\_\_}, there has been given little attention to other magic methods and as such they remain unsupported. A complete list and description of the magic methods can be found in The Python Language Reference data model\cite{pyref.datamodel} in section 3.4.
-
-\section{Exceptions}
-As a means to an end, exceptions are partially supprted. In particular there is only supprt for catch-em-all style exception handling where \inlinecode{except} statements catch all exceptions by not qualifying a type on the identifier.
+\begin{description}
+	\item[Magic methods] With the focus being on supporting \inlinecode{\_\_getattr\_\_} there has been given little attention to other magic methods. By completely omitting \inlinecode{\_\_getattribute\_\_} we noted in \autoref{Magic methods transformation} that it becomes easier to support the magic method \inlinecode{\_\_getattr\_\_}. A complete list and description of the magic methods can be found in The Python Language Reference data model \cite{pyref.datamodel} in section 3.4.
+	\item[Exceptions] As a means to an end exceptions are partially supported. In particular there is only support for catch-all except blocks, i.e. except blocks that does not specify a type.
+	\item[Standard Library] A lot of the functionality in Python comes from the Python Standard Library which includes built-in constants, functions and classes. Built-in structures can be interpreted as being implicitly imported.
+	\item[Imports] Unlike JavaScript Python supports modules, which are used in any large Python project.
+\end{description}

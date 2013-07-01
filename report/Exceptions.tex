@@ -58,17 +58,21 @@ except:
 \section{Catching exceptions}
 The constraint function for an \inlinecode{ExceptNode} in the CFG, checks the special exception register. If the abstract value of the exception register is bottom (indicating no exceptions was raised) the solution of this node is simply set to the bottom element of the $State$ lattice. This indicates that the path is infeasible and acts as a simple sort of path sensivity. If the value of the exception register is actually poiting to an object on the abstract heap, we just clear the exception register on the abstract stack by setting it to the bottom element of the $Value$ lattice. Now, the CFG nodes in the except block will change the solution, and the node following the try-except block will join the state coming from the try and except block.
 
-Our type analyser will for \autoref{code:NameExceptionExample} conclude the following for the exit node of the program:
+For \autoref{code:NameExceptionExample} our type analyser concludes the following for the program exit node:
 
 \begin{itemize}
+	\vspace{-5pt}
 	\item \inlinecode{y} is either \inlinecode{undefined} or \inlinecode{42}
 	\item \inlinecode{z} is either \inlinecode{undefined} or \inlinecode{"trickyComputation() was true"}
 	\item \inlinecode{err} is either \inlinecode{undefined} or \inlinecode{"An error occurred"}
+	\vspace{-5pt}
 \end{itemize}
 
 For the state at the last program point in the try block, the type analyser concludes:
 
 \begin{itemize}
+	\vspace{-5pt}
 	\item \inlinecode{y} is \inlinecode{undefined} or \inlinecode{42}
 	\item \inlinecode{z} is \inlinecode{"trickyComputation() was true"}
+	\vspace{-5pt}
 \end{itemize}
