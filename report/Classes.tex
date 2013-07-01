@@ -176,7 +176,7 @@ def raw_input():
 	\caption{The implementation of \inlinecode{raw_input} in \inlinecode{\_\_builtin\_\_.py}.}\label{code:InitConstructorClass}
 \end{listing}
 
-The idea of using the target language to implement some of the built-in constants, etc. is common in static analysis and can be seen in both the TAJS\cite{tajs} and the Lambda-py\cite{lambdapy} project, even though the projects have different approaches on how they do the static analysis.
+The idea of using the target language to implement some of the built-in constants etc. is common in static analysis and can be seen in both TAJS \cite{tajs} and Lambda Py \cite{lambdapy}, even though the projects have different approaches to static analysis.
 
 
 \subsection{A note on handling both new and old style classes}
@@ -192,9 +192,9 @@ For the example in \autoref{code:OldStyleMROExample} our analysis will only crea
 \begin{listing}[H]
 	\begin{minted}[linenos]{python}
 if (...):
-	class B(): pass
+  class B(): pass
 else:
-	class B(object): pass
+  class B(object): pass
 class C(B): pass
 	\end{minted}
 	\caption{An example where we can't conclude that \inlinecode{C} is definitely a new style class or definitely an old style class.}\label{code:NotDefinatelyNewOldStyleClass}
